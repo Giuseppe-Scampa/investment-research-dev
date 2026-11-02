@@ -1,6 +1,6 @@
 # Collaudo reale ESEF — Edison, bilancio consolidato FY2025
 
-**Stato: IN ATTESA DEL FILE ZIP UFFICIALE. Nessun dato iXBRL reale è stato estratto né certificato.**
+**Stato: ZIP ESEF 2025 ufficiale scaricato sul runner GitHub e parser collaudato su dati reali. Cinque fatti IFRS candidati estratti, ricondotti a tre voci contabili, con confronto numerico 5/5 sul PDF. Nessun dato certificato o utilizzato per lo scoring.**
 
 Questo documento è un protocollo di riconciliazione, non un report del parser.
 Non integra valori nel motore di ranking e non costituisce consiglio di investimento.
@@ -30,7 +30,7 @@ Valori in **milioni di euro**, trascritti dal prospetto del conto economico cons
 
 **Attenzione:** `ifrs-full:Revenue` e `ifrs-full:RevenueFromContractsWithCustomers` non vanno abbinati a priori alla riga «Ricavi di vendita» o alla riga «Totale ricavi»: verificare concetto esatto, ambito, unità, note e tassonomia. Analogamente `ProfitLoss` (270 milioni nel prospetto) non è equivalente a `ProfitLossAttributableToOwnersOfParent` (240 milioni).
 
-## Verifica da effettuare quando il file ZIP è disponibile
+## Protocollo di audit del file ZIP reale e controlli ulteriori
 
 1. Calcolare SHA-256 e annotare **URL effettivo**, timestamp di acquisizione, pubblicazione verificata sul sito e file locale; non committare ZIP o PDF nel repository pubblico.
 2. Ispezionare elenco ZIP: no traversal, link, cifratura, ZIP bomb o nomi duplicati. Identificare l'esatto `.xhtml` consolidato senza scegliere automaticamente un file alternativo.
@@ -43,5 +43,10 @@ Valori in **milioni di euro**, trascritti dal prospetto del conto economico cons
 
 - Parser su fixture: test automatici completati.
 - Prospetto pubblico PDF: valori di riferimento identificati e controllati visivamente.
-- ZIP ESEF ufficiale: URL identificato ma **download non disponibile in questo ambiente**; nessuna esecuzione del parser su dati Edison.
-- Riconciliazione tag ↔ prospetto: **non ancora effettuata**.
+- ZIP ESEF ufficiale: acquisito tramite un job PR dedicato di GitHub Actions, con checksum SHA-256 `4ab61d8a4a959801cc487711ae0850a524b531f7aacf311ecf09ad7131711232`. Lo ZIP è stato usato soltanto nel runner temporaneo; non è stato committato né caricato come artefatto.
+- Primo run con parser prudente: **0 candidati**, perché cinque fatti utilizzavano Transformation Registry 5 (2022) non ancora supportata. Il job di diagnostica ha segnalato l'esito incompleto, non lo ha spacciato per validazione.
+- Secondo run dopo supporto mirato di `2022-02-16:num-comma-decimal`: **5 facts**, relativi a **3 metriche** (un valore ricavi e uno utile di Gruppo, più tre copie dell'utile netto). Tutti e cinque i confronti numerici con le voci PDF sono concordanti.
+- **ESEF Revenue**: €17.739 milioni, corrispondente a «Ricavi di vendita» nel PDF; **non** a «Totale ricavi» di €17.986 milioni. **ProfitLoss**: €270 milioni. **ProfitLossAttributableToOwnersOfParent**: €240 milioni.
+- Sono stati scartati 25 facts dei concetti riconosciuti per contesti non corrispondenti alla durata annuale non dimensionata selezionata. Non sono stati recuperati retroattivamente.
+- Restano da verificare formalmente validità del taxonomy package, extension e anchoring, duplicazioni nel contesto del modello contabile, consolidate-vs-separate e completo significato economico; `accounting_facts_verified=0` e `market_ranking_count=0`.
+- [Run live con estrazione numerica di cinque fatti](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41445131437); la PR ora contiene anche una guardia su checksum ufficiale e corrispondenza delle tre grandezze, per impedire falsi verdi in futuro.
