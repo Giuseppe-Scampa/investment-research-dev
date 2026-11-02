@@ -13,7 +13,7 @@ from .positions import sale_cost_basis
 from .tax_engine import FiscalRegistry, classify_realization, expired_potential
 from .tax_netting import net_realizations
 from .quality import valid_isin
-from .market_calendar import session_age
+from .market_calendar import session_age, session, last_session
 from .constraints import instrument_constraints
 
 DEMO = 'SYNTHETIC_DEMONSTRATION_NOT_PERSONAL_HOLDINGS'
@@ -39,11 +39,17 @@ def _outcome_position(p, case, registry, fees):
     age = session_age(date_as_of, quote_date, venue)
     if age > int(case.get('max_quote_age_sessions', 1)):
         raise ValueError(f"Stale quotation for {p['position_id']}: {age} sessions")
-    # Explicit future date can be modeled only as an illustrative transaction;
-    # the default as-of is NOT an assertion about a tax-recognition date.
-    realization_date = date.fromisoformat(p.get('realization_date', case['as_of']))
-    if realization_date.year != date_as_of.year or realization_date < quote_date:
-        raise ValueError('Realization date inconsistent with quote/fiscal year')
+    # An as-of on a weekend is NOT a trading day. Without an explicit scenario
+    # date use the latest venue session only as an illustrative chronology key.
+    # No date here certifies broker trade/settlement/fiscal recognition.
+    explicit_date = p.get('realization_date')
+    realization_date = (date.fromisoformat(explicit_date) if explicit_date
+                        else last_session(date_as_of, venue))
+    if (realization_date.year != date_as_of.year or realization_date < quote_date
+            or not session(realization_date, venue)):
+        raise ValueError('Realization date must be a supported trading session after the quote')
+    date_provenance = ('HYPOTHETICAL_USER_SUPPLIED_UNVERIFIED' if explicit_date
+                       else 'HYPOTHETICAL_DEFAULT_LAST_VENUE_SESSION')
     rule = registry.get(p['asset_type'], realization_date, p['isin'])
     qty = D(p['sale_quantity'])
     if case['fixture_kind'] == USER and p.get('tax_cost_method') != 'BROKER_REPORTED_AVERAGE':
@@ -56,7 +62,8 @@ def _outcome_position(p, case, registry, fees):
     eligible_gain = D(taxes['compensable_eur']) if taxes['category'] == 'REDDITI_DIVERSI' and taxes['event'] == 'gain' else D(0)
     eligible_loss = D(taxes['compensable_eur']) if taxes['category'] == 'REDDITI_DIVERSI' and taxes['event'] == 'loss' else D(0)
     return {'position_id':p['position_id'], 'isin':p['isin'], 'name':p['name'],
-            'realization_date':realization_date.isoformat(), 'quote_date':quote_date.isoformat(),
+            'realization_date':realization_date.isoformat(),
+            'realization_date_provenance':date_provenance, 'quote_date':quote_date.isoformat(),
             'quote_age_sessions':age, 'sale_quantity':str(qty),
             'reference_price_eur':p['reference_unit_price_eur'],
             'sale_cash_proceeds_eur':sale['net_proceeds_eur'], 'tax_basis_eur':str(tax_basis),
@@ -78,7 +85,15 @@ def _case_new_trade(n, case, registry, fees, wallet, settings):
         'index_membership_status':n.get('index_membership_status','UNKNOWN')}, settings or {}, new_purchase=True)
     if any(flag.level == 'BLOCKED' for flag in flags):
         raise ValueError('Excluded new instrument: '+str([f.code for f in flags]))
-    rule = registry.get(n['asset_type'], date_as_of, n['isin'])
+    venue = n.get('venue')
+    if not venue:
+        raise ValueError('New investment requires a known venue for an illustrative market-session date')
+    explicit_date = n.get('realization_date')
+    realization_date = (date.fromisoformat(explicit_date) if explicit_date
+                        else last_session(date_as_of, venue))
+    if realization_date.year != date_as_of.year or not session(realization_date, venue):
+        raise ValueError('New investment realization date is not a supported trading session')
+    rule = registry.get(n['asset_type'], realization_date, n['isin'])
     buy = trade_costs(n['quantity'], n['purchase_unit_price_eur'], fees, side='buy',
                       italy_ftt_status=n.get('ftt_scope','unknown'),
                       fx_bps=n.get('fx_bps'), spread_bps=n.get('spread_bps'))
@@ -91,7 +106,7 @@ def _case_new_trade(n, case, registry, fees, wallet, settings):
     if D(buy['outlay_eur']) > D(case['investment_budget_eur']):
         raise ValueError('New investment purchase plus fees exceeds cash budget')
     realized = classify_realization(sell['net_proceeds_eur'], buy['outlay_eur'], rule)
-    event = {'realization_date':case['as_of'], 'category':realized['category'],
+    event = {'realization_date':realization_date.isoformat(), 'category':realized['category'],
              'fiscal_event':realized['event'], 'compensable_eur':realized['compensable_eur'],
              'tax_rate':realized['tax_rate'], 'hypothetical_realized_net_eur':realized['net_eur'],
              'position_id':'NEW_INVESTMENT'}
@@ -101,6 +116,9 @@ def _case_new_trade(n, case, registry, fees, wallet, settings):
     eligible = D(tax['eligible_net_gain_eur'])
     return {'name':'C_NEW_INVESTMENT', 'status':'HYPOTHETICAL_NOT_PREDICTION',
             'isin':n['isin'], 'quantity':n['quantity'], 'buy':buy, 'sell':sell,
+            'realization_date':realization_date.isoformat(),
+            'realization_date_provenance':('HYPOTHETICAL_USER_SUPPLIED_UNVERIFIED'
+                if explicit_date else 'HYPOTHETICAL_DEFAULT_LAST_VENUE_SESSION'),
             'cash_budget_eur':case['investment_budget_eur'],
             'cash_after_buy_eur':str(cents(D(case['investment_budget_eur']) - D(buy['outlay_eur']))),
             'affordable_units_including_commissions':affordable,
@@ -123,6 +141,8 @@ def evaluate_case(case, registry: FiscalRegistry, fees=None, settings=None):
     fees = fees or Fees()
     if case.get('fixture_kind') not in (DEMO,USER):
         raise ValueError('Unknown input kind')
+    if case.get('tax_regime') != 'amministrato':
+        raise ValueError('The fiscal netting simulator supports only risparmio amministrato; dichiarativo is not modeled')
     date_as_of = date.fromisoformat(case['as_of'])
     if date_as_of.year != 2026:
         raise ValueError('The decision comparison is 2026-only until rules are versioned')

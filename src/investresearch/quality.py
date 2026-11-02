@@ -100,6 +100,14 @@ def audit(instruments, quotes, reference_date: date, max_quote_age_sessions=1, s
         except (ValueError, InvalidOperation, KeyError, TypeError):
             result.append(_item('quote', 'BLOCKED', f'{uid}: invalid quote', uid))
             continue
+        if row.get('volume') is not None:
+            try:
+                volume = Decimal(row['volume'])
+                if not volume.is_finite() or volume < 0:
+                    raise ValueError('invalid volume')
+            except (ValueError, InvalidOperation, TypeError):
+                result.append(_item('volume', 'BLOCKED', f'{uid}: invalid quote volume', uid))
+                continue
         if day > reference_date:
             result.append(_item('look_ahead', 'BLOCKED', f'{uid}: future quote', uid))
             continue

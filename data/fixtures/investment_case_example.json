@@ -98,6 +98,7 @@
     "ftt_scope": "unknown",
     "fx_bps": "0",
     "spread_bps": null,
-    "scenario_kind": "HYPOTHETICAL_NOT_FORECAST"
+    "scenario_kind": "HYPOTHETICAL_NOT_FORECAST",
+    "venue": "XPAR"
   }
 }
