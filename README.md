@@ -105,3 +105,12 @@ investresearch-b screen --bundle data/private/manual-price-bundle --output repor
 ```
 
 See [docs/EU_EVIDENCE_AND_MARKET_RIGHTS.md](docs/EU_EVIDENCE_AND_MARKET_RIGHTS.md). Never commit report documents, licensed price files, private portfolios or generated local reports.
+
+### ESEF europeo: primi candidati IFRS senza ranking
+
+L'estrattore facoltativo [`--extract-ifrs`](docs/EU_IXBRL_PARSER.md) legge
+solo XHTML/ESEF ZIP locali con checksum; recupera valori candidati di
+ricavi e utile in EUR tramite tag IFRS esplicitamente supportati, in un CSV
+per revisione manuale. Usa `defusedxml`, limita i byte decompressi realmente
+letti e **non** promuove i valori a fondamentali certificati o score di
+mercato. Nessun download esterno, upload di report integrali o ordine di borsa.

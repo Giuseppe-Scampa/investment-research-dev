@@ -40,6 +40,7 @@ def main(argv=None):
     eu.add_argument('--spec',type=Path,required=True)
     eu.add_argument('--root',type=Path,help='Local document root; defaults to the spec directory')
     eu.add_argument('--output',type=Path,required=True)
+    eu.add_argument('--extract-ifrs',action='store_true', help='Opt-in conservative Inline XBRL candidate extraction; no verified accounting/ranking')
     c=sp.add_parser('collect',help='EXPLICIT NETWORK REQUEST, no paywall/provider fallback')
     c.add_argument('--provider',required=True,choices=['SEC_COMPANYFACTS','SEC_TICKERS','ECB_EUR_FX','YFINANCE_EOD_UNVERIFIED'])
     c.add_argument('--identifier',default='')
@@ -82,9 +83,9 @@ def main(argv=None):
     elif args.command=='eu-filings':
         from .research_eu_filings import audit_eu_reports, write_eu_report
         spec=json.loads(args.spec.read_text(encoding='utf-8'))
-        report=audit_eu_reports(spec,args.root or args.spec.parent)
+        report=audit_eu_reports(spec,args.root or args.spec.parent,extract_ifrs=args.extract_ifrs)
         write_eu_report(report,args.output)
-        print(f"EU report inventory: {report['document_count']} checked files; no numerical facts/ranking; {args.output}")
+        print(f"EU report inventory: {report['document_count']} files, {report['ixbrl_candidate_count']} provisional IFRS facts, 0 verified or ranked; {args.output}")
     elif args.command=='collect':
         meta=collect(args.provider,args.identifier,args.cache,
             sec_contact=args.sec_contact,

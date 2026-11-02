@@ -7,7 +7,7 @@ name = "investment-research-2026"
 version = "0.1.0"
 description = "Independent, no-trading investment research and Italian tax-cost scenario explorer"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["defusedxml>=0.7.1,<1"]
 
 [project.optional-dependencies]
 data = ["yfinance>=0.2.50", "pandas>=2.0", "numpy>=1.26"]

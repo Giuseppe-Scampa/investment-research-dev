@@ -122,3 +122,18 @@ I workflow Actions restano offline/sintetici per il ranking e senza scaricare
 prezzi Yahoo. La verifica SEC autonoma su `main` rimane separata. La ricerca
 fiscale A/B/C per posizioni reali, costo medio certificato, minusvalenze e date
 di riconoscimento fiscale resta **privata**, distinta dal Blocco B.
+
+## Estrazione iXBRL conservativa — incremento successivo
+
+È disponibile il percorso **facoltativo** `investresearch-b eu-filings --extract-ifrs`.
+Usa `defusedxml` e verifica un sottoinsieme di contesti annuali, unità EUR,
+tag `ifrs-full`, scale, segni e trasformazioni numeriche. Crea
+`EU_IFRS_CANDIDATES_REVIEW.csv` e **non certifica** i valori estratti.
+Per campi, limiti e passaggi di controllo umano consultare
+[`EU_IXBRL_PARSER.md`](EU_IXBRL_PARSER.md).
+
+Un esempio di **fonte da cui l'operatore può reperire un package reale** è la
+pagina ufficiale [Edison – Assemblea marzo 2026](https://www.edison.it/it/assemblea-degli-azionisti-marzo-2026),
+che pubblica il consolidato 2025 in ZIP ESEF e il corrispondente PDF di
+revisione. Non abbiamo ancora verificato tramite il parser i suoi byte reali:
+nessun risultato Edison è presentato come estratto o verificato.
