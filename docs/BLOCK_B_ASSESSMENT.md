@@ -10,7 +10,7 @@
 | Requisito | Evidenza | Stato |
 |---|---|---|
 | Isolamento dati personali | `.gitignore`, dataset sintetico | Implementato |
-| Prezzi storici da fonte gratuita | `research_sources.py:collect/parse_stooq` | Implementato, **non verificato live**; licenza da controllare |
+| Prezzi storici Yahoo facoltativi | `research_sources.py:collect_yfinance/parse_ohlcv` | Implementato, **non verificato live**; uso personale solo opt-in; licenza per uso aziendale non confermata |
 | Fondamentali fonte primaria SEC | `research_sources.py:parse_sec_fundamentals` | Implementato, test mock; verifica live aperta |
 | FX EUR da BCE | `research_sources.py:parse_ecb` | Implementato, test mock; verifica live aperta |
 | Cache raw + hash | `research_sources.py:collect` | Implementato, test anticorruzione |

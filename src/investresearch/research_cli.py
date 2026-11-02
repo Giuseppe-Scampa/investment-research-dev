@@ -28,12 +28,13 @@ def main(argv=None):
     u.add_argument('--limit',type=int,default=20000)
     u.add_argument('--output',type=Path,required=True)
     c=sp.add_parser('collect',help='EXPLICIT NETWORK REQUEST, no paywall/provider fallback')
-    c.add_argument('--provider',required=True,choices=['SEC_COMPANYFACTS','SEC_TICKERS','ECB_EUR_FX','STOOQ_EOD_UNVERIFIED'])
+    c.add_argument('--provider',required=True,choices=['SEC_COMPANYFACTS','SEC_TICKERS','ECB_EUR_FX','YFINANCE_EOD_UNVERIFIED'])
     c.add_argument('--identifier',default='')
     c.add_argument('--cache',type=Path,default=ROOT/'.cache/research')
     c.add_argument('--sec-contact',default=os.getenv('SEC_RESEARCH_CONTACT',''))
-    c.add_argument('--stooq-key',default=os.getenv('STOOQ_FREE_KEY',''))
-    c.add_argument('--acknowledge-stooq-terms',action='store_true')
+    c.add_argument('--acknowledge-yahoo-terms',action='store_true',
+                   help='Explicit opt-in for personal research under Yahoo Finance data terms')
+    c.add_argument('--as-of',default=None,help='Historical cutoff YYYY-MM-DD; future snapshots prohibited')
     args=p.parse_args(argv)
     if args.command=='screen':
         if args.max_age_sessions not in (0,1,2,3,4,5):
@@ -52,9 +53,9 @@ def main(argv=None):
         print(f"SEC catalog: {result['candidate_count']} unranked candidates / {result['total_sec_records']} associations")
     elif args.command=='collect':
         meta=collect(args.provider,args.identifier,args.cache,
-            sec_contact=args.sec_contact,stooq_key=args.stooq_key,
-            acknowledge_stooq_terms=args.acknowledge_stooq_terms)
-        # Never print API keys or SEC contact; descriptor redacts Stooq credential.
+            sec_contact=args.sec_contact,
+            acknowledge_yahoo_terms=args.acknowledge_yahoo_terms,as_of=args.as_of)
+        # Never print SEC contact or download credentials; prints hash + safe source.
         print(json.dumps({k:meta[k] for k in ('provider','identifier','source_url','sha256','path','bytes')},indent=2))
     else:
         p.error('Unknown command')

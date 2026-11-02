@@ -12,7 +12,7 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 import pytest
-from investresearch.research_sources import (source_request,collect,parse_stooq,
+from investresearch.research_sources import (source_request,collect,parse_ohlcv,
     parse_ecb,parse_sec_fundamentals,sha256_bytes)
 from investresearch.research_bundle import (load_bundle,build_bundle,
     parse_normalized_prices,parse_normalized_fx,SYNTHETIC,EXTERNAL)
@@ -35,45 +35,44 @@ def test_source_request_allowlist_and_credentials():
     assert req.get_header('User-agent').endswith('person@example.org')
     req,descriptor=source_request('ECB_EUR_FX')
     assert descriptor.endswith('eurofxref-hist.xml')
-    with pytest.raises(ValueError,match='acknowledgement'):
-        source_request('STOOQ_EOD_UNVERIFIED','aapl.us',stooq_key='free-demo')
-    request,redacted=source_request('STOOQ_EOD_UNVERIFIED','aapl.us',stooq_key='private-free-key',acknowledge_stooq_terms=True)
-    assert 'private-free-key' not in redacted
-    assert 'private-free-key' in request.full_url
+    with pytest.raises(ValueError,match='Unsupported'):
+        source_request('STOOQ_EOD_UNVERIFIED','aapl.us')
+
 
 
 class _FakeResponse(io.BytesIO):
     pass
 
 
-def test_collection_caches_immutable_hash_and_redacted_url(tmp_path):
-    payload=b'Date,Open,High,Low,Close,Volume\n2026-10-30,99,102,98,100,3000\n'
+def test_collection_caches_immutable_hash_and_secret_free_metadata(tmp_path):
+    payload=b'{"cik":320193,"facts":{}}'
     def fake(req,timeout):
         assert timeout<=20
+        assert req.get_header('User-agent').endswith('contact@example.org')
         return _FakeResponse(payload)
-    result=collect('STOOQ_EOD_UNVERIFIED','aapl.us',tmp_path,
-        stooq_key='mock-key',acknowledge_stooq_terms=True,transport=fake)
+    result=collect('SEC_COMPANYFACTS','320193',tmp_path,
+        sec_contact='contact@example.org',transport=fake)
     assert result['sha256']==sha256_bytes(payload)
     assert Path(result['path']).read_bytes()==payload
-    assert 'mock-key' not in json.dumps(result)
-    second=collect('STOOQ_EOD_UNVERIFIED','aapl.us',tmp_path,
-        stooq_key='mock-key',acknowledge_stooq_terms=True,transport=fake)
+    assert 'contact@example.org' not in json.dumps(result)
+    second=collect('SEC_COMPANYFACTS','320193',tmp_path,
+        sec_contact='contact@example.org',transport=fake)
     assert second['sha256']==result['sha256'] and second['path']==result['path']
     Path(result['path']).write_bytes(b'evil')
     with pytest.raises(ValueError,match='collision|corruption'):
-        collect('STOOQ_EOD_UNVERIFIED','aapl.us',tmp_path,
-            stooq_key='mock-key',acknowledge_stooq_terms=True,transport=fake)
+        collect('SEC_COMPANYFACTS','320193',tmp_path,
+            sec_contact='contact@example.org',transport=fake)
 
 
-def test_collection_rejects_stooq_denial(tmp_path):
-    with pytest.raises(ValueError,match='denial'):
-        collect('STOOQ_EOD_UNVERIFIED','aapl.us',tmp_path,stooq_key='mock',acknowledge_stooq_terms=True,
-            transport=lambda req,timeout:_FakeResponse(b'<html>quota exhausted</html>'))
+def test_collection_rejects_sec_invalid_response(tmp_path):
+    with pytest.raises(ValueError,match='Invalid SEC'):
+        collect('SEC_COMPANYFACTS','320193',tmp_path,sec_contact='contact@example.org',
+            transport=lambda req,timeout:_FakeResponse(b'{"error":"denied"}'))
 
 
-def test_stooq_parser_strict_price_and_as_of():
+def test_ohlcv_parser_strict_price_and_as_of():
     raw=b'Date,Open,High,Low,Close,Volume\n2026-10-30,99,102,98,100,3000\n2026-11-05,100,101,99,100,4000\n'
-    assert parse_stooq(raw,date(2026,11,1))==[{'date':'2026-10-30','close':'100','volume':'3000'}]
+    assert parse_ohlcv(raw,date(2026,11,1))==[{'date':'2026-10-30','close':'100','volume':'3000'}]
     for malformed in [
         b'Date,Open,High,Low,Close,Volume\n2026-10-30,99,102,98,NaN,3000\n',
         b'Date,Open,High,Low,Close,Volume\n2026-10-30,99,102,98,0,3000\n',
@@ -81,7 +80,7 @@ def test_stooq_parser_strict_price_and_as_of():
         b'Date,Open,High,Low,Close,Volume\n2026-10-30,99,99,98,100,3000\n',
         b'Date,Open,High,Low,Close,Volume\n2026-10-30,99,102,98,100,3000\n2026-10-30,99,102,98,100,3000\n',
     ]:
-        with pytest.raises(ValueError):parse_stooq(malformed,date(2026,11,1))
+        with pytest.raises(ValueError):parse_ohlcv(malformed,date(2026,11,1))
 
 
 def test_fx_ebc_parser_validation_and_future_filter():
@@ -175,12 +174,12 @@ def test_external_rejects_synthetic_inputs(tmp_path):
 
 
 def test_source_url_must_match_provider(tmp_path):
-    raw=tmp_path/'stooq.csv';raw.write_text('Date,Open,High,Low,Close,Volume\n2026-10-30,99,102,98,100,3000\n')
+    raw=tmp_path/'prices.csv';raw.write_text('Date,Open,High,Low,Close,Volume\n2026-10-30,99,102,98,100,3000\n')
     spec={'mode':EXTERNAL,'as_of':'2026-11-01','assets':[{'id':'TEST','name':'test','venue':'XMIL',
         'currency':'EUR','sector':'Industry',
-        'prices_source':{'provider':'STOOQ_EOD_UNVERIFIED','path':str(raw),
-                         'source_url':'https://evil.example.org/not-stooq'}}]}
-    with pytest.raises(ValueError,match='Stooq'):
+        'prices_source':{'provider':'YFINANCE_EOD_UNVERIFIED','path':str(raw),
+                         'source_url':'https://evil.example.org/not-yahoo'}}]}
+    with pytest.raises(ValueError,match='Yahoo Finance'):
         build_bundle(spec,tmp_path/'bundle')
 
 
@@ -277,8 +276,8 @@ def test_sec_bundle_rejects_mismatched_company_cik(tmp_path):
     spec={'mode':EXTERNAL,'as_of':'2026-11-01','assets':[{
         'id':'APPLE_EXAMPLE','name':'test','asset_type':'EQUITY',
         'venue':'XNAS','currency':'USD','sec_cik':'0000123456',
-        'prices_source':{'provider':'STOOQ_EOD_UNVERIFIED','path':str(prices),
-                         'source_url':'https://stooq.com/q/d/l/?s=aapl.us&i=d&apikey=REDACTED'},
+        'prices_source':{'provider':'YFINANCE_EOD_UNVERIFIED','path':str(prices),
+                         'source_url':'https://finance.yahoo.com/quote/AAPL/history/'},
         'fundamentals_source':{'provider':'SEC_COMPANYFACTS','path':str(sec),
             'source_url':'https://data.sec.gov/api/xbrl/companyfacts/CIK0000123456.json'}
     }]}
@@ -287,7 +286,7 @@ def test_sec_bundle_rejects_mismatched_company_cik(tmp_path):
 
 
 def test_external_market_dataset_not_trade_ready_even_if_ranked(tmp_path):
-    raw=tmp_path/'synthetic_but_tagged_as_unverified_stooq.csv'
+    raw=tmp_path/'synthetic_but_tagged_as_unverified_yahoo.csv'
     from investresearch.demo_dataset import _days
     lines=['Date,Open,High,Low,Close,Volume']
     for i,d in enumerate(_days('XMIL')):
@@ -296,8 +295,8 @@ def test_external_market_dataset_not_trade_ready_even_if_ranked(tmp_path):
     raw.write_text('\n'.join(lines)+'\n')
     spec={'mode':EXTERNAL,'as_of':'2026-11-01','assets':[{'id':'MOCK_REAL','name':'test','venue':'XMIL',
         'currency':'EUR','asset_type':'EQUITY','sector':'Industry','oil_exposure':'none',
-        'prices_source':{'provider':'STOOQ_EOD_UNVERIFIED','path':str(raw),
-            'source_url':'https://stooq.com/q/d/l/?s=test.it&i=d&apikey=REDACTED',
+        'prices_source':{'provider':'YFINANCE_EOD_UNVERIFIED','path':str(raw),
+            'source_url':'https://finance.yahoo.com/quote/TEST.MI/history/',
             'retrieved_at_utc':'2026-11-01T08:00:00+00:00'}}]}
     build_bundle(spec,tmp_path/'external')
     result=screen(tmp_path/'external')

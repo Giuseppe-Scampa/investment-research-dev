@@ -57,8 +57,20 @@ La provenienza, i requisiti dei provider e gli esempi d'importazione sono in
 ### Blocco B — catalogo società SEC e controlli data quality
 
 Nel branch di sviluppo è disponibile il catalogo SEC per costruire fino a
-20.000 candidati (30.000 limite esplicito) *non classificati*, `investresearch-b universe`, a partire da
+10.000 candidati *non classificati*, `investresearch-b universe`, a partire da
 un download **esplicito** dell'elenco ufficiale SEC. È una discovery US-only,
 non una shortlist finanziaria. La graduatoria richiede storici completi,
 provenienza verificabile, data di acquisizione coerente con `as_of` e controlli
 sui possibili split. Vedi [docs/BLOCK_B.md](docs/BLOCK_B.md).
+
+
+### SEC e dati storici Yahoo (in opt-in)
+
+- La SEC usa il secret GitHub `SEC_RESEARCH_CONTACT` esclusivamente nel workflow **Manual source probe**.
+  Le API EDGAR non richiedono un account, un token o un piano a pagamento.
+- Stooq non viene più utilizzato. `YFINANCE_EOD_UNVERIFIED` è un adattatore opzionale
+  a Yahoo via yfinance **senza API key**, per ricerca personale secondo i termini Yahoo;
+  nessun download live avviene in automatico durante i test o nelle PR.
+- Il workflow è visibile nell'interfaccia Actions dopo l'inclusione in `main`.
+  Nessuno snapshot SEC/Yahoo viene pubblicato come artefatto pubblico.
+- Vedi [`docs/BLOCK_B.md`](docs/BLOCK_B.md) per istruzioni e limiti di licenza.

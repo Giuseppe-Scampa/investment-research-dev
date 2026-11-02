@@ -8,10 +8,11 @@ import csv
 import hashlib
 import io
 import json
+import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from .research_sources import (MAX_BYTES, SEC_HOST, ECB_URL, ECB_CSV_URL, STOOQ_URL, sha256_bytes, parse_stooq, parse_ecb,
+from .research_sources import (MAX_BYTES, SEC_HOST, ECB_URL, ECB_CSV_URL, YAHOO_HISTORY_URL, YFINANCE, sha256_bytes, parse_ohlcv, parse_ecb,
                                parse_sec_fundamentals)
 from .quality import valid_isin
 
@@ -96,8 +97,9 @@ def _get_source_bytes(meta:dict):
         raise ValueError('SEC data must originate from an official companyfacts URL')
     if meta['provider']=='ECB_EUR_FX' and source_url not in (ECB_URL,ECB_CSV_URL):
         raise ValueError('ECB FX must originate from the approved source endpoint')
-    if meta['provider']=='STOOQ_EOD_UNVERIFIED' and not source_url.startswith(STOOQ_URL+'?'):
-        raise ValueError('Unverified price feed does not match the permitted Stooq source')
+    if meta['provider']==YFINANCE:
+        if not re.fullmatch(r'https://finance\.yahoo\.com/quote/[A-Za-z0-9%._^=\-]{1,100}/history/',source_url):
+            raise ValueError('Unverified price feed does not match Yahoo Finance disclosure URL')
     if not source_url.startswith('https://') and meta['provider'] not in ('SYNTHETIC_PRICES','SYNTHETIC_FUNDAMENTALS','SYNTHETIC_FX','SYNTHETIC_EVENTS'):
         raise ValueError('External source requires HTTPS provenance URL')
     return payload
@@ -160,8 +162,8 @@ def build_bundle(spec:dict, output:Path):
         if mode==EXTERNAL and source['provider'].startswith('SYNTHETIC'):
             raise ValueError('Synthetic prices cannot be promoted to external research')
         payload=_get_source_bytes(source)
-        if source['provider']=='STOOQ_EOD_UNVERIFIED':
-            records=parse_stooq(payload,as_of)
+        if source['provider']==YFINANCE:
+            records=parse_ohlcv(payload,as_of)
         elif source['provider']=='SYNTHETIC_PRICES' and mode==SYNTHETIC:
             records=parse_normalized_prices(payload,as_of)
         else: raise ValueError('Unsupported price source; do not infer provider format')
@@ -173,7 +175,10 @@ def build_bundle(spec:dict, output:Path):
             raise ValueError(f"Invalid ISIN: {uid}")
         source_note={'provider':source['provider'],'source_url':source.get('source_url',''),
                      'retrieved_at_utc':source.get('retrieved_at_utc'),
-                     'raw_sha256':sha256_bytes(payload),'data_warning':'Not an executable bid/ask quote'}
+                     'raw_sha256':sha256_bytes(payload),
+                     'price_basis':source.get('price_basis','UNVERIFIED_UNADJUSTED_CLOSE'),
+                     'split_dates':source.get('split_dates',[]),
+                     'data_warning':'Not an executable bid/ask quote or total-return price'}
         entry['prices']={**_write_checked(output,f'prices/{uid}.csv',_csv_bytes(records,['date','close','volume'])),**source_note}
         fmeta=row.get('fundamentals_source')
         if fmeta:

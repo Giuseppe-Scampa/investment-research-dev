@@ -169,11 +169,17 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
         if history['reason']: warnings.append(history['reason'])
         pit_issues=_point_in_time_source_status(manifest,asset,reference,fx)
         warnings.extend(pit_issues)
+        # yfinance provides Yahoo Close prices (auto_adjust=False); a documented split during the
+        # last 61 observations invalidates raw price momentum until adjusted.
+        split_dates=asset['prices'].get('split_dates',[])
+        if any(isinstance(d,str) and d>=bars[max(0,len(bars)-61)]['date'] and d<=latest for d in split_dates):
+            warnings.append('UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW')
         if manifest['mode']!=SYNTHETIC and (not asset.get('sector') or asset.get('oil_exposure') not in ('none','direct','primary','material','indirect')):
             warnings.append('UNVERIFIED_SECTOR_OR_OIL_EXPOSURE')
         market_ready=(not blocks and stale is not None and stale<=max_age_sessions
                       and not fx_issue and history['verified'] and not pit_issues
-                      and 'UNVERIFIED_SECTOR_OR_OIL_EXPOSURE' not in warnings)
+                      and 'UNVERIFIED_SECTOR_OR_OIL_EXPOSURE' not in warnings
+                      and 'UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW' not in warnings)
         if market_ready:
             m=_score_indicators(data)
             price_score,components=_market_score(m)
@@ -249,8 +255,8 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
             'Closing dates for US/EU markets may not represent synchronous information sets.',
             'Continuity gate requires every last 61 trading sessions (2026 calendars only).',
             'Source bytes collected after as_of do not qualify as point-in-time evidence.',
-            'Extreme daily price jumps (>60%) block ranking pending corporate-action review.',
-            'Prices from Stooq are not certified adjusted for dividends/splits; research use only.',
+            'Extreme daily price jumps (>40%) block ranking pending corporate-action review.',
+            'Yahoo/yfinance Close (auto_adjust=False) excludes dividends from returns; split adjustments depend on the provider and require review; research use subject to provider license.',
             'Annual SEC net margin is not a substitute for sector-specific valuations, debt, guidance or catalysts.',
             'Ranking only considers EUR-converted same-date aligned observations and available evidence.',
             'No sector-relative valuation ranking or predictive calibration is claimed.']}

@@ -14,10 +14,12 @@
       "index_memberships": [],
       "sec_cik": "0000320193",
       "prices_source": {
-        "provider": "STOOQ_EOD_UNVERIFIED",
-        "path": "REPLACE_WITH_STOOQ_CACHED_BLOB_PATH",
+        "provider": "YFINANCE_EOD_UNVERIFIED",
+        "path": "REPLACE_WITH_YFINANCE_CACHED_BLOB_PATH",
         "sha256": "REPLACE_WITH_RAW_SHA256",
-        "source_url": "https://stooq.com/q/d/l/?s=aapl.us&i=d&apikey=REDACTED"
+        "source_url": "https://finance.yahoo.com/quote/AAPL/history/",
+        "price_basis": "YAHOO_CLOSE_AUTO_ADJUST_FALSE_NOT_TOTAL_RETURN",
+        "split_dates": []
       },
       "fundamentals_source": {
         "provider": "SEC_COMPANYFACTS",

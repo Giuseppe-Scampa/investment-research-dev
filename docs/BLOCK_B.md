@@ -1,7 +1,7 @@
 # Blocco B — acquisizione, provenance e screening quantitativo (M3 + M4)
 
-**Stato:** implementazione e test offline; la compatibilità effettiva con i provider
-esterni NON è stata verificata con chiamate live in questo ambiente. Dati inclusi
+**Stato:** implementazione e test offline; la compatibilità SEC e yfinance deve essere verificata mediante un test manuale GitHub Actions;
+la BCE XML è stata verificata separatamente dalla CI. Dati inclusi
 nel repository: **100% inventati e marcati sintetici**.
 
 ## Primi comandi, senza account e senza rete
@@ -27,12 +27,12 @@ che escono dal bundle.
 |---|---|---|---|
 | **SEC EDGAR** `data.sec.gov` | Annual 10-K companyfacts XBRL, USD | Ufficiale, senza API key | Contatto identificativo reale per User-Agent, limiti SEC, assenza di CORS |
 | **BCE** `ecb.europa.eu` | USD per EUR, riferimenti FX storici | Ufficiale, senza API key | Riferimento giornaliero, NON cambio eseguibile o fiscale del broker |
-| **Stooq** CSV | OHLCV storici per screening | **Terza parte non verificata** | Opt-in, chiave gratuita quando richiesta, termini di utilizzo e possibile limite personale/non commerciale |
+| **Yahoo tramite yfinance** | OHLCV storici per ricerca personale | **Terza parte non ufficiale / non verificata** | Nessuna chiave; opt-in esplicito. Le condizioni Yahoo/yfinance indicano uso personale, non redistribuzione né licenza commerciale |
 
 Documentazione primaria: [SEC XBRL APIs](https://www.sec.gov/search-filings/edgar-application-programming-interfaces),
 [SEC fair access](https://www.sec.gov/about/developer-resources),
 [cambi di riferimento BCE](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html).
-**Non ridistribuire dataset Stooq senza autorizzazione prevista dalla licenza.**
+**Non ridistribuire snapshot Yahoo/yfinance.** L’API accessibile tramite la libreria non garantisce una licenza per uso commerciale: per un eventuale utilizzo aziendale/produzione servirà una fonte con diritti appropriati.
 L'acquisizione di dati pubblici non equivale all'acquisizione di dati di livello
 professionale o alla disponibilità di prezzi eseguibili.
 
@@ -48,10 +48,10 @@ investresearch-b collect --provider SEC_COMPANYFACTS --identifier 0000320193
 # BCE / cambi USD per EUR
 investresearch-b collect --provider ECB_EUR_FX
 
-# Stooq solo se l'utente ha una chiave gratuita e accetta i termini:
-export STOOQ_FREE_KEY='CHIAVE_FREE_PRIVATA'
-investresearch-b collect --provider STOOQ_EOD_UNVERIFIED \
-  --identifier aapl.us --acknowledge-stooq-terms
+# Yahoo via yfinance: per ricerca PERSONALE solo previo consenso ai termini
+python -m pip install -e '.[data]'
+investresearch-b collect --provider YFINANCE_EOD_UNVERIFIED \
+  --identifier AAPL --acknowledge-yahoo-terms
 ```
 
 Il primo esempio di contatto è un **segnaposto**, da sostituire con un contatto
@@ -90,7 +90,7 @@ Lo spec di importazione contiene `mode=EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE`
 `as_of=YYYY-MM-DD`, `assets[]` con `id`, `name`, `venue` (codici MIC supportati),
 `currency` (EUR/USD), `asset_type`, `isin` facoltativo ma verificato quando
 presente, `sector`, `oil_exposure`, `index_memberships` e `prices_source`.
-La fonte prezzo normalizza Stooq `Date,Open,High,Low,Close,Volume` come
+La fonte prezzo normalizza lo storico yfinance `Date,Open,High,Low,Close,Volume` (Close non aggiustato) come
 `date,close,volume`. Il prezzo non è dichiarato *adjusted* o total-return.
 `fundamentals_source` per SEC richiede `sec_cik` che corrisponda al campo CIK
 nel JSON e nell'URL `CIK##########.json`.
@@ -148,7 +148,7 @@ validazione di Blocco B**. Non viene chiamata nessuna API a pagamento.
 
 ## Stato di completamento / prossimi controlli
 
-**Implementati:** manifest e hash, parser e cache, acquisizione manuale SEC/BCE/Stooq,
+**Implementati:** manifest e hash, parser e cache, acquisizione manuale SEC/BCE/Yahoo tramite yfinance,
 normalizzazione point-in-time, scoring deterministico con valuta EUR, overlay
 fondamentale, eventi source-dated, CSV/JSON/Markdown/dashboard, test offline.
 
@@ -209,8 +209,8 @@ Il job GitHub Actions `live_ecb_smoke`, in esecuzione sulle PR, effettua **una**
 chiamata HTTPS alla BCE, verifica l'hash e prova il parser CSV su dati reali.
 È *best effort*: l'insuccesso per rete/429 non rende rossa la CI offline,
 ma i log devono riportarne esplicitamente l'esito. Le API SEC (contatto reale)
-e Stooq (chiave gratuita e termini) non vengono richiamate automaticamente.
-Non interpretare la CI verde come prova che SEC/Stooq siano stati interrogati.
+e Yahoo/yfinance (opt-in e termini personali) non vengono richiamati automaticamente.
+Non interpretare la CI verde come prova che SEC/yfinance siano stati interrogati.
 
 ### Controllo live BCE: anomalia identificata e mitigazione
 
@@ -230,3 +230,32 @@ un limite inferiore riduce deliberatamente la copertura e non rappresenta un
 campione statisticamente neutro. Il dataset effettivo viene sempre tracciato
 con hash e conteggi. Un cambio prezzo del 50% (possibile split 2:1) viene ora
 intercettato dal gate del 40%; serve revisione prima di qualsiasi ranking.
+
+
+## Collegamento del secret SEC a GitHub Actions (novembre 2026)
+
+La variabile `SEC_RESEARCH_CONTACT` è uno **secret del repository**, non una API key.
+Viene iniettata come variabile d'ambiente soltanto nel workflow **Manual source probe (SEC / optional Yahoo)**,
+che ha esclusivamente il trigger `workflow_dispatch`. Le normali CI e le PR non ricevono il secret.
+
+**Dopo il merge della PR che introduce questo workflow:** aprire Actions →
+Manual source probe (SEC / optional Yahoo) → Run workflow → `main` → scegliere **sec** → Run.
+Il job effettua due richieste SEC identificabili (catalogo e companyfacts Apple) e fallisce esplicitamente
+in caso di 403, 429 o dati difformi. Non logga l'indirizzo né conserva come artefatto i file scaricati.
+Stampa conteggi, date di deposito e hash, senza identificativi personali.
+
+Per testare Yahoo separatamente scegliere `yfinance` e spuntare
+`acknowledge_yahoo_personal_terms` **solo dopo** aver verificato le condizioni d'uso.
+È facoltativo e *non* necessario per la verifica SEC. Non eseguiamo Yahoo nella CI automatica.
+I dati Yahoo restano in una cache temporanea del runner e non vengono caricati su GitHub.
+
+Il collector yfinance richiede `--acknowledge-yahoo-terms`, usa `auto_adjust=False`,
+`actions=True`, `keepna=True` e produce prezzi Yahoo Close **non total-return**, quindi indicatori di
+*price return* e non *total return*. I possibili split registrati fra le ultime 61 osservazioni
+bloccano il ranking fino a controllo documentato. La funzione `history()` è non ufficiale
+ed è soggetta a modifiche; un errore di rete o rate limit **non abilita fallback automatici**.
+
+Per importare lo storico salvato nella cache locale, riportare in uno spec privato
+`provider`, `path`, `sha256`, `source_url`, `retrieved_at_utc`, `price_basis` e
+`split_dates` dal file metadati; utilizzare `investresearch-b build` e `screen`
+come documentato sopra. La cache localizzata sotto `.cache/` non è versionata.

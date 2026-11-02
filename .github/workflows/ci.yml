@@ -56,4 +56,4 @@ jobs:
         continue-on-error: true
         run: python tools/smoke_ecb.py
       - name: Scope disclaimer
-        run: echo 'SEC and Stooq live access are NOT tested without an explicit user-provided contact or free key.'
+        run: echo 'SEC requires a manual source probe with its configured contact secret; Yahoo/yfinance is opt-in only, never an automatic CI feed.'

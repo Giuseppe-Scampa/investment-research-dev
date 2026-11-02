@@ -12,13 +12,15 @@
       "oil_exposure": "none",
       "prices": {
         "bytes": 3268,
-        "data_warning": "Not an executable bid/ask quote",
+        "data_warning": "Not an executable bid/ask quote or total-return price",
         "path": "prices/DEMO_GRID.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
         "provider": "SYNTHETIC_PRICES",
         "raw_sha256": "6815614e95895ae630a80dc010bd1ac3ba69120a48cc5482e6f3f6e9330a311f",
         "retrieved_at_utc": null,
         "sha256": "6815614e95895ae630a80dc010bd1ac3ba69120a48cc5482e6f3f6e9330a311f",
-        "source_url": ""
+        "source_url": "",
+        "split_dates": []
       },
       "sector": "Electrification",
       "venue": "XMIL"
@@ -43,13 +45,15 @@
       "oil_exposure": "none",
       "prices": {
         "bytes": 3268,
-        "data_warning": "Not an executable bid/ask quote",
+        "data_warning": "Not an executable bid/ask quote or total-return price",
         "path": "prices/DEMO_HEALTH.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
         "provider": "SYNTHETIC_PRICES",
         "raw_sha256": "31cf2db1ec53c74fb497918e28553fa8334aa516f1e3ad826fa7898557670ee9",
         "retrieved_at_utc": null,
         "sha256": "31cf2db1ec53c74fb497918e28553fa8334aa516f1e3ad826fa7898557670ee9",
-        "source_url": ""
+        "source_url": "",
+        "split_dates": []
       },
       "sector": "Healthcare",
       "venue": "XMIL"
@@ -74,13 +78,15 @@
       "oil_exposure": "none",
       "prices": {
         "bytes": 3193,
-        "data_warning": "Not an executable bid/ask quote",
+        "data_warning": "Not an executable bid/ask quote or total-return price",
         "path": "prices/DEMO_TECH.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
         "provider": "SYNTHETIC_PRICES",
         "raw_sha256": "d5c221283e90b964ec3ab8a8b75ae72fabe337f03debf5b14311c1fa403c8f71",
         "retrieved_at_utc": null,
         "sha256": "d5c221283e90b964ec3ab8a8b75ae72fabe337f03debf5b14311c1fa403c8f71",
-        "source_url": ""
+        "source_url": "",
+        "split_dates": []
       },
       "sector": "Semiconductors",
       "venue": "XNAS"
@@ -105,13 +111,15 @@
       "oil_exposure": "direct",
       "prices": {
         "bytes": 3268,
-        "data_warning": "Not an executable bid/ask quote",
+        "data_warning": "Not an executable bid/ask quote or total-return price",
         "path": "prices/DEMO_OIL.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
         "provider": "SYNTHETIC_PRICES",
         "raw_sha256": "1ff384239372625a975992f4d2b01cdbd9479862badf925907ad38eeb5b846c6",
         "retrieved_at_utc": null,
         "sha256": "1ff384239372625a975992f4d2b01cdbd9479862badf925907ad38eeb5b846c6",
-        "source_url": ""
+        "source_url": "",
+        "split_dates": []
       },
       "sector": "Oil",
       "venue": "XMIL"
@@ -127,13 +135,15 @@
       "oil_exposure": "none",
       "prices": {
         "bytes": 568,
-        "data_warning": "Not an executable bid/ask quote",
+        "data_warning": "Not an executable bid/ask quote or total-return price",
         "path": "prices/DEMO_SHORT.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
         "provider": "SYNTHETIC_PRICES",
         "raw_sha256": "df0455df0de1905519638e225175be3e4e46bb6d20920df39115f3fdf037d823",
         "retrieved_at_utc": null,
         "sha256": "df0455df0de1905519638e225175be3e4e46bb6d20920df39115f3fdf037d823",
-        "source_url": ""
+        "source_url": "",
+        "split_dates": []
       },
       "sector": "Industrials",
       "venue": "XMIL"
@@ -149,13 +159,15 @@
       "oil_exposure": "none",
       "prices": {
         "bytes": 3268,
-        "data_warning": "Not an executable bid/ask quote",
+        "data_warning": "Not an executable bid/ask quote or total-return price",
         "path": "prices/DEMO_ETF.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
         "provider": "SYNTHETIC_PRICES",
         "raw_sha256": "415286b430a21cc86d3cf9688c0ec1d0df020e88a1a77084a36977f0f69c1ffb",
         "retrieved_at_utc": null,
         "sha256": "415286b430a21cc86d3cf9688c0ec1d0df020e88a1a77084a36977f0f69c1ffb",
-        "source_url": ""
+        "source_url": "",
+        "split_dates": []
       },
       "sector": "Index fund",
       "venue": "XMIL"
@@ -180,13 +192,15 @@
       "oil_exposure": "none",
       "prices": {
         "bytes": 3268,
-        "data_warning": "Not an executable bid/ask quote",
+        "data_warning": "Not an executable bid/ask quote or total-return price",
         "path": "prices/DEMO_WEAK.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
         "provider": "SYNTHETIC_PRICES",
         "raw_sha256": "953a2944c941b2de9c28e33988d2c0f2476782602c698022cfac56a2efb6ffdd",
         "retrieved_at_utc": null,
         "sha256": "953a2944c941b2de9c28e33988d2c0f2476782602c698022cfac56a2efb6ffdd",
-        "source_url": ""
+        "source_url": "",
+        "split_dates": []
       },
       "sector": "Industry",
       "venue": "XMIL"

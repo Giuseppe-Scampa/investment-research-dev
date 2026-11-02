@@ -2,7 +2,7 @@
 
 No arbitrary URL fetching, automatic retries, paid APIs, or redistribution of
 provider payloads. Use the SEC's official EDGAR XBRL API and ECB reference FX;
-Stooq history is opt-in and unverified, with provider terms to be reviewed.
+Yahoo/yfinance is an optional, unverified personal-research adapter; no data redistribution.
 """
 from __future__ import annotations
 import csv
@@ -15,7 +15,7 @@ from decimal import Decimal, InvalidOperation
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import quote
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 MAX_BYTES = 20_000_000
@@ -23,7 +23,8 @@ SEC_HOST = 'https://data.sec.gov/api/xbrl/companyfacts/'
 SEC_TICKERS_URL = 'https://www.sec.gov/files/company_tickers_exchange.json'
 ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml'
 ECB_CSV_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.csv'
-STOOQ_URL = 'https://stooq.com/q/d/l/'
+YAHOO_HISTORY_URL = 'https://finance.yahoo.com/quote/'
+YFINANCE = 'YFINANCE_EOD_UNVERIFIED'
 
 
 def sha256_bytes(content: bytes) -> str:
@@ -35,9 +36,8 @@ class _NoRedirect(HTTPRedirectHandler):
         raise ValueError('Provider redirected; new endpoint requires explicit review')
 
 
-def source_request(provider: str, identifier: str = '', *, sec_contact: str = '',
-                   stooq_key: str = '', acknowledge_stooq_terms: bool = False):
-    """Return a fixed-host Request and a key-redacted source descriptor."""
+def source_request(provider: str, identifier: str = '', *, sec_contact: str = ''):
+    """Return allowlisted official HTTP request; yfinance is a separate adapter."""
     if provider == 'SEC_COMPANYFACTS':
         if not re.fullmatch(r'\d{1,10}', identifier):
             raise ValueError('SEC identifier must be a CIK containing 1-10 digits')
@@ -57,21 +57,17 @@ def source_request(provider: str, identifier: str = '', *, sec_contact: str = ''
         if identifier:
             raise ValueError('ECB FX needs no identifier')
         return Request(ECB_URL, headers={'User-Agent': 'InvestmentResearchDev/0.3', 'Accept':'application/xml'}), ECB_URL
-    if provider == 'STOOQ_EOD_UNVERIFIED':
-        if not acknowledge_stooq_terms or not stooq_key:
-            raise ValueError('Stooq requires explicit terms acknowledgement and a free API key')
-        if not re.fullmatch(r'[a-z0-9^._-]{1,36}', identifier.lower()):
-            raise ValueError('Invalid Stooq symbol')
-        params = urlencode({'s': identifier.lower(), 'i': 'd', 'apikey': stooq_key})
-        return Request(STOOQ_URL + '?' + params, headers={'User-Agent': 'InvestmentResearchDev/0.2'}), STOOQ_URL + '?s=' + identifier.lower() + '&i=d&apikey=REDACTED'
     raise ValueError('Unsupported provider; no automatic provider fallback')
 
 
 def collect(provider: str, identifier: str, cache: Path, *, sec_contact='',
-            stooq_key='', acknowledge_stooq_terms=False, transport=None):
-    """One explicit network request; cache immutable bytes + redacted metadata."""
-    request, descriptor = source_request(provider, identifier, sec_contact=sec_contact,
-        stooq_key=stooq_key, acknowledge_stooq_terms=acknowledge_stooq_terms)
+            acknowledge_yahoo_terms=False, as_of=None, transport=None,
+            history_loader=None):
+    """Explicit provider request; caching never claims trade-ready prices."""
+    if provider == YFINANCE:
+        return collect_yfinance(identifier, cache, acknowledge_terms=acknowledge_yahoo_terms,
+                                as_of=as_of, history_loader=history_loader)
+    request, descriptor = source_request(provider, identifier, sec_contact=sec_contact)
     if transport is None:
         transport = build_opener(_NoRedirect()).open
     try:
@@ -98,49 +94,130 @@ def collect(provider: str, identifier: str, cache: Path, *, sec_contact='',
         parsed=parse_ecb(payload, date.today())
         if date.fromisoformat(parsed[-1]['date']) < date.today()-timedelta(days=14):
             raise ValueError('ECB FX provider response is stale; reject even if parseable')
-    else:
-        if b'Date,Open,High,Low,Close,Volume' not in payload[:300] or b'\x3chtml' in payload[:500].lower():
-            raise ValueError('Stooq returned a denial or non-price response; do not treat it as data')
-    digest = sha256_bytes(payload)
-    dest = Path(cache) / provider / (identifier or ('SEC_CATALOG' if provider == 'SEC_TICKERS' else 'EUR_FX'))
-    dest.mkdir(parents=True, exist_ok=True)
-    raw_path = dest / (digest + '.bin')
-    if raw_path.exists() and sha256_bytes(raw_path.read_bytes()) != digest:
+    return _save_snapshot(provider, identifier, cache, descriptor, payload)
+
+
+def _valid_yahoo_symbol(symbol: str) -> str:
+    if not isinstance(symbol, str) or not re.fullmatch(r'[A-Za-z0-9^._=\-]{1,36}', symbol):
+        raise ValueError('Invalid Yahoo symbol: only known market symbol characters allowed')
+    return symbol.upper()
+
+
+def yahoo_source_url(symbol: str) -> str:
+    """Disclosure URL only: yfinance is a third-party library, not direct HTTP to this URL."""
+    return YAHOO_HISTORY_URL + quote(_valid_yahoo_symbol(symbol), safe='._-') + '/history/'
+
+
+def _serialize_yahoo_history(frame, as_of: date) -> tuple[bytes, dict]:
+    """Convert library OHLCV to strict, reviewable canonical CSV.
+
+    Never use Adj Close as executable price; dividends are NOT added to returns.
+    Provider Close can contain split revisions; we block known splits pending review.
+    """
+    required=('Open','High','Low','Close','Volume')
+    if frame is None or getattr(frame,'empty', True):
+        raise ValueError('yfinance returned empty historical prices; not a valid snapshot')
+    if any(field not in frame.columns for field in required):
+        raise ValueError('yfinance returned missing OHLCV fields')
+    stream=io.StringIO(newline='');writer=csv.writer(stream,lineterminator='\n')
+    writer.writerow(['Date','Open','High','Low','Close','Volume'])
+    split_dates=[];dividend_dates=[];count=0
+    for ix, row in frame.iterrows():
+        day=ix.date() if hasattr(ix,'date') else date.fromisoformat(str(ix)[:10])
+        if day>as_of:continue
+        cells=[str(row[field]) for field in required]
+        writer.writerow([day.isoformat(),*cells])
+        count+=1
+        for field, record in (('Stock Splits',split_dates),('Dividends',dividend_dates)):
+            if field in frame.columns:
+                try: val=Decimal(str(row[field]))
+                except (InvalidOperation,TypeError,ValueError) as exc:
+                    raise ValueError(f'Invalid yfinance {field}') from exc
+                if not val.is_finite() or val<0:raise ValueError(f'Invalid yfinance {field}')
+                if val>0:record.append(day.isoformat())
+    payload=stream.getvalue().encode('utf-8')
+    if not count:raise ValueError('No Yahoo trading days within as_of')
+    parse_ohlcv(payload,as_of)  # fail closed before caching
+    return payload,{'price_basis':'YAHOO_CLOSE_AUTO_ADJUST_FALSE_NOT_TOTAL_RETURN',
+                    'split_dates':sorted(set(split_dates)),
+                    'dividend_dates':sorted(set(dividend_dates)),
+                    'library':'yfinance',
+                    'source_claim':'THIRD_PARTY_UNVERIFIED_CANONICAL_EXPORT',
+                    'license':'Personal research only per Yahoo/yfinance terms; never publish downloaded data'}
+
+
+def collect_yfinance(symbol: str, cache: Path, *, acknowledge_terms=False, as_of=None,
+                     history_loader=None):
+    """Explicit opt-in only; no key, no automatic retries, no silent source fallback.
+
+    history_loader is a test seam; production uses yfinance.Ticker.history.
+    """
+    if not acknowledge_terms:
+        raise ValueError('Yahoo/yfinance requires explicit acknowledgement of personal-use terms')
+    symbol=_valid_yahoo_symbol(symbol)
+    cutoff = as_of or date.today()
+    if isinstance(cutoff,str):cutoff=date.fromisoformat(cutoff)
+    if not isinstance(cutoff,date) or cutoff>date.today():
+        raise ValueError('Future or malformed as_of for Yahoo collection')
+    start=cutoff-timedelta(days=440); end=cutoff+timedelta(days=1)
+    if history_loader is None:
+        try: import yfinance as yf
+        except ImportError as exc:
+            raise RuntimeError('yfinance is optional: install with pip install -e .[data]') from exc
+        def history_loader(sym, left, right):
+            return yf.Ticker(sym).history(start=left.isoformat(),end=right.isoformat(),
+                interval='1d',auto_adjust=False,actions=True,repair=False,
+                keepna=True,raise_errors=True,timeout=20)
+    try:
+        frame=history_loader(symbol,start,end)
+    except Exception as exc:
+        # Do not print request headers, cookies or possible tokens in exception text.
+        raise RuntimeError('Yahoo/yfinance historical retrieval failed; no fallback or retry') from None
+    payload,extra=_serialize_yahoo_history(frame,cutoff)
+    return _save_snapshot(YFINANCE,symbol,cache,yahoo_source_url(symbol),payload,extra)
+
+
+def _save_snapshot(provider, identifier, cache, descriptor, payload, extra=None):
+    """Immutable content-addressed local cache, shared by official and unofficial sources."""
+    if len(payload)>MAX_BYTES or not payload.strip():raise ValueError('Empty or oversized source payload')
+    digest=sha256_bytes(payload)
+    dest=Path(cache)/provider/(identifier or ('SEC_CATALOG' if provider=='SEC_TICKERS' else 'EUR_FX'))
+    dest.mkdir(parents=True,exist_ok=True)
+    raw_path=dest/(digest+'.bin')
+    if raw_path.exists() and sha256_bytes(raw_path.read_bytes())!=digest:
         raise ValueError('Cache collision or corruption')
-    if not raw_path.exists():
-        raw_path.write_bytes(payload)
-    meta = {'provider': provider, 'identifier': identifier, 'source_url': descriptor,
-        'sha256': digest, 'bytes': len(payload),
-        'retrieved_at_utc': datetime.now(timezone.utc).isoformat(),
-        'path': str(raw_path), 'status': 'UNVERIFIED_PROVIDER_PAYLOAD',
-        'license': 'Review provider terms before using or redistributing market data'}
-    (dest / (digest + '.json')).write_text(json.dumps(meta, indent=2, sort_keys=True)+'\n', encoding='utf-8')
+    if not raw_path.exists():raw_path.write_bytes(payload)
+    meta={'provider':provider,'identifier':identifier,'source_url':descriptor,'sha256':digest,
+          'bytes':len(payload),'retrieved_at_utc':datetime.now(timezone.utc).isoformat(),
+          'path':str(raw_path),'status':'UNVERIFIED_PROVIDER_PAYLOAD',
+          'license':'Check provider rights before further use or redistribution'}
+    if extra: meta.update(extra)
+    (dest/(digest+'.json')).write_text(json.dumps(meta,indent=2,sort_keys=True)+'\n',encoding='utf-8')
     return meta
 
-
-def parse_stooq(data: bytes, as_of: date):
-    """Validate Stooq OHLCV; outputs normalized close, not known adjusted prices."""
+def parse_ohlcv(data: bytes, as_of: date):
+    """Validate canonical OHLCV CSV; Yahoo Close without dividend total-return adjustment, NOT a total return."""
     text = data.decode('utf-8-sig')
     reader = csv.DictReader(io.StringIO(text))
     if reader.fieldnames != ['Date','Open','High','Low','Close','Volume']:
-        raise ValueError('Invalid Stooq OHLCV schema')
+        raise ValueError('Invalid OHLCV schema')
     rows, dates = [], set()
     for row in reader:
         if None in row or any(v is None for v in row.values()):
-            raise ValueError('Malformed Stooq row')
+            raise ValueError('Malformed OHLCV row')
         d = date.fromisoformat(row['Date'])
         if d > as_of or d in dates:
             if d > as_of: continue  # point-in-time cutoff
-            raise ValueError('Duplicate Stooq price session')
+            raise ValueError('Duplicate OHLCV price session')
         dates.add(d)
         try:
             nums = {k: Decimal(row[k]) for k in ['Open','High','Low','Close','Volume']}
         except InvalidOperation as exc:
-            raise ValueError('Non-numeric Stooq price') from exc
+            raise ValueError('Non-numeric OHLCV price') from exc
         if any(not v.is_finite() for v in nums.values()) or any(nums[x] <= 0 for x in ['Open','High','Low','Close']) or nums['Volume'] < 0:
-            raise ValueError('Invalid Stooq price/volume')
+            raise ValueError('Invalid OHLCV price/volume')
         if nums['Low'] > min(nums['Open'],nums['Close']) or nums['High'] < max(nums['Open'],nums['Close']) or nums['High'] < nums['Low']:
-            raise ValueError('Inconsistent Stooq OHLC')
+            raise ValueError('Inconsistent OHLC')
         rows.append({'date':str(d), 'close': str(nums['Close']), 'volume':str(nums['Volume'])})
     if not rows:
         raise ValueError('No historical prices at or before as_of')

@@ -1,0 +1,68 @@
+name: Manual source probe (SEC / optional Yahoo)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'One or two explicit source probes, no raw data artifacts'
+        type: choice
+        required: true
+        default: sec
+        options: [sec, yfinance, both]
+      symbol:
+        description: 'Yahoo symbol for personal-use test only (e.g. AAPL)'
+        type: string
+        required: true
+        default: AAPL
+      acknowledge_yahoo_personal_terms:
+        description: 'I have reviewed and accept Yahoo personal-use terms (needed for yfinance)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-research-probe
+  cancel-in-progress: false
+
+jobs:
+  sec:
+    if: ${{ inputs.source == 'sec' || inputs.source == 'both' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SEC_RESEARCH_CONTACT: ${{ secrets.SEC_RESEARCH_CONTACT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: Validate SEC catalog and Apple annual companyfacts (no secret in logs)
+        run: python tools/smoke_free_sources.py --source sec
+
+  yahoo:
+    if: ${{ (inputs.source == 'yfinance' || inputs.source == 'both') && inputs.acknowledge_yahoo_personal_terms }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      RESEARCH_SYMBOL: ${{ inputs.symbol }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install optional free research dependencies
+        run: python -m pip install -e '.[data]'
+      - name: One explicit personal-use yfinance read; no raw data uploads
+        run: python tools/smoke_free_sources.py --source yfinance --symbol "$RESEARCH_SYMBOL" --acknowledge-yahoo-terms
+
+  yahoo_requires_consent:
+    if: ${{ (inputs.source == 'yfinance' || inputs.source == 'both') && !inputs.acknowledge_yahoo_personal_terms }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo 'Yahoo personal-use terms must be acknowledged explicitly.'
+          exit 1
