@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import date
 from pathlib import Path
 from .research_bundle import build_bundle
 from .research_sources import collect
@@ -27,6 +28,13 @@ def main(argv=None):
     u.add_argument('--as-of',required=True)
     u.add_argument('--limit',type=int,default=20000)
     u.add_argument('--output',type=Path,required=True)
+    sec=sp.add_parser('sec-pilot',help='One manual SEC-only current-catalog/annual-evidence pilot, no market ranking')
+    sec.add_argument('--symbols',default='AAPL,MSFT,NVDA,AMZN')
+    sec.add_argument('--as-of',default=date.today().isoformat())
+    sec.add_argument('--live-confirm',action='store_true',help='Explicit authorization for SEC requests')
+    sec.add_argument('--cache',type=Path,default=ROOT/'.cache/research')
+    sec.add_argument('--output',type=Path,default=ROOT/'reports/generated/block_b/sec_pilot')
+    sec.add_argument('--sec-contact',default=os.getenv('SEC_RESEARCH_CONTACT',''))
     c=sp.add_parser('collect',help='EXPLICIT NETWORK REQUEST, no paywall/provider fallback')
     c.add_argument('--provider',required=True,choices=['SEC_COMPANYFACTS','SEC_TICKERS','ECB_EUR_FX','YFINANCE_EOD_UNVERIFIED'])
     c.add_argument('--identifier',default='')
@@ -48,9 +56,16 @@ def main(argv=None):
         result=build_bundle(spec,args.output)
         print(f"Bundle built: {len(result['assets'])} assets, source kinds {result['source_kinds']}")
     elif args.command=='universe':
-        from datetime import date
         result=write_sec_candidates(args.raw,args.metadata,date.fromisoformat(args.as_of),args.output,limit=args.limit)
         print(f"SEC catalog: {result['candidate_count']} unranked candidates / {result['total_sec_records']} associations")
+    elif args.command=='sec-pilot':
+        from .research_sec_pilot import parse_symbols, collect_sec_pilot, write_sec_evidence
+        if not args.live_confirm:
+            p.error('sec-pilot requires --live-confirm; never fetch implicitly')
+        result=collect_sec_pilot(parse_symbols(args.symbols),date.fromisoformat(args.as_of),
+            args.cache,args.sec_contact)
+        summary=write_sec_evidence(result,args.output)
+        print(f"SEC pilot: {summary['annual_evidence_count']} / {summary['rows']} annual profiles; no market ranking; saved {args.output}")
     elif args.command=='collect':
         meta=collect(args.provider,args.identifier,args.cache,
             sec_contact=args.sec_contact,

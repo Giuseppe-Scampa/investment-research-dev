@@ -34,3 +34,23 @@
 5. `git diff` limitato al Blocco B, README, doc e CI.
 6. Verifica GitHub CI della PR prima del merge; nessun merge automatico.
 7. Nessun output demo spacciato per ricerca su prezzi reali.
+
+## SEC annual research pilot — implementation increment
+
+- `research_sec_pilot.py` links the SEC catalog and `companyfacts` by CIK,
+  rejects future collection timestamps, incorrect official URLs, checksum
+  mismatches and mismatched company identities.
+- It only derives annual revenue, net income and arithmetic net margin from
+  a coherent annual EDGAR filing. Missing SEC annual data remain reviewable
+  gaps; unverified prices/sector/ISIN are not fabricated.
+- CLI command `sec-pilot` is **opt-in**, today-only, at most eight explicitly
+  selected tickers and spaced SEC requests. No secret or raw SEC payload is
+  written to committed files or uploaded artifacts.
+- End-to-end test fixtures use independently constructed SEC-like payloads,
+  including future amendments, conflicting accessions, ambiguous tickers,
+  tampered hashes, missing fiscal fields and negative margins. Offline CI
+  never requires SEC credentials or network.
+- Real-source smoke on main is a separate trusted workflow using the configured
+  contact secret; **successful connectivity does not by itself certify this
+  newly added report until its exact pinned version is exercised live**.
+- M4 live-price ranking and broad cross-sector coverage remain pending.

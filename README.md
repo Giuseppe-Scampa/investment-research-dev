@@ -74,3 +74,12 @@ sui possibili split. Vedi [docs/BLOCK_B.md](docs/BLOCK_B.md).
 - Il workflow è visibile nell'interfaccia Actions dopo l'inclusione in `main`.
   Nessuno snapshot SEC/Yahoo viene pubblicato come artefatto pubblico.
 - Vedi [`docs/BLOCK_B.md`](docs/BLOCK_B.md) per istruzioni e limiti di licenza.
+
+### Blocco B — prima copertura SEC su dati reali
+
+`investresearch-b sec-pilot --live-confirm --symbols AAPL,MSFT,NVDA,AMZN`
+uses the official SEC ticker catalog and annual US-GAAP companyfacts through
+bounded, explicit requests. It requires `SEC_RESEARCH_CONTACT` in the process
+environment (not in the repository) and produces **issuer coverage and net
+margin only**, **not** a real investment ranking. See `docs/BLOCK_B.md` for
+security, scope and local-only report instructions.

@@ -259,3 +259,51 @@ Per importare lo storico salvato nella cache locale, riportare in uno spec priva
 `provider`, `path`, `sha256`, `source_url`, `retrieved_at_utc`, `price_basis` e
 `split_dates` dal file metadati; utilizzare `investresearch-b build` e `screen`
 come documentato sopra. La cache localizzata sotto `.cache/` non è versionata.
+
+## SEC real-source pilot: first verified annual research coverage (M3)
+
+A new, explicitly triggered command joins the **current** SEC listing catalog to a
+small bounded set of official `companyfacts` XBRL payloads by **CIK**, preserving
+acquisition date, official URLs, SHA-256, filing accession and fiscal period. It
+produces a research-coverage report **without prices and without an investment
+ranking**. No external securities are recommended.
+
+```bash
+# Contact exists only in the process environment, never in tracked files.
+export SEC_RESEARCH_CONTACT='real-monitored-contact@example.org'
+# One explicit run on the current day, at most 8 tickers and <=9 HTTP requests.
+investresearch-b sec-pilot \
+  --symbols AAPL,MSFT,NVDA,AMZN \
+  --live-confirm \
+  --output reports/generated/block_b/sec_pilot
+```
+
+The `--live-confirm` flag is mandatory. There are no retries, commercial
+feeds, broker APIs or paid services. Requests are spaced by 1.2 seconds to
+remain well below SEC fair-access thresholds. HTTP 403/429 fail closed.
+Cache files remain exclusively in `.cache/research/`, which is gitignored.
+Do **not** put real contacts in CLI flags, committed files, workflow log
+commands or examples; use `SEC_RESEARCH_CONTACT` as a GitHub Actions secret.
+
+Outputs (local-only, not automatically published):
+
+- `SEC_ANNUAL_RESEARCH.json`: source hashes, as-of date, issuer-level coverage
+  and `market_ranking_count: 0`.
+- `SEC_ANNUAL_RESEARCH.csv`: public summary metrics and statuses.
+- `SEC_ANNUAL_RESEARCH.md`: legible summary with explicit limitations.
+
+The only calculated financial ratio is
+`net_margin_pct = 100 × annual net income / annual revenue`, using USD annual
+figures from the **same EDGAR accession** where available. The underlying
+`parse_sec_fundamentals` rules require annual `10-K/10-K/A` periods and filing
+dates not exceeding the cutoff; future restatements are excluded. Insufficient
+facts, incompatible venues or ambiguous ticker mappings are marked as review
+cases rather than guessed. Reports include official source URLs and hashes.
+
+**This is not a factor ranking or a live price screener.** Annual metrics may
+not be comparable across banks, insurers, fiscal years or reporting entities.
+The SEC catalog is US-only and a current listing snapshot; it does not
+establish ISIN, industry, oil exposure or historical constituents. Real
+M4 market rankings still require licensed, validated price histories and
+corporate action handling. Yahoo/yfinance remains personal-use only and is
+not called by this SEC pilot.
