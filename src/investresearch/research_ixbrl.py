@@ -166,9 +166,15 @@ def _contexts(root, fiscal_year_end: date):
 
 def _units(root, prefixes):
     allowed = set()
+    seen_ids = set()
     for node in root.iter(f'{{{XBRLI}}}unit'):
         unit_id = node.get('id')
-        if not unit_id: continue
+        # A duplicated ID can alias a rejected USD/ratio unit to an accepted
+        # EUR unit. Reject all collisions, including unsupported unit shapes,
+        # before trusting any fact's unitRef.
+        if not unit_id or unit_id in seen_ids:
+            raise ValueError('Missing or duplicated XBRL unit ID')
+        seen_ids.add(unit_id)
         measures = list(node.iter(f'{{{XBRLI}}}measure'))
         # Reject ratios and complex units.
         if len(measures) != 1 or len(node) != 1 or _local(node[0].tag) != 'measure':

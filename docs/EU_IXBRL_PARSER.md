@@ -139,3 +139,15 @@ e [GitHub Actions run di acquisizione ed estrazione](https://github.com/Giuseppe
 - Riferimenti preliminari dal sito dell'emittente per l'anno 2025: ricavi **19.650 milioni EUR** e utile netto riportato nei comunicati **1.270 milioni EUR**. *Non sono automaticamente equivalenti a uno specifico tag IFRS*, né costituiscono controllo pagina-per-pagina del conto economico consolidato.
 - `tools/smoke_prysmian_esef.py` è un controllo live senza credenziali, senza upload di raw file e con output di soli candidati, hash e avvisi. Il probe è best-effort e il successo dei test offline non certifica il risultato live: verificare sempre il log GitHub Actions per il valore `OUTCOME`.
 - Nessuna nuova fonte di prezzi è abilitata: licenza, rettifiche corporate actions e diritto di output derivati rimangono aperti.
+
+
+### Hardening degli identificativi `xbrli:unit` (2 novembre 2026)
+
+Il parser rifiuta unità XBRL con ID assente o ripetuto nell'intero documento,
+anche se una delle unità duplicate sarebbe stata ignorata perché USD o con
+`divide`. In precedenza due definizioni con lo stesso ID potevano far
+accettare come EUR un `unitRef` ambiguo, producendo candidati non affidabili.
+I test sintetici coprono collisioni EUR/EUR, EUR/USD, unità a rapporto,
+ordine invertito, unità senza ID e documenti validi con più unità distinte.
+La modifica mantiene il gate `accounting_facts_verified=0`: non certifica
+la correttezza IFRS, non introduce prezzi né ranking operativi.
