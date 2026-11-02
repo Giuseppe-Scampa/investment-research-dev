@@ -34,7 +34,7 @@ def test_source_request_allowlist_and_credentials():
     assert descriptor.endswith('CIK0000320193.json')
     assert req.get_header('User-agent').endswith('person@example.org')
     req,descriptor=source_request('ECB_EUR_FX')
-    assert descriptor.endswith('eurofxref-hist.csv')
+    assert descriptor.endswith('eurofxref-hist.xml')
     with pytest.raises(ValueError,match='acknowledgement'):
         source_request('STOOQ_EOD_UNVERIFIED','aapl.us',stooq_key='free-demo')
     request,redacted=source_request('STOOQ_EOD_UNVERIFIED','aapl.us',stooq_key='private-free-key',acknowledge_stooq_terms=True)

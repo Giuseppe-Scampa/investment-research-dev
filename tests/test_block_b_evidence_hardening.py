@@ -111,3 +111,22 @@ def test_full_screen_no_rank_for_missing_bar_and_future_collection(tmp_path):
     assert _point_in_time_source_status(meta,asset,date(2026,11,2),None)==[]
     asset['prices'].pop('retrieved_at_utc')
     assert 'MISSING_SOURCE_COLLECTION_DATE' in _point_in_time_source_status(meta,asset,date(2026,11,2),None)
+
+
+def test_ecb_xml_realistic_envelope_and_stale_provider_rejected(tmp_path):
+    from investresearch.research_sources import parse_ecb
+    import io
+    xml=b'''<?xml version="1.0" encoding="UTF-8"?>
+    <gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01"
+    xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref">
+      <Cube><Cube time="2026-10-30"><Cube currency="USD" rate="1.16"/>
+      <Cube currency="GBP" rate="0.86"/></Cube></Cube>
+    </gesmes:Envelope>'''
+    parsed=parse_ecb(xml,date(2026,11,2))
+    assert parsed==[{'date':'2026-10-30','usd_per_eur':'1.16'}]
+    with pytest.raises(ValueError,match='weekend'):
+        parse_ecb(b'Date,USD\n2010-02-14,1.45\n',date(2026,11,2))
+    old=b'Date,USD\n2010-02-15,1.45\n'
+    class Fake(io.BytesIO):pass
+    with pytest.raises(ValueError,match='stale'):
+        collect('ECB_EUR_FX','',tmp_path,transport=lambda req,timeout:Fake(old))

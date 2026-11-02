@@ -211,3 +211,15 @@ chiamata HTTPS alla BCE, verifica l'hash e prova il parser CSV su dati reali.
 ma i log devono riportarne esplicitamente l'esito. Le API SEC (contatto reale)
 e Stooq (chiave gratuita e termini) non vengono richiamate automaticamente.
 Non interpretare la CI verde come prova che SEC/Stooq siano stati interrogati.
+
+### Controllo live BCE: anomalia identificata e mitigazione
+
+Il primo smoke su GitHub ha mostrato una risposta CSV BCE formalmente
+leggibile ma con ultima osservazione risalente al 2010: **non valida** per
+una ricerca 2026. L'acquisizione BCE usa ora l'endpoint ufficiale XML
+`https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml`, preservando
+solo la compatibilità di lettura con vecchie cache CSV. Il collector applica
+un controllo di freschezza (ultima osservazione non oltre 14 giorni prima
+ della data corrente) e rifiuta esplicitamente feed formalmente corretti ma
+ obsoleti. Lo smoke live deve mostrare un'ultima osservazione recente e non
+ solo la validità del parsing. Nessun fallback nascosto o servizio a pagamento.

@@ -10,8 +10,9 @@ import hashlib
 import io
 import json
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -20,7 +21,8 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 MAX_BYTES = 20_000_000
 SEC_HOST = 'https://data.sec.gov/api/xbrl/companyfacts/'
 SEC_TICKERS_URL = 'https://www.sec.gov/files/company_tickers_exchange.json'
-ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.csv'
+ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml'
+ECB_CSV_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.csv'
 STOOQ_URL = 'https://stooq.com/q/d/l/'
 
 
@@ -54,7 +56,7 @@ def source_request(provider: str, identifier: str = '', *, sec_contact: str = ''
     if provider == 'ECB_EUR_FX':
         if identifier:
             raise ValueError('ECB FX needs no identifier')
-        return Request(ECB_URL, headers={'User-Agent': 'InvestmentResearchDev/0.2'}), ECB_URL
+        return Request(ECB_URL, headers={'User-Agent': 'InvestmentResearchDev/0.3', 'Accept':'application/xml'}), ECB_URL
     if provider == 'STOOQ_EOD_UNVERIFIED':
         if not acknowledge_stooq_terms or not stooq_key:
             raise ValueError('Stooq requires explicit terms acknowledgement and a free API key')
@@ -93,8 +95,9 @@ def collect(provider: str, identifier: str, cache: Path, *, sec_contact='',
         from .research_universe import parse_sec_tickers
         parse_sec_tickers(payload)
     elif provider == 'ECB_EUR_FX':
-        if 'Date' not in payload[:500].decode('utf-8-sig'):
-            raise ValueError('Invalid ECB FX CSV header')
+        parsed=parse_ecb(payload, date.today())
+        if date.fromisoformat(parsed[-1]['date']) < date.today()-timedelta(days=14):
+            raise ValueError('ECB FX provider response is stale; reject even if parseable')
     else:
         if b'Date,Open,High,Low,Close,Volume' not in payload[:300] or b'\x3chtml' in payload[:500].lower():
             raise ValueError('Stooq returned a denial or non-price response; do not treat it as data')
@@ -145,23 +148,45 @@ def parse_stooq(data: bytes, as_of: date):
 
 
 def parse_ecb(data: bytes, as_of: date):
-    reader = csv.DictReader(io.StringIO(data.decode('utf-8-sig')))
-    if reader.fieldnames:
-        reader.fieldnames = [col.strip() for col in reader.fieldnames]
-    if not reader.fieldnames or 'Date' not in reader.fieldnames or 'USD' not in reader.fieldnames:
-        raise ValueError('ECB CSV must contain Date and USD')
-    result = {}
-    for r in reader:
-        d = date.fromisoformat(r['Date'].strip())
-        if d > as_of: continue
-        if d.isoformat() in result:
-            raise ValueError('Duplicate ECB FX date')
-        try: rate = Decimal(r['USD'].strip())
-        except InvalidOperation as exc: raise ValueError('Invalid ECB USD FX') from exc
-        if not rate.is_finite() or rate <= 0:
-            raise ValueError('Invalid ECB FX value')
-        result[d.isoformat()] = {'date':d.isoformat(), 'usd_per_eur':str(rate)}
-    if not result: raise ValueError('No ECB rates before as_of')
+    """Read official BCE XML (current default) or legacy CSV, fail closed on age.
+
+    Date sorting is explicit. This parser validates values; live collector separately
+    verifies recency so a stale but well-formed historical snapshot is rejected.
+    """
+    result={}
+    if data.lstrip().startswith(b'<'):
+        try: root=ET.fromstring(data)
+        except ET.ParseError as exc:raise ValueError('Invalid ECB XML') from exc
+        for el in root.iter():
+            if el.tag.split('}')[-1]!='Cube' or 'time' not in el.attrib:
+                continue
+            d=date.fromisoformat(el.attrib['time'])
+            if d.weekday()>=5:raise ValueError('ECB fixing dated on weekend')
+            if d>as_of:continue
+            usd=[child.attrib['rate'] for child in el
+                 if child.tag.split('}')[-1]=='Cube' and child.attrib.get('currency')=='USD']
+            if len(usd)!=1:continue
+            if d.isoformat() in result:raise ValueError('Duplicate ECB XML date')
+            try:rate=Decimal(usd[0])
+            except InvalidOperation as exc:raise ValueError('Invalid ECB USD FX') from exc
+            if not rate.is_finite() or rate<=0:raise ValueError('Invalid ECB FX value')
+            result[d.isoformat()]={'date':d.isoformat(),'usd_per_eur':str(rate)}
+    else:
+        reader=csv.DictReader(io.StringIO(data.decode('utf-8-sig')))
+        if reader.fieldnames:
+            reader.fieldnames=[col.strip() for col in reader.fieldnames]
+        if not reader.fieldnames or 'Date' not in reader.fieldnames or 'USD' not in reader.fieldnames:
+            raise ValueError('ECB CSV must contain Date and USD')
+        for r in reader:
+            d=date.fromisoformat(r['Date'].strip())
+            if d.weekday()>=5:raise ValueError('ECB fixing dated on weekend')
+            if d>as_of:continue
+            if d.isoformat() in result:raise ValueError('Duplicate ECB FX date')
+            try:rate=Decimal(r['USD'].strip())
+            except InvalidOperation as exc:raise ValueError('Invalid ECB USD FX') from exc
+            if not rate.is_finite() or rate<=0:raise ValueError('Invalid ECB FX value')
+            result[d.isoformat()]={'date':d.isoformat(),'usd_per_eur':str(rate)}
+    if not result:raise ValueError('No ECB rates before as_of')
     return [result[x] for x in sorted(result)]
 
 

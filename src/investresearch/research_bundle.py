@@ -11,7 +11,7 @@ import json
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from .research_sources import (MAX_BYTES, SEC_HOST, ECB_URL, STOOQ_URL, sha256_bytes, parse_stooq, parse_ecb,
+from .research_sources import (MAX_BYTES, SEC_HOST, ECB_URL, ECB_CSV_URL, STOOQ_URL, sha256_bytes, parse_stooq, parse_ecb,
                                parse_sec_fundamentals)
 from .quality import valid_isin
 
@@ -94,7 +94,7 @@ def _get_source_bytes(meta:dict):
     source_url=str(meta.get('source_url',''))
     if meta['provider']=='SEC_COMPANYFACTS' and not source_url.startswith(SEC_HOST):
         raise ValueError('SEC data must originate from an official companyfacts URL')
-    if meta['provider']=='ECB_EUR_FX' and source_url!=ECB_URL:
+    if meta['provider']=='ECB_EUR_FX' and source_url not in (ECB_URL,ECB_CSV_URL):
         raise ValueError('ECB FX must originate from the approved source endpoint')
     if meta['provider']=='STOOQ_EOD_UNVERIFIED' and not source_url.startswith(STOOQ_URL+'?'):
         raise ValueError('Unverified price feed does not match the permitted Stooq source')

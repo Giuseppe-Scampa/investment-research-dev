@@ -31,6 +31,6 @@
     "provider": "ECB_EUR_FX",
     "path": "REPLACE_WITH_ECB_CACHED_BLOB_PATH",
     "sha256": "REPLACE_WITH_RAW_SHA256",
-    "source_url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.csv"
+    "source_url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml"
   }
 }
