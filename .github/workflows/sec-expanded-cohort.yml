@@ -1,0 +1,52 @@
+name: SEC 18-issuer coverage on pinned Block B commit
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sec-expanded-cohort.yml
+permissions:
+  contents: read
+concurrency:
+  group: sec-expanded-cohort
+  cancel-in-progress: false
+jobs:
+  sec-cohort:
+    if: github.repository == 'Giuseppe-Scampa/investment-research-dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      SEC_RESEARCH_CONTACT: ${{ secrets.SEC_RESEARCH_CONTACT }}
+    steps:
+      - name: Checkout exact reviewed research implementation
+        uses: actions/checkout@v4
+        with:
+          ref: 3771bd3a9b04df8fb86f65ab68c63f486826281a
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install code without paid data services
+        run: python -m pip install -e .
+      - name: Validate SEC contact without printing it
+        run: test -n "$SEC_RESEARCH_CONTACT"
+      - name: SEC 18-issuer live fundamental evidence; at most 19 requests
+        run: |
+          investresearch-b sec-pilot --live-confirm --cohort config/sec_cohort_example.json --cache "$RUNNER_TEMP/sec-evidence/raw" --output "$RUNNER_TEMP/sec-evidence/report"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report=json.loads((Path(os.environ["RUNNER_TEMP"])/"sec-evidence/report/SEC_ANNUAL_RESEARCH.json").read_text())
+          assert report["selected_count"]==18 and report["market_ranking_count"]==0
+          assert 0<=report["comparable_prior_year_count"]<=report["annual_evidence_count"]<=18
+          print("SEC LIVE COHORT",report["annual_evidence_count"],"annual profiles; same-filing comparisons:",report["comparable_prior_year_count"],"stale:",report["stale_annual_count"])
+          for row in report["results"]:
+              print(row["ticker"],row["status"],row["comparison_status"])
+          PY
+      - name: Upload ONLY public SEC-derived summary (never raw cache or contact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEC-cohort-18-derived-evidence
+          path: ${{ runner.temp }}/sec-evidence/report/SEC_ANNUAL_RESEARCH.*
+          retention-days: 7
+          if-no-files-found: error
