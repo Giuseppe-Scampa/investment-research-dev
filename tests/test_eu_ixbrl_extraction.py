@@ -210,3 +210,28 @@ def test_duplicate_zip_members_are_rejected_before_extracting(tmp_path):
     root,spec=fixture(tmp_path,archive.getvalue(),fmt='ESEF_ZIP')
     with pytest.raises(ValueError,match='Duplicate ESEF ZIP member'):
         audit_eu_reports(spec,root,extract_ifrs=True)
+
+
+def test_zip_decompression_counter_checks_actual_stream_bytes(tmp_path, monkeypatch):
+    """An archive that *claims* a safe size cannot stream unbounded data."""
+    xml=xhtml(fact())
+    root,spec=fixture(tmp_path,pack({'report.xhtml':xml}),fmt='ESEF_ZIP')
+    from investresearch import research_ixbrl
+    monkeypatch.setattr(research_ixbrl,'MAX_XHTML_BYTES',len(xml)+30)
+    original_open=zipfile.ZipFile.open
+    def unexpected_inflate(self, name, mode='r', pwd=None, *, force_zip64=False):
+        if isinstance(name,zipfile.ZipInfo) and name.filename=='report.xhtml':
+            return io.BytesIO(xml + b'X' * 128)
+        return original_open(self,name,mode,pwd,force_zip64=force_zip64)
+    monkeypatch.setattr(zipfile.ZipFile,'open',unexpected_inflate)
+    with pytest.raises(ValueError,match='Actual decompressed XHTML exceeds safety limit'):
+        audit_eu_reports(spec,root,extract_ifrs=True)
+
+
+def test_legacy_transformation_registry_is_explicit_and_limited():
+    xml=xhtml(fact(fmt='ixt:numdotdecimal')).replace(
+        b'http://www.xbrl.org/inlineXBRL/transformation/2020-02-12',
+        b'http://www.xbrl.org/inlineXBRL/transformation/2015-02-26')
+    result=extract_ixbrl_ifrs_candidates(xml,date(2025,12,31))
+    assert result['candidate_count']==1
+    assert result['facts'][0]['value_eur']=='1200500000.0'
