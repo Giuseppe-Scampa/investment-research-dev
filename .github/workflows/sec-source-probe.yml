@@ -1,0 +1,115 @@
+name: SEC connectivity probe (manual; first-run validation)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sec-source-probe.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sec-source-probe
+  cancel-in-progress: false
+
+jobs:
+  verify-sec:
+    if: github.repository == 'Giuseppe-Scampa/investment-research-dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      SEC_RESEARCH_CONTACT: ${{ secrets.SEC_RESEARCH_CONTACT }}
+    steps:
+      - name: Verify SEC catalog and Apple annual companyfacts (no raw artifacts)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import sys
+          import time
+          from datetime import date
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, build_opener, HTTPRedirectHandler
+
+          contact = os.environ.get('SEC_RESEARCH_CONTACT', '')
+          if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', contact):
+              raise SystemExit('FAIL: SEC_RESEARCH_CONTACT is missing or not a valid email format')
+
+          # Do not echo headers, contact email, response data, or full exceptions.
+          user_agent = f'InvestmentResearchDev/0.4 (research contact: {contact})'
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  raise RuntimeError('Unexpected provider redirect')
+
+          opener = build_opener(NoRedirect())
+          def fetch(url):
+              req = Request(url, headers={
+                  'User-Agent': user_agent,
+                  'Accept': 'application/json',
+              })
+              try:
+                  with opener.open(req, timeout=30) as response:
+                      if response.geturl() != url:
+                          raise RuntimeError('Unexpected final URL')
+                      payload = response.read(20_000_001)
+              except HTTPError as err:
+                  raise RuntimeError(f'SEC returned HTTP {err.code}; not bypassing access restrictions') from None
+              except URLError:
+                  raise RuntimeError('SEC network connection unavailable') from None
+              if not payload or len(payload) > 20_000_000:
+                  raise RuntimeError('SEC response missing or too large')
+              try:
+                  body = json.loads(payload)
+              except (ValueError, UnicodeDecodeError):
+                  raise RuntimeError('SEC returned non-JSON content') from None
+              return body, hashlib.sha256(payload).hexdigest()
+
+          catalog_url = 'https://www.sec.gov/files/company_tickers_exchange.json'
+          facts_url = 'https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json'
+          try:
+              catalog, catalog_hash = fetch(catalog_url)
+              if (not isinstance(catalog, dict)
+                      or catalog.get('fields') != ['cik','name','ticker','exchange']
+                      or not isinstance(catalog.get('data'), list)
+                      or not catalog['data']):
+                  raise RuntimeError('SEC ticker catalog has unexpected schema')
+              print(f'PASS: SEC ticker catalog: {len(catalog["data"])} records; sha256={catalog_hash}')
+              # Two requests, spaced out; no scraping, retries, or paid fallbacks.
+              time.sleep(1.2)
+              facts, facts_hash = fetch(facts_url)
+              if not isinstance(facts, dict) or int(facts.get('cik', 0)) != 320193:
+                  raise RuntimeError('SEC companyfacts company identity mismatch')
+              us_gaap = facts.get('facts', {}).get('us-gaap', {})
+              if not isinstance(us_gaap, dict):
+                  raise RuntimeError('SEC companyfacts missing us-gaap taxonomy')
+
+              today = date.today().isoformat()
+              def annual_count(tags):
+                  count = 0
+                  for tag in tags:
+                      for row in us_gaap.get(tag, {}).get('units', {}).get('USD', []):
+                          if (row.get('form') in ('10-K', '10-K/A')
+                                  and row.get('fp') == 'FY'
+                                  and isinstance(row.get('filed'), str)
+                                  and row['filed'] <= today
+                                  and isinstance(row.get('val'), (int, float))):
+                              count += 1
+                  return count
+
+              rev = annual_count([
+                  'RevenueFromContractWithCustomerExcludingAssessedTax',
+                  'Revenues', 'SalesRevenueNet'])
+              income = annual_count(['NetIncomeLoss'])
+              if not rev or not income:
+                  raise RuntimeError('SEC companyfacts missing filed annual USD revenue/income')
+              print(f'PASS: SEC Apple companyfacts: annual revenue observations={rev}, annual net income observations={income}; sha256={facts_hash}')
+              print('SEC PROBE SUCCESS; only counts and checksums logged. No raw provider data uploaded.')
+          except RuntimeError as err:
+              print('SEC PROBE FAILED: ' + str(err), file=sys.stderr)
+              sys.exit(1)
+          PY
