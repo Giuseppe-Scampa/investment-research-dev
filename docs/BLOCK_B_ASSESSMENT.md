@@ -54,3 +54,20 @@
   contact secret; **successful connectivity does not by itself certify this
   newly added report until its exact pinned version is exercised live**.
 - M4 live-price ranking and broad cross-sector coverage remain pending.
+
+
+### Confirmed SEC live integration (2026-11-02)
+
+- Initial real SEC pilot found that official ticker catalog rows sometimes
+  contain `exchange=null`. The parser now maps that to `UNMAPPED` and
+  retains the valid CIK/ticker mapping.
+- Pinned immutable commit `c70dbea756f8e20baadfe5bccc6d018d4f2f9262`
+  passed the trusted SEC workflow: **10,423** catalog associations and **4/4**
+  issuer annual evidence results, with independent SEC connectivity checks
+  also passing. [Live evidence](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41429639471).
+- The public source data are fetched with an explicitly authorized, rate-limited
+  contact header, never committed. All original SEC response bodies remain on
+  the temporary runner; only derived public information can be distributed.
+- The live verification establishes a **small US annual financial-data pilot**,
+  not a global coverage claim, complete price ingestion, investment ranking,
+  industry comparability, or trading readiness.

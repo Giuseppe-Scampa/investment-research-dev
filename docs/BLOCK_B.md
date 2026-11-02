@@ -307,3 +307,19 @@ establish ISIN, industry, oil exposure or historical constituents. Real
 M4 market rankings still require licensed, validated price histories and
 corporate action handling. Yahoo/yfinance remains personal-use only and is
 not called by this SEC pilot.
+
+
+### Live validation outcome and reproducible review artifacts
+
+The trusted SEC workflow on `main` executes an **immutable reviewed Block B commit**
+using the repository's `SEC_RESEARCH_CONTACT` secret. On 2026-11-02,
+a live pilot fetched **10,423** current SEC ticker associations and produced
+annual company profiles for **4 of 4** selected issuers (AAPL, MSFT, NVDA,
+AMZN). The evidence is in [Actions run 41429639471](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41429639471).
+
+The official catalog may contain `exchange: null`; those associations stay
+`UNMAPPED` instead of causing false venue inference or rejecting valid
+records. Derived public-data reports can be retained temporarily as GitHub
+Actions artifacts. **Neither raw SEC payloads nor the contact email are
+published**. The SEC annual metrics are not an investment ranking or
+comparable market valuations across sectors.
