@@ -64,6 +64,52 @@ def select_consolidated_xhtml(payload: bytes) -> str:
     return matches[0]
 
 
+
+def inspect_supported_fact_coverage(payload: bytes, member: str) -> dict:
+    """Count real iXBRL metadata only, never log the source XHTML or amounts."""
+    from collections import Counter
+    from investresearch.research_eu_filings import _esef_report_xhtml
+    from investresearch.research_ixbrl import (
+        _parse_tree, _contexts, _units, _qualified,
+        IFRS_NS, CONCEPTS, IXBRL, TRANSFORMS,
+    )
+    xhtml = _esef_report_xhtml(payload, 'ESEF_ZIP', member)
+    root, prefixes = _parse_tree(xhtml)
+    contexts, _ = _contexts(root, date(2025, 12, 31))
+    units = _units(root, prefixes)
+    all_concepts = Counter()
+    eligible_formats = Counter()
+    valid_formats = Counter()
+    eligible = 0
+    for node in root.iter(f'{{{IXBRL}}}nonFraction'):
+        namespace, concept = _qualified(node.get('name'), prefixes)
+        if not IFRS_NS.fullmatch(namespace) or concept not in CONCEPTS:
+            continue
+        all_concepts[concept] += 1
+        if node.get('contextRef') not in contexts or node.get('unitRef') not in units:
+            continue
+        eligible += 1
+        fmt = node.get('format', 'UNFORMATTED')
+        if fmt == 'UNFORMATTED':
+            key = 'UNFORMATTED'
+            valid_formats[key] += 1
+        else:
+            ns, name = _qualified(fmt, prefixes)
+            # Explicit URI/name, not any value or source content.
+            key = ns[:120] + ':' + name[:60]
+            if name in TRANSFORMS.get(ns, {}):
+                valid_formats[key] += 1
+        eligible_formats[key] += 1
+    return {
+        'recognized_ifrs_concepts_before_context_filter': dict(sorted(all_concepts.items())),
+        'supported_annual_undimensioned_contexts': len(contexts),
+        'supported_eur_units': len(units),
+        'eligible_ifrs_facts_before_numeric_conversion': eligible,
+        'eligible_numeric_transforms_seen': dict(sorted(eligible_formats.items())),
+        'eligible_supported_transforms': dict(sorted(valid_formats.items())),
+    }
+
+
 def verify_official_package(payload: bytes, as_of: date) -> dict:
     """Audit exact ESEF source and compare only supported IFRS candidates.
 
@@ -95,6 +141,7 @@ def verify_official_package(payload: bytes, as_of: date) -> dict:
         report = audit_eu_reports(spec, base, extract_ifrs=True)
     item = report['results'][0]
     ix = item['ixbrl']
+    diagnostics = inspect_supported_fact_coverage(payload, member)
     from decimal import Decimal
     comparisons=[]
     for fact in ix['facts']:
@@ -114,6 +161,7 @@ def verify_official_package(payload: bytes, as_of: date) -> dict:
         'candidate_count': ix['candidate_count'],
         'conflicting_metrics': ix.get('conflicting_metrics', []),
         'rejection_counts': ix['rejected_fact_reasons'],
+        'diagnostics': diagnostics,
         'pdf_reference_compared_count': len(comparisons),
         'pdf_reference_numeric_matches': sum(x['pdf_amount_matches'] for x in comparisons),
         'pdf_comparison_candidates': comparisons,
@@ -130,7 +178,10 @@ def main():
         print('LIVE ESEF NOT VALIDATED:', type(exc).__name__, str(exc)[:180], file=sys.stderr)
         return 1
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
-    print('LIVE ESEF AUDIT COMPLETED: candidates only, no certified financials')
+    if not result['candidate_count']:
+        print('LIVE ESEF INCOMPLETE: zero extractable candidates, review transformation and contexts', file=sys.stderr)
+        return 2
+    print('LIVE ESEF CANDIDATE EXTRACTION COMPLETED: no certified financials')
     return 0
 
 

@@ -61,3 +61,32 @@ def test_probe_refuses_unexpected_member_name():
         archive.writestr('package/reports/different-2025.xhtml',b'fake')
     with pytest.raises(ValueError,match='expected one consolidated XHTML member'):
         probe.verify_official_package(output.getvalue(),date(2026,11,2))
+
+
+def test_probe_no_candidates_is_incomplete_even_when_zip_download_succeeded(monkeypatch, capsys):
+    # The optional CI job must not label a parseable, zero-coverage ZIP a success.
+    payload = io.BytesIO()
+    xml = b'<html xmlns="http://www.w3.org/1999/xhtml"><head/><body/></html>'
+    with zipfile.ZipFile(payload, 'w',zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr('reports/'+probe.EDISON_SUFFIX, xml)
+    monkeypatch.setattr(probe, 'fetch_official_zip', lambda: payload.getvalue())
+    # The real LEI field is not available in this empty XHTML, so a strictly
+    # validated run should fail loudly, rather than pretending the sample works.
+    assert probe.main() == 1
+    assert 'NOT VALIDATED' in capsys.readouterr().err
+
+
+def test_probe_reports_parseable_but_zero_coverage_as_incomplete(monkeypatch, capsys):
+    raw = sample_esef()
+    xml = raw
+    with zipfile.ZipFile(io.BytesIO(raw)) as z:
+        entry = z.namelist()[0]
+        xml = z.read(entry).replace(b'contextRef="fy"', b'contextRef="missing"')
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr(entry, xml)
+    monkeypatch.setattr(probe, 'fetch_official_zip', lambda: out.getvalue())
+    assert probe.main() == 2
+    outlog = capsys.readouterr()
+    assert 'INCOMPLETE: zero extractable candidates' in outlog.err
+    assert '"candidate_count": 0' in outlog.out
