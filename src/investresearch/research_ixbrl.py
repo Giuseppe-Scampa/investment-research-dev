@@ -23,6 +23,10 @@ XBRLI = 'http://www.xbrl.org/2003/instance'
 ISO4217 = 'http://www.xbrl.org/2003/iso4217'
 IFRS_NS = re.compile(r'^https?://xbrl\.ifrs\.org/taxonomy/[0-9]{4}-[0-9]{2}-[0-9]{2}/ifrs-full$')
 TRANSFORMS = {
+    # XBRL International Transformation Registry 5 (2022-02-16), exact
+    # decimal formats audited for the same bounded syntax as registry 4.
+    'http://www.xbrl.org/inlineXBRL/transformation/2022-02-16':
+        {'num-dot-decimal': 'DOT', 'num-comma-decimal': 'COMMA'},
     'http://www.xbrl.org/inlineXBRL/transformation/2020-02-12':
         {'num-dot-decimal': 'DOT', 'num-comma-decimal': 'COMMA'},
     'http://www.xbrl.org/inlineXBRL/transformation/2015-02-26':

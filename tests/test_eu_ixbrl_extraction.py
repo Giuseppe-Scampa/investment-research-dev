@@ -291,3 +291,19 @@ def test_duplicate_same_concept_conflicting_values_requires_review():
     assert r['conflicting_concepts']==['REVENUE:Revenue']
     assert r['conflicting_metrics']==['REVENUE']
     assert r['metric_review']['REVENUE']['status']=='DUPLICATE_CONCEPT_VALUE_CONFLICT_REVIEW_REQUIRED'
+
+
+def test_official_registry_2022_decimal_transform_supported_without_guessing():
+    from investresearch.research_ixbrl import extract_ixbrl_ifrs_candidates
+    xml=xhtml(fact(value='12.345,6',scale='3',fmt='ixt:num-comma-decimal')).replace(
+        b'http://www.xbrl.org/inlineXBRL/transformation/2020-02-12',
+        b'http://www.xbrl.org/inlineXBRL/transformation/2022-02-16')
+    result=extract_ixbrl_ifrs_candidates(xml,date(2025,12,31))
+    assert result['candidate_count']==1
+    assert result['facts'][0]['value_eur']=='12345600.0'
+    unsupported=xhtml(fact(value='12.345,6',scale='3',fmt='ixt:num-comma-decimal-apos')).replace(
+        b'http://www.xbrl.org/inlineXBRL/transformation/2020-02-12',
+        b'http://www.xbrl.org/inlineXBRL/transformation/2022-02-16')
+    rejected=extract_ixbrl_ifrs_candidates(unsupported,date(2025,12,31))
+    assert rejected['candidate_count']==0
+    assert rejected['rejected_fact_reasons']['NUMERIC_TRANSFORMATION_REQUIRES_REVIEW']==1

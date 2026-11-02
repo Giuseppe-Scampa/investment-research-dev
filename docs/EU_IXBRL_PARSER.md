@@ -78,3 +78,23 @@ https://www.edison.it/it/assemblea-degli-azionisti-marzo-2026 .
 Il documento deve essere scaricato localmente e sottoposto a `eu-filings
 --extract-ifrs`; il successo dei test con fixture non costituisce un collaudo
 su emittenti reali. Conservare ZIP e PDF fuori dal GitHub pubblico.
+
+
+### Collaudo live su Edison FY2025: compatibilità Transformation Registry 5
+
+Il job GitHub Actions (solo PR, nessun secret, nessun artifact ESEF) ha scaricato
+lo ZIP ufficiale Edison FY2025, SHA-256
+`4ab61d8a4a959801cc487711ae0850a524b531f7aacf311ecf09ad7131711232`.
+La prima estrazione ha identificato **cinque** fatti IFRS con contesto annuale
+non dimensionato e unità EUR, ma **nessuno** è stato convertito perché il
+bilancio usa il namespace Transformation Registry 5
+`http://www.xbrl.org/inlineXBRL/transformation/2022-02-16`
+con regola `num-comma-decimal`. Questo fallimento è stato segnalato come
+**incomplete**, anziché come validazione positiva; nessun numero verificato.
+
+Il supporto al formato esatto `num-comma-decimal` e `num-dot-decimal` di
+[Registry 5 (XBRL International)](https://www.xbrl.org/Specification/inlineXBRL-transformationRegistry/REC-2022-02-16/inlineXBRL-transformationRegistry-REC-2022-02-16.html)
+è stato aggiunto mantenendo gli stessi controlli stretti su segni, separatori
+e scala. Gli altri formati del registro 2022 restano **non supportati**, anche
+quando semanticamente simili. Un nuovo job deve confermare quali fatti reali
+vengono estratti e il loro eventuale confronto **manuale** con il PDF.
