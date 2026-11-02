@@ -91,3 +91,7 @@ filing accession in both fiscal years.
 The fallback was supported by a live SEC taxonomy inspection of
 Caterpillar and Mastercard. Different accounting tags do not imply
 comparability across sectors or suitability for investment ranking.
+
+## Security status after independent review (2026-11-02)
+
+The historical live 18/18 run remains evidence of acquisition/parsing only. Its main-branch workflow was removed because it executed code from a still-unmerged Block B commit with access to the SEC contact. The separate inline SEC connectivity check remains on `main`, with a step-scoped secret. **Do not treat historical green runs as permission to reactivate a branch-based workflow with secrets.** Restore broader live coverage only once its code has been independently reviewed and incorporated into trusted `main`.
