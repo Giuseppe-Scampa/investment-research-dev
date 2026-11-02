@@ -23,13 +23,21 @@ ISSUER_URL = ('https://www.prysmian.com/sites/www.prysmian.com/files/media/'
               'documents/529900X0H1IO3RS1A464-2025-12-31-1-en.zip')
 ISSUER_LEI = '529900X0H1IO3RS1A464'
 EXPECTED_REPORT_NAME = '529900x0h1io3rs1a464-2025-12-31-1-en.xhtml'
-# Reference values are from issuer's public FY2025 investor disclosures, NOT
-# an independent line-by-line inspection of the IFRS consolidated statements.
-# Figures are in millions of EUR; a match is only a numeric coverage signal.
-INVESTOR_REFERENCE = {
-    'REVENUE': Decimal('19650000000'),
-    'PROFIT_LOSS': Decimal('1270000000'),
-    'PROFIT_PARENT': Decimal('1270000000'),
+# Immutable issuer package observed on 2026-11-02 GitHub runner. Changed ZIP
+# bytes must never silently be treated as the same financial statement.
+PRYSMIAN_FY2025_SHA256 = '75bd4db98fcf84a4cb51330fc0b6c6745fc2fa6a82cf89ecbbea739a2c9c0737'
+# Exact controls from Prysmian's own 26 February 2026 consolidated income
+# statement, page 12 of the official FY2025 results PDF. These are four
+# DIFFERENT concepts, not competing guesses for the same metric.
+OFFICIAL_INCOME_STATEMENT_PDF = (
+    'https://www.prysmian.com/sites/www.prysmian.com/files/media/documents/'
+    'investors/CS_Prysmian_FY25_26022026.pdf'
+)
+PDF_REFERENCE_BY_CONCEPT = {
+    'RevenueFromContractsWithCustomers': Decimal('19650000000'),  # Ricavi
+    'Revenue': Decimal('20348000000'),  # Totale ricavi e proventi
+    'ProfitLoss': Decimal('1294000000'),  # Risultato netto consolidato
+    'ProfitLossAttributableToOwnersOfParent': Decimal('1270000000'),  # Gruppo
 }
 MAX_DOWNLOAD = MAX_DOCUMENT_BYTES
 
@@ -107,12 +115,12 @@ def verify_official_package(payload: bytes, as_of: date) -> dict:
             value = Decimal(fact['value_eur'])
         except (KeyError, ValueError):
             raise ValueError('Parser returned invalid candidate value') from None
-        target = INVESTOR_REFERENCE.get(metric)
-        # The reference is in EUR millions. A 0.5m tolerance matches rounding
-        # of an official published whole-million figure, not taxonomy identity.
+        target = PDF_REFERENCE_BY_CONCEPT.get(fact['concept'])
+        # The official PDF is expressed in rounded EUR millions. A 0.5m
+        # tolerance covers rounding only, not semantic comparability.
         matches.append({'metric':metric, 'concept':fact['concept'],
                         'value_eur':str(value),
-                        'matches_rounded_investor_reference':(
+                        'matches_rounded_pdf_concept':(
                             target is not None and abs(value-target) <= Decimal('500000'))})
     return {
         'mode':'PRYSMIAN_FY2025_ESEF_DIAGNOSTIC_NOT_AUDITED',
@@ -120,7 +128,8 @@ def verify_official_package(payload: bytes, as_of: date) -> dict:
         'sha256':sha256,
         'selected_member':member,
         'candidate_count':ix['candidate_count'],
-        'numeric_reference_matches':sum(1 for m in matches if m['matches_rounded_investor_reference']),
+        'numeric_reference_matches':sum(1 for m in matches if m['matches_rounded_pdf_concept']),
+        'pdf_reference_url': OFFICIAL_INCOME_STATEMENT_PDF,
         'metrics_found':sorted(set(f['metric'] for f in facts)),
         'conflicting_metrics':ix.get('conflicting_metrics', []),
         'rejected_fact_reasons':ix.get('rejected_fact_reasons', {}),
@@ -128,8 +137,9 @@ def verify_official_package(payload: bytes, as_of: date) -> dict:
         'accounting_facts_verified':0,
         'market_ranking_count':0,
         'limitations':[
-            'The 2025 investor highlights are NOT a substitute for line-by-line PDF reconciliation.',
-            'The archive SHA256 is not yet pinned; publication date is an issuer-page declaration.',
+            'Numeric agreement is with the official FY2025 consolidated income statement PDF, not a full XBRL audit.',
+            'Revenue and RevenueFromContractsWithCustomers are intentionally different concepts; no score may pick one automatically.',
+            'The report publication date is an issuer-page declaration, not an independently authenticated timestamp.',
             'No IFRS extensions, sector-specific revenue, or audit certification is inferred.',
             'No market-data licensing, executable prices, or investment ranking is established.',
         ],
@@ -137,15 +147,27 @@ def verify_official_package(payload: bytes, as_of: date) -> dict:
 
 
 def validate_compatibility(result: dict) -> tuple[bool, str]:
+    """Pin exact issuer bytes and reconcile ALL supported candidates by concept.
+
+    Preserve REVENUE semantic ambiguity for manual human selection. A numeric
+    match does not certify XBRL validity, issuer audit or suitability to score.
+    """
+    if result.get('sha256') != PRYSMIAN_FY2025_SHA256:
+        return False, 'PRYSMIAN_OFFICIAL_ZIP_CHANGED_REQUIRES_REVIEW'
     if result.get('accounting_facts_verified') != 0 or result.get('market_ranking_count') != 0:
         return False, 'UNEXPECTED_AUTOMATIC_FACT_OR_RANK_PROMOTION'
-    if result.get('candidate_count', 0) < 1:
-        return False, 'ZERO_IFRS_CANDIDATES'
-    if result.get('conflicting_metrics'):
-        return False, 'CONFLICTING_METRIC_CANDIDATES_REQUIRE_REVIEW'
-    if not result.get('numeric_reference_matches'):
-        return False, 'NO_2025_INVESTOR_REFERENCE_NUMERIC_MATCH'
-    return True, 'PRELIMINARY_IFRS_COMPATIBILITY_ONLY_NOT_PDF_VALIDATION'
+    expected = set(PDF_REFERENCE_BY_CONCEPT)
+    found = result.get('candidates', [])
+    if result.get('candidate_count') != len(found) or len(found) < len(expected):
+        return False, 'INCOMPLETE_IFRS_CANDIDATES'
+    observed = {r.get('concept') for r in found}
+    if observed != expected:
+        return False, 'IFRS_CONCEPT_COVERAGE_CHANGED_REQUIRE_REVIEW'
+    if any(r.get('matches_rounded_pdf_concept') is not True for r in found):
+        return False, 'OFFICIAL_PDF_AMOUNT_MISMATCH'
+    if result.get('conflicting_metrics') != ['REVENUE']:
+        return False, 'REVENUE_CONCEPT_AMBIGUITY_CHANGED_REQUIRE_REVIEW'
+    return True, 'FOUR_DISTINCT_IFRS_CONCEPTS_MATCH_OFFICIAL_PDF_NUMERICALLY_HUMAN_REVIEW_STILL_REQUIRED'
 
 
 def main() -> int:
