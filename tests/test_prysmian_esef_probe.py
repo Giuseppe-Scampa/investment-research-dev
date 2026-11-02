@@ -43,7 +43,9 @@ def synthetic_package(*, lei=probe.ISSUER_LEI, value='19,650', concept='Revenue'
 def test_offline_probe_two_supported_facts_still_unverified():
     report = probe.verify_official_package(synthetic_package(),date(2026,11,2))
     assert report['candidate_count'] == 2
-    assert report['numeric_reference_matches'] == 2
+    # These synthetic values intentionally disagree with the concept-specific
+    # official PDF reference; this must not be counted as a successful match.
+    assert report['numeric_reference_matches'] == 0
     assert report['accounting_facts_verified'] == report['market_ranking_count'] == 0
     assert report['mode'].endswith('NOT_AUDITED')
     assert len(report['candidates']) == 2
