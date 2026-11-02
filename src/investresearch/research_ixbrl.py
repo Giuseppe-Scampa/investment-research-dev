@@ -13,7 +13,10 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from defusedxml import ElementTree as SafeET
 
-MAX_XHTML_BYTES = 32_000_000
+# 65,361,070-byte FY2025 Prysmian XHTML exceeds the original 32MB limit.
+# Keep a bounded 80MB ceiling; ZIP actual-inflation and XML element/fact
+# limits remain independent. This is NOT a blanket permission for huge files.
+MAX_XHTML_BYTES = 80_000_000
 MAX_XML_ELEMENTS = 200_000
 MAX_FACTS = 100_000
 MAX_CONCEPT_CANDIDATES = 100
