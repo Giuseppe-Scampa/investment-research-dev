@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+.env.*
+!*.example
+reports/generated/*
+!reports/generated/.gitkeep
+*.sqlite
+.cache/
+
+# Locally supplied portfolios: never add to Git history
+data/private/
+portfolio_private.json
+**/portfolio_private.json

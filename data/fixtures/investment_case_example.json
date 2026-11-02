@@ -1,0 +1,103 @@
+{
+  "fixture_kind": "SYNTHETIC_DEMONSTRATION_NOT_PERSONAL_HOLDINGS",
+  "as_of": "2026-11-01",
+  "account_id": "SYNTHETIC_PRIMARY",
+  "tax_regime": "amministrato",
+  "investment_budget_eur": "20000",
+  "tax_wallets": [
+    {
+      "account_id": "SYNTHETIC_PRIMARY",
+      "tax_regime": "amministrato",
+      "year": 2023,
+      "remaining_eur": "2500",
+      "verification_status": "DECLARED"
+    },
+    {
+      "account_id": "SYNTHETIC_SECONDARY",
+      "tax_regime": "amministrato",
+      "year": 2024,
+      "remaining_eur": "3000",
+      "verification_status": "DECLARED"
+    }
+  ],
+  "existing_positions": [
+    {
+      "position_id": "DEMO_EQUITY",
+      "account_id": "SYNTHETIC_PRIMARY",
+      "name": "Prysmian — fixture dimostrativa",
+      "isin": "IT0004176001",
+      "asset_type": "EQUITY",
+      "trade_currency": "EUR",
+      "venue": "XMIL",
+      "tax_cost_method": "EXPLICIT_LOT_SELECTION",
+      "lots": [
+        {
+          "lot_id": "L1",
+          "quantity": "10",
+          "tax_unit_cost_eur": "70",
+          "purchase_date": "2024-03-12"
+        },
+        {
+          "lot_id": "L2",
+          "quantity": "10",
+          "tax_unit_cost_eur": "85",
+          "purchase_date": "2025-06-17"
+        }
+      ],
+      "sale_lot_allocations": [
+        {
+          "lot_id": "L1",
+          "quantity": "5"
+        },
+        {
+          "lot_id": "L2",
+          "quantity": "5"
+        }
+      ],
+      "sale_quantity": "10",
+      "reference_unit_price_eur": "110",
+      "quote_date": "2026-10-30",
+      "ftt_scope": "no",
+      "fx_bps": "0",
+      "spread_bps": null,
+      "estimated_future_position_value_eur": null
+    },
+    {
+      "position_id": "DEMO_ETF",
+      "account_id": "SYNTHETIC_PRIMARY",
+      "name": "ETF UCITS — fixture dimostrativa",
+      "isin": "IE00B4L5Y983",
+      "asset_type": "ETF_UCITS",
+      "trade_currency": "EUR",
+      "venue": "XMIL",
+      "tax_cost_method": "BROKER_REPORTED_AVERAGE",
+      "broker_tax_unit_cost_eur": "90",
+      "lots": [
+        {
+          "lot_id": "ETF-L1",
+          "quantity": "20",
+          "purchase_date": "2025-01-10"
+        }
+      ],
+      "sale_quantity": "10",
+      "reference_unit_price_eur": "105",
+      "quote_date": "2026-10-30",
+      "ftt_scope": "no",
+      "fx_bps": "0",
+      "spread_bps": null
+    }
+  ],
+  "new_investment": {
+    "name": "Azione dimostrativa — scenario non predittivo",
+    "isin": "FR0000120628",
+    "asset_type": "EQUITY",
+    "quantity": "50",
+    "purchase_unit_price_eur": "42.60",
+    "hypothetical_sale_unit_price_eur": "45.00",
+    "currency": "EUR",
+    "ftt_scope": "unknown",
+    "fx_bps": "0",
+    "spread_bps": null,
+    "scenario_kind": "HYPOTHETICAL_NOT_FORECAST"
+  }
+}

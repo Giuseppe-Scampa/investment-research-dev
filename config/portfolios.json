@@ -1,0 +1,66 @@
+{
+  "disclaimer": "Hypothetical scenario returns; NOT predicted target prices, probability estimates or recommendations. Cash zero return, all assumed EUR returns; USD FX costs missing.",
+  "scenarios": {
+    "downside": {
+      "WSPX": -0.1,
+      "WNAS": -0.18,
+      "AXA": -0.07,
+      "SAN": -0.06,
+      "PRY": -0.15,
+      "FSLR": -0.3,
+      "MP": -0.35
+    },
+    "base": {
+      "WSPX": 0.02,
+      "WNAS": 0.03,
+      "AXA": 0.01,
+      "SAN": 0.015,
+      "PRY": 0.025,
+      "FSLR": 0.04,
+      "MP": 0.05
+    },
+    "upside": {
+      "WSPX": 0.07,
+      "WNAS": 0.12,
+      "AXA": 0.06,
+      "SAN": 0.07,
+      "PRY": 0.15,
+      "FSLR": 0.25,
+      "MP": 0.3
+    }
+  },
+  "portfolios": [
+    {
+      "id": "balanced",
+      "positions": {
+        "WSPX": 9000,
+        "AXA": 7000
+      },
+      "cash_eur": 4000
+    },
+    {
+      "id": "dynamic",
+      "positions": {
+        "WNAS": 8000,
+        "SAN": 7500
+      },
+      "cash_eur": 4500
+    },
+    {
+      "id": "opportunistic",
+      "positions": {
+        "WSPX": 9000,
+        "FSLR": 4000
+      },
+      "cash_eur": 7000
+    },
+    {
+      "id": "rare_earths_stress",
+      "positions": {
+        "AXA": 10000,
+        "MP": 3000
+      },
+      "cash_eur": 7000
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+id,market_date,price,currency,source_url,verification,source_note
+WSPX,2026-10-30,41.50,EUR,https://www.borsaitaliana.it/borsa/etc-etn/scheda/XS2427355958-ETFP.html,exchange_reference_price,Borsa Italiana 30 October 17:55 CET
+WNAS,2026-10-30,37.35,EUR,https://www.borsaitaliana.it/borsa/etc-etn/scheda/XS3003325795-ETFP.html,exchange_reference_price,Borsa Italiana 30 October 17:55 CET
+WRTY,2026-10-30,37.17,EUR,https://www.borsaitaliana.it/borsa/etc-etn/dettaglio.html?isin=XS3003324129&lang=it,exchange_reference_price,Borsa Italiana 30 October 17:55 CET
+AXA,2026-10-30,42.60,EUR,https://markets.ft.markitdigital.com/data/equities/tearsheet/historical?s=CS%3APAR,closing_quote,FT historical 30 October
+SAN,2026-10-30,79.74,EUR,https://markets.ft.markitdigital.com/data/equities/tearsheet/historical?s=SAN%3APAR,closing_quote,FT historical 30 October
+FRE,2026-10-30,47.79,EUR,https://olb-customer.vwd.com/olb/kurse_einzelkurs_uebersicht.htn?i=32342439,market_quote,Xetra quote 30 October from multi-venue market data
+ALB,2026-10-30,91.00,USD,https://stockanalysis.com/stocks/alb/history/,closing_quote,NYSE 30 October 16:00 EDT
+MP,2026-10-30,39.57,USD,https://stockanalysis.com/stocks/mp/history/,closing_quote,NYSE 30 October 16:00 EDT

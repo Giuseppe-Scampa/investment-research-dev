@@ -1,0 +1,17 @@
+id,name,ticker,isin,asset_type,sector,exchange,trade_currency,underlying_fx_exposure,oil_exposure,profile,fiscal_status,italian_ftt,notes,index_memberships,index_membership_status,index_membership_source_url
+WSPX,WisdomTree S&P 500 ETN,WSPX.MI,XS2427355958,ETN,US broad index,Borsa Italiana,EUR,USD,minority,balanced,bank_review,no,Collateral/issuer and currency exposure; verify KID and account classification,,UNVERIFIED,
+WNAS,WisdomTree Nasdaq-100 ETN,WNAS.MI,XS3003325795,ETN,US technology heavy index,Borsa Italiana,EUR,USD,minority,dynamic,bank_review,no,Higher concentration than S&P 500,,UNVERIFIED,
+WRTY,WisdomTree Russell 2000 ETN,WRTY.MI,XS3003324129,ETN,US small caps,Borsa Italiana,EUR,USD,minority,dynamic,bank_review,no,Only 8 reported trades on 2026-10-30; check order book,,UNVERIFIED,
+AXA,AXA,CS.PA,FR0000120628,EQUITY,Insurance,Euronext Paris,EUR,EUR,none,balanced,eligible,no,Insurance defensive relative to tech not principal-protected,EURO_STOXX_50,SECONDARY_SNAPSHOT_2026_10_30,https://it.investing.com/indices/eu-stoxx50-components
+SAN,Sanofi,SAN.PA,FR0000120578,EQUITY,Healthcare,Euronext Paris,EUR,EUR,none,balanced,eligible,no,Recent positive earnings reaction; avoid chasing,EURO_STOXX_50,SECONDARY_SNAPSHOT_2026_10_30,https://it.investing.com/indices/eu-stoxx50-components
+FRE,Fresenius,FRE.DE,DE000FRE5EN2,EQUITY,Healthcare,Xetra,EUR,EUR,none,balanced,eligible,no,Hospital services; check debt and guidance,,UNVERIFIED,
+PRY,Prysmian,PRY.MI,IT0004176001,EQUITY,Electrification,Borsa Italiana,EUR,EUR,none,dynamic,eligible,yes,2026 3Q strong; Italian FTT if in scope,,UNVERIFIED,
+TRN,Terna,TRN.MI,IT0003242622,EQUITY,Electric grid,Borsa Italiana,EUR,EUR,none,defensive,eligible,yes,Regulated utility; Italian FTT if in scope,,UNVERIFIED,
+GOOGL,Alphabet Class A,GOOGL,US02079K3059,EQUITY,Technology,Nasdaq,USD,USD,minority,dynamic,eligible,no,AI expenditure and Search risk,,UNVERIFIED,
+MSFT,Microsoft,MSFT,US5949181045,EQUITY,Technology,Nasdaq,USD,USD,minority,dynamic,eligible,no,Cloud quality but valuation and currency risks,,UNVERIFIED,
+NVDA,NVIDIA,NVDA,US67066G1040,EQUITY,Semiconductors,Nasdaq,USD,USD,none,opportunistic,eligible,no,17 November earnings catalyst requires confirmation,,UNVERIFIED,
+FSLR,First Solar,FSLR,US3364331070,EQUITY,Solar,Nasdaq,USD,USD,none,opportunistic,eligible,no,Guidance cut offset by buyback; policy risk,,UNVERIFIED,
+ALB,Albemarle,ALB,US0126531013,EQUITY,Lithium,NYSE,USD,USD,none,opportunistic,eligible,no,Lithium supply cycle risk,,UNVERIFIED,
+MP,MP Materials,MP,,EQUITY,Rare earths,NYSE,USD,USD,none,opportunistic,eligible,no,ISIN needs official verification,,UNVERIFIED,
+CCJ,Cameco,CCJ,CA13321L1085,EQUITY,Nuclear fuel,NYSE,USD,USD,none,opportunistic,eligible,no,Uranium and high valuation,,UNVERIFIED,
+COPA,WisdomTree Copper ETC,COPA.MI,GB00B15KXQ89,ETC,Copper futures,Borsa Italiana,EUR,USD,none,opportunistic,bank_review,no,Futures roll and collateral risks,,UNVERIFIED,
