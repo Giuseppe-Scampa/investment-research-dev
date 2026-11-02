@@ -22,7 +22,7 @@ jobs:
           from datetime import date
           from urllib.request import Request,urlopen
           contact=os.environ.get('SEC_RESEARCH_CONTACT','')
-          if not re.fullmatch(r'[^\\s@]+@[^\\s@]+\\.[^\\s@]+',contact):
+          if '@' not in contact or ' ' in contact or '.' not in contact.rsplit('@',1)[-1]:
               raise SystemExit('SEC contact missing')
           for ticker,cik in [('CAT','0000018230'),('MA','0001141391')]:
               req=Request('https://data.sec.gov/api/xbrl/companyfacts/CIK'+cik+'.json',headers={
