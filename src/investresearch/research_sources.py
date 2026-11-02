@@ -98,10 +98,18 @@ def collect(provider: str, identifier: str, cache: Path, *, sec_contact='',
 
 
 def _valid_yahoo_symbol(symbol: str) -> str:
-    if not isinstance(symbol, str) or not re.fullmatch(r'[A-Za-z0-9^._=\-]{1,36}', symbol):
-        raise ValueError('Invalid Yahoo symbol: only known market symbol characters allowed')
-    return symbol.upper()
+    """Accept ordinary ticker syntax, never relative path segments.
 
+    A symbol becomes a cache directory name. Reject dot segments even though
+    Yahoo's symbol grammar otherwise legitimately includes dots (BRK.B, ENI.MI).
+    """
+    if (not isinstance(symbol, str)
+            or not re.fullmatch(r'[A-Za-z0-9^._=\\-]{1,36}', symbol)
+            or symbol in ('.', '..')
+            or symbol.startswith('.')
+            or '..' in symbol):
+        raise ValueError('Invalid Yahoo symbol: only safe market symbol characters allowed')
+    return symbol.upper()
 
 def yahoo_source_url(symbol: str) -> str:
     """Disclosure URL only: yfinance is a third-party library, not direct HTTP to this URL."""
