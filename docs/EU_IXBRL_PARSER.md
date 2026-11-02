@@ -31,7 +31,7 @@ Le unità USD/GBP, la tassonomia di estensione e i relativi *anchoring*, le exte
 
 ## Sicurezza dei file non fidati
 
-- Parser `defusedxml` (non `xml.etree.ElementTree`) con budget di **32 MB** per il documento XHTML e **200.000 elementi XML**; vietate espansioni entità.
+- Parser `defusedxml` (non `xml.etree.ElementTree`) con budget di **80 MB** per il documento XHTML (adeguato allo XHTML Prysmian FY2025 misurato a 65.361.070 byte; non rimuove i limiti ZIP e sugli elementi XML) e **200.000 elementi XML**; vietate espansioni entità.
 - Per il contenuto ESEF ZIP: inventario dei membri prima della lettura, rifiuto dei percorsi rischiosi, file cifrati, symlink e nomi duplicati. Si legge solo il membro XHTML scelto, in blocchi di 64 KiB, con limite calcolato sui **byte realmente decompressi**, non soltanto sulle dimensioni riportate nella directory ZIP.
 - Non viene eseguito codice, non viene scaricato nulla dalla rete e non vengono caricati payload ESEF negli artefatti GitHub.
 - Il modulo **non** è un validatore completo del package ESEF: il controllo delle firme, dei linkbase, delle taxonomy extension, dell'issuer identity e delle dichiarazioni di pubblicazione richiede una verifica indipendente.
@@ -130,3 +130,12 @@ verde, `accounting_facts_verified` resta 0 e i dati non sono usati nel ranking.
 Fonti per il confronto: [pagina assembleare ufficiale Edison](https://www.edison.it/it/assemblea-degli-azionisti-marzo-2026),
 [PDF del consolidato FY2025, pagina 3](https://www.edison.it/sites/default/files/documents/relazione_finanziaria_integrata_annuale_2025_bilancio_consolidato_volume_2_1.pdf)
 e [GitHub Actions run di acquisizione ed estrazione](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41445131437).
+
+
+### Prysmian FY2025: secondo emittente reale, test incrementale
+
+- Documento ufficiale: https://www.prysmian.com/sites/www.prysmian.com/files/media/documents/529900X0H1IO3RS1A464-2025-12-31-1-en.zip (pubblicato nella pagina assembleare del 13 marzo 2026). Il primo probe su GitHub ha misurato **32.658.496 byte** per lo ZIP e **65.361.070 byte** dichiarati per l'XHTML consolidato. Il limite originale di 32MB lo rifiutava correttamente.
+- Il parser ora accetta un XHTML fino a 80MB, conservando i limiti di dimensione dello ZIP, il controllo dei byte realmente decompressi, il massimo di 200.000 elementi XML e i limiti sui fatti. Non viene distribuito il file ESEF.
+- Riferimenti preliminari dal sito dell'emittente per l'anno 2025: ricavi **19.650 milioni EUR** e utile netto riportato nei comunicati **1.270 milioni EUR**. *Non sono automaticamente equivalenti a uno specifico tag IFRS*, né costituiscono controllo pagina-per-pagina del conto economico consolidato.
+- `tools/smoke_prysmian_esef.py` è un controllo live senza credenziali, senza upload di raw file e con output di soli candidati, hash e avvisi. Il probe è best-effort e il successo dei test offline non certifica il risultato live: verificare sempre il log GitHub Actions per il valore `OUTCOME`.
+- Nessuna nuova fonte di prezzi è abilitata: licenza, rettifiche corporate actions e diritto di output derivati rimangono aperti.
