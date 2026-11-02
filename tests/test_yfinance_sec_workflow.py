@@ -135,3 +135,19 @@ def test_secret_workflow_is_manual_and_never_distributes_downloads():
     script=(root/'tools/smoke_free_sources.py').read_text()
     assert 'SEC_RESEARCH_CONTACT' in script
     assert 'print(contact)' not in script
+
+
+def test_yahoo_symbol_rejects_dot_segments_before_touching_cache(tmp_path):
+    """A ticker cannot escape or ambiguously address the cache directory."""
+    called = []
+    def fake(*args):
+        called.append(args)
+        return sample_frame()
+    for invalid in ('.', '..', '...', '.cache', '..hidden', 'A..B'):
+        with pytest.raises(ValueError, match='Invalid Yahoo symbol'):
+            collect(YFINANCE, invalid, tmp_path, acknowledge_yahoo_terms=True,
+                    history_loader=fake)
+    assert not called
+    assert not list(tmp_path.rglob('*.bin'))
+    assert yahoo_source_url('BRK.B').endswith('/BRK.B/history/')
+    assert yahoo_source_url('ENI.MI').endswith('/ENI.MI/history/')
