@@ -7,6 +7,7 @@ from pathlib import Path
 from .research_bundle import build_bundle
 from .research_sources import collect
 from .research_screen import screen,write_screening
+from .research_universe import write_sec_candidates
 from .cli import ROOT
 
 
@@ -20,8 +21,14 @@ def main(argv=None):
     b=sp.add_parser('build',help='Normalize local raw provider snapshots to immutable bundle')
     b.add_argument('--spec',type=Path,required=True)
     b.add_argument('--output',type=Path,required=True)
+    u=sp.add_parser('universe',help='Offline SEC candidate catalog; no implicit ranking')
+    u.add_argument('--raw',type=Path,required=True)
+    u.add_argument('--metadata',type=Path,required=True)
+    u.add_argument('--as-of',required=True)
+    u.add_argument('--limit',type=int,default=1000)
+    u.add_argument('--output',type=Path,required=True)
     c=sp.add_parser('collect',help='EXPLICIT NETWORK REQUEST, no paywall/provider fallback')
-    c.add_argument('--provider',required=True,choices=['SEC_COMPANYFACTS','ECB_EUR_FX','STOOQ_EOD_UNVERIFIED'])
+    c.add_argument('--provider',required=True,choices=['SEC_COMPANYFACTS','SEC_TICKERS','ECB_EUR_FX','STOOQ_EOD_UNVERIFIED'])
     c.add_argument('--identifier',default='')
     c.add_argument('--cache',type=Path,default=ROOT/'.cache/research')
     c.add_argument('--sec-contact',default=os.getenv('SEC_RESEARCH_CONTACT',''))
@@ -39,6 +46,10 @@ def main(argv=None):
         spec=json.loads(args.spec.read_text(encoding='utf-8'))
         result=build_bundle(spec,args.output)
         print(f"Bundle built: {len(result['assets'])} assets, source kinds {result['source_kinds']}")
+    elif args.command=='universe':
+        from datetime import date
+        result=write_sec_candidates(args.raw,args.metadata,date.fromisoformat(args.as_of),args.output,limit=args.limit)
+        print(f"SEC catalog: {result['candidate_count']} unranked candidates / {result['total_sec_records']} associations")
     elif args.command=='collect':
         meta=collect(args.provider,args.identifier,args.cache,
             sec_contact=args.sec_contact,stooq_key=args.stooq_key,

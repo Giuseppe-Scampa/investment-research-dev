@@ -297,7 +297,8 @@ def test_external_market_dataset_not_trade_ready_even_if_ranked(tmp_path):
     spec={'mode':EXTERNAL,'as_of':'2026-11-01','assets':[{'id':'MOCK_REAL','name':'test','venue':'XMIL',
         'currency':'EUR','asset_type':'EQUITY','sector':'Industry','oil_exposure':'none',
         'prices_source':{'provider':'STOOQ_EOD_UNVERIFIED','path':str(raw),
-            'source_url':'https://stooq.com/q/d/l/?s=test.it&i=d&apikey=REDACTED'}}]}
+            'source_url':'https://stooq.com/q/d/l/?s=test.it&i=d&apikey=REDACTED',
+            'retrieved_at_utc':'2026-11-01T08:00:00+00:00'}}]}
     build_bundle(spec,tmp_path/'external')
     result=screen(tmp_path/'external')
     assert result['ranked_count']==1

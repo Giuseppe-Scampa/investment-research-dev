@@ -53,3 +53,12 @@ sono classifiche reali, previsioni né raccomandazioni. L'acquisizione live è
 **solo su comando esplicito** con limiti conservativi; nessuna API a pagamento.
 La provenienza, i requisiti dei provider e gli esempi d'importazione sono in
 [`docs/BLOCK_B.md`](docs/BLOCK_B.md). Nessun ordine viene trasmesso.
+
+### Blocco B — catalogo società SEC e controlli data quality
+
+Nel branch di sviluppo è disponibile il catalogo SEC per costruire fino a
+10.000 candidati *non classificati*, `investresearch-b universe`, a partire da
+un download **esplicito** dell'elenco ufficiale SEC. È una discovery US-only,
+non una shortlist finanziaria. La graduatoria richiede storici completi,
+provenienza verificabile, data di acquisizione coerente con `as_of` e controlli
+sui possibili split. Vedi [docs/BLOCK_B.md](docs/BLOCK_B.md).

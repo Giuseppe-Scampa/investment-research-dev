@@ -10,13 +10,13 @@ import html
 import io
 import json
 import math
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from statistics import mean, stdev
 from .analytics import wilder_rsi
 from .constraints import instrument_constraints
-from .market_calendar import session_age
+from .market_calendar import session_age, session
 from .research_bundle import load_bundle, SYNTHETIC
 
 WEIGHTS = {'momentum_20':.30,'momentum_60':.20,'volatility_20':.20,
@@ -82,6 +82,61 @@ def _fx_dated_prices(bars, fx, currency):
     return aligned,None
 
 
+def _history_quality(dated_prices, venue):
+    """Require a complete last 61 venue sessions and check for possible split jumps.
+
+    A price series with 61 rows is not necessarily 61 *consecutive* sessions.
+    Refuse a reliable-looking momentum score when bars are missing, even when
+    the newest quote is fresh. Calendars beyond 2026 are fail-closed.
+    """
+    if len(dated_prices)<61:
+        return {'verified':False,'reason':'INSUFFICIENT_61_ALIGNED_OBSERVATIONS',
+                'missing_sessions':None,'largest_daily_move':None}
+    last=dated_prices[-61:]
+    try:
+        start,end=date.fromisoformat(last[0][0]),date.fromisoformat(last[-1][0])
+        expected=[]
+        for offset in range((end-start).days+1):
+            day=start+timedelta(days=offset)
+            if session(day,venue):expected.append(day.isoformat())
+    except ValueError:
+        return {'verified':False,'reason':'HISTORY_SESSION_CALENDAR_UNAVAILABLE',
+                'missing_sessions':None,'largest_daily_move':None}
+    actual=[x[0] for x in last]
+    if actual!=expected:
+        missing=len(set(expected)-set(actual))
+        return {'verified':False,'reason':'MISSING_OR_INVALID_TRADING_SESSIONS',
+                'missing_sessions':missing,'largest_daily_move':None}
+    prices=[x[1] for x in last]
+    moves=[abs(prices[i]/prices[i-1]-1) for i in range(1,len(prices))]
+    maximum=max(moves)
+    if maximum>Decimal('.60'):
+        return {'verified':False,'reason':'UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP',
+                'missing_sessions':0,'largest_daily_move':round(float(maximum),6)}
+    return {'verified':True,'reason':None,'missing_sessions':0,
+            'largest_daily_move':round(float(maximum),6)}
+
+
+def _point_in_time_source_status(manifest, asset, as_of, fx):
+    if manifest['mode']==SYNTHETIC:
+        return []
+    metadata=[asset['prices']]
+    if asset['currency']=='USD' and manifest.get('fx'):metadata.append(manifest['fx'])
+    problems=[]
+    for m in metadata:
+        collected=m.get('retrieved_at_utc')
+        if not collected:
+            problems.append('MISSING_SOURCE_COLLECTION_DATE')
+            continue
+        try: retrieved=date.fromisoformat(collected[:10])
+        except (TypeError,ValueError):
+            problems.append('MALFORMED_SOURCE_COLLECTION_DATE')
+            continue
+        if retrieved>as_of:
+            problems.append('SNAPSHOT_COLLECTED_AFTER_AS_OF')
+    return sorted(set(problems))
+
+
 def _format_metric(value):
     if value is None: return 'N/A'
     if isinstance(value,float): return f'{value:.4f}'
@@ -110,25 +165,48 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
             warnings.append(f'STALE_BY_{stale}_MARKET_SESSIONS')
         data,fx_issue=_fx_dated_prices(bars,fx,asset['currency'])
         if fx_issue: warnings.append(fx_issue)
-        if len(data)<61: warnings.append('INSUFFICIENT_61_ALIGNED_OBSERVATIONS')
-        market_ready=not blocks and stale is not None and stale<=max_age_sessions and not fx_issue and len(data)>=61
+        history=_history_quality(data,asset['venue'])
+        if history['reason']: warnings.append(history['reason'])
+        pit_issues=_point_in_time_source_status(manifest,asset,reference,fx)
+        warnings.extend(pit_issues)
+        if manifest['mode']!=SYNTHETIC and (not asset.get('sector') or asset.get('oil_exposure') not in ('none','direct','primary','material','indirect')):
+            warnings.append('UNVERIFIED_SECTOR_OR_OIL_EXPOSURE')
+        market_ready=(not blocks and stale is not None and stale<=max_age_sessions
+                      and not fx_issue and history['verified'] and not pit_issues
+                      and 'UNVERIFIED_SECTOR_OR_OIL_EXPOSURE' not in warnings)
         if market_ready:
             m=_score_indicators(data)
             price_score,components=_market_score(m)
+        fundamentals_warning=[]
         if facts and asset.get('asset_type','EQUITY')=='EQUITY':
             revenue=Decimal(facts['revenue_usd']);income=Decimal(facts['net_income_usd'])
             margin=float(income/revenue)
             if not math.isfinite(margin): raise ValueError('Invalid fundamental ratio')
+            if manifest['mode']!=SYNTHETIC:
+                fundamental_meta=asset.get('fundamentals') or {}
+                collected=fundamental_meta.get('retrieved_at_utc')
+                if not collected:
+                    fundamentals_warning.append('MISSING_FUNDAMENTAL_COLLECTION_DATE')
+                else:
+                    try:
+                        if date.fromisoformat(collected[:10])>reference:
+                            fundamentals_warning.append('FUNDAMENTALS_COLLECTED_AFTER_AS_OF')
+                    except (TypeError,ValueError):
+                        fundamentals_warning.append('MALFORMED_FUNDAMENTAL_COLLECTION_DATE')
+                if fundamental_meta.get('provider')=='SEC_COMPANYFACTS' and not facts.get('source_filing_accession'):
+                    fundamentals_warning.append('MISSING_SEC_FILING_ACCESSION')
             fundamental={'net_margin_annual':round(margin,6),
                 'period_end':facts['period_end'],
                 'last_filed':max(facts['revenue_filed_date'],facts['earnings_filed_date']),
-                'fundamental_provider':asset['fundamentals']['provider']}
-            if price_score is not None:
+                'fundamental_provider':asset['fundamentals']['provider'],
+                'source_filing_accession':facts.get('source_filing_accession')}
+            if price_score is not None and not fundamentals_warning:
                 quality=_bounded(margin,-.2,.4)*100
                 equity_score=round(.85*price_score+.15*quality,2)
         else:
             fundamental=None
             if asset.get('asset_type','EQUITY')=='EQUITY': warnings.append('MISSING_AS_OF_FUNDAMENTALS')
+        warnings.extend(fundamentals_warning)
         if blocks: status='BLOCKED_BY_POLICY'
         elif not market_ready: status='INCOMPLETE_NO_RANK'
         elif manifest['mode']==SYNTHETIC: status='DEMO_RANK_NOT_REAL_MARKET'
@@ -148,6 +226,7 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
             'market_score':price_score,'market_components':components,
             'equity_fundamental_score':equity_score,
             'market_metrics':m,'fundamental_metrics':fundamental,
+            'history_quality':history,
             'documented_events_not_causal_predictions':upcoming,
             'trade_ready':False,
             'research_rationale':'Scores compare historical indicators, NOT expected future returns.'})
@@ -168,6 +247,9 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
         'results':results,'limitations':[
             'Not a forecast or trade recommendation; no real bid/ask, corporate actions, intraday or broker verification.',
             'Closing dates for US/EU markets may not represent synchronous information sets.',
+            'Continuity gate requires every last 61 trading sessions (2026 calendars only).',
+            'Source bytes collected after as_of do not qualify as point-in-time evidence.',
+            'Extreme daily price jumps (>60%) block ranking pending corporate-action review.',
             'Prices from Stooq are not certified adjusted for dividends/splits; research use only.',
             'Annual SEC net margin is not a substitute for sector-specific valuations, debt, guidance or catalysts.',
             'Ranking only considers EUR-converted same-date aligned observations and available evidence.',

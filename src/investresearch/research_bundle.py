@@ -74,9 +74,15 @@ def parse_synthetic_fundamentals(payload: bytes, as_of: date):
     try: net=Decimal(str(d['net_income_usd']))
     except InvalidOperation as exc: raise ValueError('Invalid earnings') from exc
     if not net.is_finite(): raise ValueError('Nonfinite earnings')
-    return {'period_end':str(period),'revenue_usd':str(_positive(d['revenue_usd'])),
+    result={'period_end':str(period),'revenue_usd':str(_positive(d['revenue_usd'])),
             'net_income_usd':str(net), 'revenue_filed_date':str(revfiled),
-            'earnings_filed_date':str(incfiled),'status':'SYNTHETIC_NOT_REPORTED'}
+            'earnings_filed_date':str(incfiled),'status':d.get('status','SYNTHETIC_NOT_REPORTED')}
+    if 'source_filing_accession' in d:
+        accession=d['source_filing_accession']
+        if accession is not None and (not isinstance(accession,str) or len(accession)>40):
+            raise ValueError('Invalid SEC accession')
+        result['source_filing_accession']=accession
+    return result
 
 
 def _get_source_bytes(meta:dict):

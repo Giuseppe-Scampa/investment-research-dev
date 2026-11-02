@@ -19,6 +19,7 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 MAX_BYTES = 20_000_000
 SEC_HOST = 'https://data.sec.gov/api/xbrl/companyfacts/'
+SEC_TICKERS_URL = 'https://www.sec.gov/files/company_tickers_exchange.json'
 ECB_URL = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.csv'
 STOOQ_URL = 'https://stooq.com/q/d/l/'
 
@@ -44,6 +45,12 @@ def source_request(provider: str, identifier: str = '', *, sec_contact: str = ''
         url = SEC_HOST + f'CIK{identifier}.json'
         headers = {'User-Agent': f'InvestmentResearchDev/0.2 research {sec_contact}', 'Accept': 'application/json'}
         return Request(url, headers=headers), url
+    if provider == 'SEC_TICKERS':
+        if identifier:
+            raise ValueError('SEC ticker catalog needs no identifier')
+        if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', sec_contact):
+            raise ValueError('SEC requires a real, explicitly supplied contact email')
+        return Request(SEC_TICKERS_URL, headers={'User-Agent': f'InvestmentResearchDev/0.3 research {sec_contact}', 'Accept': 'application/json'}), SEC_TICKERS_URL
     if provider == 'ECB_EUR_FX':
         if identifier:
             raise ValueError('ECB FX needs no identifier')
@@ -82,6 +89,9 @@ def collect(provider: str, identifier: str, cache: Path, *, sec_contact='',
             raise ValueError('Invalid SEC companyfacts JSON')
         if str(obj.get('cik')) != str(int(identifier)):
             raise ValueError('SEC CIK in payload does not match requested company')
+    elif provider == 'SEC_TICKERS':
+        from .research_universe import parse_sec_tickers
+        parse_sec_tickers(payload)
     elif provider == 'ECB_EUR_FX':
         if 'Date' not in payload[:500].decode('utf-8-sig'):
             raise ValueError('Invalid ECB FX CSV header')
@@ -89,7 +99,7 @@ def collect(provider: str, identifier: str, cache: Path, *, sec_contact='',
         if b'Date,Open,High,Low,Close,Volume' not in payload[:300] or b'\x3chtml' in payload[:500].lower():
             raise ValueError('Stooq returned a denial or non-price response; do not treat it as data')
     digest = sha256_bytes(payload)
-    dest = Path(cache) / provider / (identifier or 'EUR_FX')
+    dest = Path(cache) / provider / (identifier or ('SEC_CATALOG' if provider == 'SEC_TICKERS' else 'EUR_FX'))
     dest.mkdir(parents=True, exist_ok=True)
     raw_path = dest / (digest + '.bin')
     if raw_path.exists() and sha256_bytes(raw_path.read_bytes()) != digest:
@@ -184,14 +194,30 @@ def parse_sec_fundamentals(data: bytes, as_of: date):
                 except (KeyError, TypeError, ValueError, InvalidOperation): continue
                 if filed > as_of or end > filed or not 300 <= (end-start).days <= 390: continue
                 if not value.is_finite(): continue
-                out.append((end,filed,-precedence,tag,str(value)))
+                out.append((end,filed,-precedence,tag,str(value),r.get('accn')))
         return out
     rev = candidates(concepts['revenue']); inc = candidates(concepts['net_income'])
     same_end = {r[0] for r in rev} & {r[0] for r in inc}
     if not same_end: raise ValueError('No same-period SEC annual revenue and earnings available as_of')
     period = max(same_end)
-    r = max((x for x in rev if x[0] == period), key=lambda x:(x[1],x[2]))
-    n = max((x for x in inc if x[0] == period), key=lambda x:(x[1],x[2]))
+    rev_period=[x for x in rev if x[0]==period]
+    inc_period=[x for x in inc if x[0]==period]
+    # Actual SEC companyfacts include accession IDs. Refuse mixed-period or
+    # mixed-filing statements; revenues and earnings must refer to one filing.
+    if any(x[5] for x in rev_period+inc_period):
+        shared={x[5] for x in rev_period if x[5]} & {x[5] for x in inc_period if x[5]}
+        if not shared: raise ValueError('No same-filing SEC annual revenue and earnings')
+        pairs=[]
+        for accn in shared:
+            rv=max((x for x in rev_period if x[5]==accn),key=lambda x:(x[1],x[2]))
+            iv=max((x for x in inc_period if x[5]==accn),key=lambda x:(x[1],x[2]))
+            pairs.append((max(rv[1],iv[1]),rv,iv,accn))
+        _,r,n,accession=max(pairs,key=lambda x:(x[0],x[3]))
+    else:
+        r=max(rev_period,key=lambda x:(x[1],x[2]))
+        n=max(inc_period,key=lambda x:(x[1],x[2]))
+        accession=None
     return {'period_end': period.isoformat(), 'revenue_usd':r[4], 'net_income_usd':n[4],
+            'source_filing_accession':accession,
             'revenue_filed_date':r[1].isoformat(), 'earnings_filed_date':n[1].isoformat(),
             'revenue_concept':r[3], 'earnings_concept':n[3], 'status':'SEC_ANNUAL_FILED_BY_AS_OF'}

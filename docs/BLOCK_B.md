@@ -156,3 +156,58 @@ fondamentale, eventi source-dated, CSV/JSON/Markdown/dashboard, test offline.
 provider, mappatura di un ampio universo di ISIN e CIK, corporate actions,
 metodologia quantitativa sui diversi settori, quotazioni ufficiali, qualità
 storica e backtest out-of-sample. Nessuna shortlist operativa è prodotta.
+
+## Secondo incremento — discovery reale e qualità avanzata
+
+### Universi SEC senza ranking fittizi
+
+La nuova fonte ufficiale **SEC_TICKERS** consente di scaricare il file corrente
+`https://www.sec.gov/files/company_tickers_exchange.json` con un contatto
+esplicito SEC nel `User-Agent`. La stessa cache SHA-256 conserva raw e metadati.
+
+```bash
+export SEC_RESEARCH_CONTACT='tuo-contatto-effettivo@example.org' # sostituisci
+investresearch-b collect --provider SEC_TICKERS
+# Leggi i due path .bin e .json stampati/salvati in .cache/research/SEC_TICKERS/SEC_CATALOG/
+investresearch-b universe \
+  --raw .cache/research/SEC_TICKERS/SEC_CATALOG/<sha256>.bin \
+  --metadata .cache/research/SEC_TICKERS/SEC_CATALOG/<sha256>.json \
+  --as-of 2026-11-02 --limit 1000 --output data/private/sec-candidates
+```
+
+**Importante:** lo snapshot SEC è una mappa *corrente* ticker–CIK–exchange,
+non un universo storico privo di survivorship bias, non un classificatore
+settoriale e non una lista di titoli negoziabili. L'importatore rifiuta snapshot
+acquisiti **dopo** il `as_of`, richiede hash e URL ufficiale e salva solo un
+catalogo *CANDIDATE_ONLY* US (NYSE/Nasdaq riconosciuti). Non attribuisce
+automaticamente ISIN, esposizione etica, fondamentali o quotazioni. Per Europa,
+Asia e altre classi di attivo servono cataloghi ulteriori e mapping documentato.
+
+### Gate prima di attribuire un punteggio
+
+- Le 61 osservazioni devono coincidere con **61 sedute consecutive** del
+  mercato indicato, non semplicemente 61 righe. Buchi, sedute fittizie e
+  calendari non supportati impediscono il punteggio.
+- Movimenti giornalieri assoluti oltre il **60%** sono uno *stop di revisione*
+  (possibile split, prezzo corrotto o evento reale): non vengono corretti
+  automaticamente, ma richiedono corporate action documentate. La soglia è
+  cautelativa e NON una regola universale di trading.
+- Con fonti esterne la data di raccolta dei **prezzi e cambi** deve essere
+  documentata e non successiva al `as_of`; altrimenti il ranking è sospeso.
+  Mancanza di classificazione settoriale/esposizione petrolifera = non classificabile.
+- I fondamentali SEC devono associare ricavi e utile dello stesso periodo e,
+  se presenti, della **medesima accession EDGAR**; con accession assente,
+  data di acquisizione mancante o successiva ad `as_of`, viene sospeso **solo
+  il ranking fondamentale**, non il punteggio di mercato eventualmente valido.
+- L'algoritmo resta valido unicamente per i calendari 2026 documentati;
+  l'estensione a più anni e la validazione degli aggiustamenti per dividendi,
+  split e ticker changes sono ancora attività aperte.
+
+### Verifica live indipendente
+
+Il job GitHub Actions `live_ecb_smoke`, in esecuzione sulle PR, effettua **una**
+chiamata HTTPS alla BCE, verifica l'hash e prova il parser CSV su dati reali.
+È *best effort*: l'insuccesso per rete/429 non rende rossa la CI offline,
+ma i log devono riportarne esplicitamente l'esito. Le API SEC (contatto reale)
+e Stooq (chiave gratuita e termini) non vengono richiamate automaticamente.
+Non interpretare la CI verde come prova che SEC/Stooq siano stati interrogati.

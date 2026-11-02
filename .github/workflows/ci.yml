@@ -37,3 +37,23 @@ jobs:
           name: offline-analysis
           path: reports/generated/
           retention-days: 14
+
+  live_ecb_smoke:
+    # Independent public-source compatibility check, not a financial-data
+    # verification certificate. Network outages must not invalidate offline CI.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: ECB official CSV live HTTP and parser smoke (best effort)
+        continue-on-error: true
+        run: python tools/smoke_ecb.py
+      - name: Scope disclaimer
+        run: echo 'SEC and Stooq live access are NOT tested without an explicit user-provided contact or free key.'
