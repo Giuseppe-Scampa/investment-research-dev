@@ -1,6 +1,6 @@
 # Input di posizioni esistenti — Block A V3
 
-La fixture dimostrativa è `data/fixtures/investment_case_example.json` e contiene **dati inventati** per testare la logica. Per usarne altre localmente, passare in futuro un file equivalente non versionato con `fixture_kind: USER_SUPPLIED_UNVERIFIED`; l'interfaccia CLI attuale genera esclusivamente il caso dimostrativo, **non carica automaticamente dossier veri**.
+La fixture dimostrativa è `data/fixtures/investment_case_example.json` e contiene **dati inventati** per testare la logica. Per usare un caso locale, passare `investresearch report --case data/private/portfolio_private.json` con `fixture_kind: USER_SUPPLIED_UNVERIFIED`. Il file locale non viene caricato automaticamente dai workflow GitHub Actions.
 
 Schema dell'oggetto:
 
@@ -9,7 +9,7 @@ fixture_kind: SYNTHETIC_DEMONSTRATION_NOT_PERSONAL_HOLDINGS | USER_SUPPLIED_UNVE
 as_of: YYYY-MM-DD (solo 2026 per il caso d'uso attuale)
 account_id: identificatore di rapporto, NON il numero bancario reale
 investment_budget_eur: decimal string
- tax_regime: amministrato (unico regime simulato; dichiarativo rifiutato esplicitamente)
+tax_regime: amministrato (unico regime simulato; dichiarativo rifiutato esplicitamente)
 tax_wallets[]: {account_id, tax_regime, year, remaining_eur, verification_status}
 existing_positions[]:
   {position_id, account_id, name, isin, asset_type, trade_currency, venue,
