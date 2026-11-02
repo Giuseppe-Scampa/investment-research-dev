@@ -114,3 +114,16 @@ ricavi e utile in EUR tramite tag IFRS esplicitamente supportati, in un CSV
 per revisione manuale. Usa `defusedxml`, limita i byte decompressi realmente
 letti e **non** promuove i valori a fondamentali certificati o score di
 mercato. Nessun download esterno, upload di report integrali o ordine di borsa.
+
+
+### EU ESEF live issuer verification (2026-11-02)
+
+Official FY2025 European iXBRL samples have been tested on GitHub Actions for
+**Edison and Prysmian**, with numeric checks against issuer income statements.
+Both remain provisional human-review candidates; no EU fundamental scores are
+automatically promoted. Prysmian required a measured 80MB parser ceiling and
+has two semantically different revenue concepts (19,650m / 20,348m EUR).
+**Terna** has official PDF references but its ESEF ZIP has not been acquired
+and parsed; it is not marked validated. See
+[real issuer comparison and unresolved Terna evidence](docs/EU_ESEF_REAL_VALIDATION_PRYSMIAN_TERNA.md)
+and [Edison validation](docs/EU_ESEF_REAL_VALIDATION_EDISON.md).
