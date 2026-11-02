@@ -183,3 +183,33 @@ def test_stale_same_filing_comparison_does_not_inflate_usable_comparable_count(t
     assert result['stale_annual_count']==1
     assert result['results'][0]['comparison_status']=='COMPARABLE_SAME_SEC_FILING'
     assert result['comparable_prior_year_count']==0
+
+
+def test_sec_profitloss_annual_fallback_is_disclosed_and_comparable(tmp_path):
+    obj=json.loads(facts())
+    us=obj['facts']['us-gaap']
+    income=us.pop('NetIncomeLoss')
+    us['ProfitLoss']=income
+    body=json.dumps(obj).encode()
+    latest=parse_sec_fundamentals(body,ASOF)
+    assert latest['earnings_concept']=='ProfitLoss'
+    assert latest['earnings_basis']=='CONSOLIDATED_PROFIT_LOSS_INCLUDING_NONCONTROLLING_INTERESTS'
+    comparison=parse_sec_annual_comparison(body,ASOF,latest)
+    assert comparison['status']=='COMPARABLE_SAME_SEC_FILING'
+    catalog=_catalog(tmp_path)
+    filing=_meta(tmp_path,'SEC_COMPANYFACTS',body,'0000320193',SEC_HOST+'CIK0000320193.json')
+    report=analyze_sec_evidence(catalog,{'0000320193':filing},['AAPL'],ASOF)
+    row=report['results'][0]
+    assert report['annual_evidence_count']==1
+    assert row['earnings_concept']=='ProfitLoss'
+    assert 'NONCONTROLLING' in row['earnings_basis']
+    assert row['revenue_yoy_pct']=='25.00'
+
+
+def test_netincomeloss_preferred_when_both_profit_concepts_present():
+    obj=json.loads(facts())
+    us=obj['facts']['us-gaap']
+    us['ProfitLoss']={'units':{'USD':[dict(us['NetIncomeLoss']['units']['USD'][0],val=999)]}}
+    latest=parse_sec_fundamentals(json.dumps(obj).encode(),ASOF)
+    assert latest['earnings_concept']=='NetIncomeLoss'
+    assert latest['net_income_usd']=='80'

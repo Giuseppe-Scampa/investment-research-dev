@@ -77,3 +77,17 @@ cache integrity, not an SEC signature or valuation certificate.
 
 **Primary references:** [SEC EDGAR API documentation](https://www.sec.gov/search-filings/edgar-application-programming-interfaces),
 [SEC Accessing EDGAR Data / fair access](https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data).
+
+### SEC earnings taxonomy — accounting scope
+
+The parser prioritizes `us-gaap:NetIncomeLoss` and accepts
+`us-gaap:ProfitLoss` if it is the available annual 10-K concept for the
+same accession and fiscal period. **ProfitLoss may include noncontrolling
+interests; it is not automatically identical to earnings attributable
+to common shareholders.** Report rows disclose `earnings_concept` and
+`earnings_basis`. YoY comparisons require exactly the same concept and
+filing accession in both fiscal years.
+
+The fallback was supported by a live SEC taxonomy inspection of
+Caterpillar and Mastercard. Different accounting tags do not imply
+comparability across sectors or suitability for investment ranking.

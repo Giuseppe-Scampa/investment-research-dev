@@ -283,7 +283,7 @@ def parse_sec_fundamentals(data: bytes, as_of: date):
     facts = _sec_facts(data, as_of)
     concepts = {
         'revenue': ['RevenueFromContractWithCustomerExcludingAssessedTax','Revenues','SalesRevenueNet'],
-        'net_income': ['NetIncomeLoss'],
+        'net_income': ['NetIncomeLoss', 'ProfitLoss'],  # ProfitLoss includes NCI; disclose the source tag
     }
     def candidates(tags):
         out=[]
@@ -322,7 +322,10 @@ def parse_sec_fundamentals(data: bytes, as_of: date):
     return {'period_end': period.isoformat(), 'revenue_usd':r[4], 'net_income_usd':n[4],
             'source_filing_accession':accession,
             'revenue_filed_date':r[1].isoformat(), 'earnings_filed_date':n[1].isoformat(),
-            'revenue_concept':r[3], 'earnings_concept':n[3], 'status':'SEC_ANNUAL_FILED_BY_AS_OF'}
+            'revenue_concept':r[3], 'earnings_concept':n[3],
+            'earnings_basis':('CONSOLIDATED_PROFIT_LOSS_INCLUDING_NONCONTROLLING_INTERESTS'
+                              if n[3]=='ProfitLoss' else 'NET_INCOME_LOSS'),
+            'status':'SEC_ANNUAL_FILED_BY_AS_OF'}
 
 
 def parse_sec_annual_comparison(data: bytes, as_of: date, latest: dict) -> dict:
