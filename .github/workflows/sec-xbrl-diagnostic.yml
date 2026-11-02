@@ -11,10 +11,10 @@ jobs:
     if: github.repository == 'Giuseppe-Scampa/investment-research-dev'
     runs-on: ubuntu-latest
     timeout-minutes: 3
-    env:
-      SEC_RESEARCH_CONTACT: ${{ secrets.SEC_RESEARCH_CONTACT }}
     steps:
       - name: Public XBRL tag coverage, no raw data/secret output
+        env:
+          SEC_RESEARCH_CONTACT: ${{ secrets.SEC_RESEARCH_CONTACT }}
         shell: bash
         run: |
           python - <<'PY'
