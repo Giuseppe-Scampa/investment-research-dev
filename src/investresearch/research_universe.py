@@ -29,6 +29,11 @@ def parse_sec_tickers(payload: bytes):
         cik,name,ticker,exchange=row
         if isinstance(cik,bool) or not isinstance(cik,int) or not 1<=cik<=9999999999:
             raise ValueError('Invalid SEC CIK')
+        # Official SEC mappings include records with a null exchange. Keep the
+        # CIK/ticker association but mark its venue UNMAPPED; do not invent
+        # a venue or discard otherwise valid listed candidates.
+        if exchange is None:
+            exchange=''
         if not isinstance(name,str) or not isinstance(ticker,str) or not isinstance(exchange,str):
             raise ValueError('Invalid SEC ticker field')
         name=name.strip();ticker=ticker.strip();exchange=exchange.strip()

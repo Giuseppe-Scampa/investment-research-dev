@@ -24,7 +24,7 @@ def _cached(tmp_path, provider, identifier, data, url, *, retrieved='2026-11-02T
 def _catalog(tmp_path, *, entries=None):
     entries = entries or [[320193, 'Apple Inc', 'AAPL', 'Nasdaq'],
                           [789019, 'Microsoft Corp', 'MSFT', 'Nasdaq'],
-                          [101, 'Legacy', 'OLD', 'UNSUPPORTED']]
+                          [101, 'Legacy', 'OLD', None]]
     return _cached(tmp_path, 'SEC_TICKERS', '',
                    {'fields':['cik','name','ticker','exchange'], 'data':entries},SEC_TICKERS_URL)
 
