@@ -91,3 +91,17 @@ For an explicit, limited SEC evidence exercise (not a market ranking), use
 The 18-ticker sample uses only public SEC records; comparable revenue growth is
 reported **only for same-accession prior-year annual observations**. It never
 inventories ISINs, prices or sector labels. See [SEC cohort methods](docs/SEC_COHORT.md).
+
+### EU annual disclosures and locally authorized price input (offline)
+
+Block B now includes an **EU ESEF/XHTML/PDF document integrity register** and an **explicit, local-only market-price CSV import**. These add coverage paths for non-US issuers without claiming automatic IFRS extraction or unrestricted market-data licensing. The program verifies checksums and as-of dates; source authenticity, accounting facts and provider rights still require independent review.
+
+```bash
+# Copy config/eu_filings_example.json into data/private/ and fill real document metadata.
+investresearch-b eu-filings --spec data/private/eu-filings.json --output reports/generated/private-eu-evidence
+# A separate config/manual_prices_example.json demonstrates user-authorized local OHLCV input.
+investresearch-b build --spec data/private/manual-prices.json --output data/private/manual-price-bundle
+investresearch-b screen --bundle data/private/manual-price-bundle --output reports/generated/private-price-research
+```
+
+See [docs/EU_EVIDENCE_AND_MARKET_RIGHTS.md](docs/EU_EVIDENCE_AND_MARKET_RIGHTS.md). Never commit report documents, licensed price files, private portfolios or generated local reports.
