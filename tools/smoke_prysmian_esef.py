@@ -150,7 +150,16 @@ def validate_compatibility(result: dict) -> tuple[bool, str]:
 
 def main() -> int:
     try:
-        report = verify_official_package(fetch_official_zip(),date.today())
+        payload = fetch_official_zip()
+        member = select_consolidated_xhtml(payload)
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            info = archive.getinfo(member)
+            print('PRYSMIAN ESEF ARCHIVE METADATA:',
+                  'zip_bytes=',len(payload),
+                  'selected_xhtml_declared_bytes=',info.file_size,
+                  'selected_xhtml_compressed_bytes=',info.compress_size,
+                  flush=True)
+        report = verify_official_package(payload,date.today())
     except Exception as exc:
         # Do not print response bodies, raw XHTML, or local paths.
         print('PRYSMIAN LIVE ESEF INCOMPLETE:',type(exc).__name__,str(exc)[:160],file=sys.stderr)
