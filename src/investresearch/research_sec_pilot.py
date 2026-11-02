@@ -150,7 +150,11 @@ def analyze_sec_evidence(catalog_meta: dict, company_metas: dict,
                     "filing_accession": fact.get("source_filing_accession") or ""})
         findings.append(row)
     evidence_count = sum(x["status"] == "SEC_ANNUAL_EVIDENCE_AVAILABLE_NO_MARKET_RANK" for x in findings)
-    comparable_count = sum(x["comparison_status"] == "COMPARABLE_SAME_SEC_FILING" for x in findings)
+    # Usable comparisons exclude old annual filings even when same-accession
+    # historical observations exist in the SEC payload.
+    comparable_count = sum(x["status"] == "SEC_ANNUAL_EVIDENCE_AVAILABLE_NO_MARKET_RANK"
+                           and x["comparison_status"] == "COMPARABLE_SAME_SEC_FILING"
+                           for x in findings)
     stale_count = sum(x["status"] == "SEC_ANNUAL_STALE_REVIEW_NO_MARKET_RANK" for x in findings)
     return {"as_of": as_of.isoformat(), "mode": "SEC_REAL_ANNUAL_RESEARCH_COVERAGE_NOT_RANKING",
             "source_provider": "SEC EDGAR (official)",

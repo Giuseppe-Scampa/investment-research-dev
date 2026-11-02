@@ -167,3 +167,19 @@ def test_sec_pilot_cohort_cli_accepts_file_without_network(monkeypatch,tmp_path)
     path.write_text(json.dumps({'symbols':[12]}))
     with pytest.raises(SystemExit):
         main(['sec-pilot','--cohort',str(path),'--live-confirm','--sec-contact','test@example.org'])
+
+
+def test_stale_same_filing_comparison_does_not_inflate_usable_comparable_count(tmp_path):
+    catalog=_catalog(tmp_path)
+    obj=json.loads(facts())
+    for label in ('RevenueFromContractWithCustomerExcludingAssessedTax','NetIncomeLoss'):
+        rows=obj['facts']['us-gaap'][label]['units']['USD']
+        rows[0].update(start='2023-10-01',end='2024-09-28',filed='2024-10-31',accn='0000320193-24-000100')
+        rows[1].update(start='2022-10-02',end='2023-09-30',filed='2024-10-31',accn='0000320193-24-000100')
+    filing=_meta(tmp_path,'SEC_COMPANYFACTS',json.dumps(obj).encode(),
+                 '0000320193',SEC_HOST+'CIK0000320193.json')
+    result=analyze_sec_evidence(catalog,{'0000320193':filing},['AAPL'],ASOF)
+    assert result['annual_evidence_count']==0
+    assert result['stale_annual_count']==1
+    assert result['results'][0]['comparison_status']=='COMPARABLE_SAME_SEC_FILING'
+    assert result['comparable_prior_year_count']==0
