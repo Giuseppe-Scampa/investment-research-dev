@@ -90,3 +90,23 @@ def test_probe_reports_parseable_but_zero_coverage_as_incomplete(monkeypatch, ca
     outlog = capsys.readouterr()
     assert 'INCOMPLETE: zero extractable candidates' in outlog.err
     assert '"candidate_count": 0' in outlog.out
+
+
+def test_real_zip_reference_gate_requires_all_three_distinct_accounting_metrics():
+    result=probe.verify_official_package(sample_esef(),date(2026,11,2))
+    ok, reason=probe.validate_live_reference_controls(result)
+    assert ok is False and 'ZIP_BYTES_CHANGED' in reason
+    result['document_sha256']=probe.EDISON_2025_SHA256
+    ok, reason=probe.validate_live_reference_controls(result)
+    assert ok is False and 'VALUES_INCOMPLETE' in reason
+    result['pdf_comparison_candidates'].append({
+        'metric':'PROFIT_PARENT', 'concept':'ProfitLossAttributableToOwnersOfParent',
+        'value_eur':'240000000', 'pdf_amount_matches':True})
+    result['candidate_count']=3
+    ok, reason=probe.validate_live_reference_controls(result)
+    assert ok is True and 'THREE_NUMERIC' in reason
+    result['conflicting_metrics']=['REVENUE']
+    assert probe.validate_live_reference_controls(result)[0] is False
+    result['conflicting_metrics']=[]
+    result['pdf_comparison_candidates'][1]['pdf_amount_matches']=False
+    assert probe.validate_live_reference_controls(result)[0] is False

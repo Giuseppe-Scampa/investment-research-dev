@@ -22,6 +22,9 @@ EDISON_URL = ('https://www.edison.it/sites/default/files/documents/'
               '529900ws2e20ba5j4l49-2025-12-31-1-it_1.zip')
 EDISON_LEI = '529900WS2E20BA5J4L49'
 EDISON_SUFFIX = '529900ws2e20ba5j4l49-2025-12-31-1-it.xhtml'
+# Immutable source captured from the issuer's official 2025 package in the
+# initial 2026-11-02 live run. Changed bytes require a fresh document review.
+EDISON_2025_SHA256 = '4ab61d8a4a959801cc487711ae0850a524b531f7aacf311ecf09ad7131711232'
 
 # These are reference figures from the issuer's FY2025 PDF, not expected
 # iXBRL tag equivalents, and no automatic promotion to verified facts occurs.
@@ -170,6 +173,32 @@ def verify_official_package(payload: bytes, as_of: date) -> dict:
     }
 
 
+
+def validate_live_reference_controls(result: dict) -> tuple[bool, str]:
+    """Strict three-metric *numeric* cross-check, not a XBRL audit certificate."""
+    if result.get('document_sha256') != EDISON_2025_SHA256:
+        return False, 'OFFICIAL_ESEF_ZIP_BYTES_CHANGED_REQUIRE_REVIEW'
+    if result.get('accounting_facts_verified') != 0 or result.get('market_ranking_count') != 0:
+        return False, 'UNEXPECTED_PROMOTION_TO_VERIFIED_OR_RANKED_STATUS'
+    if result.get('conflicting_metrics'):
+        return False, 'CONFLICTING_IFRS_METRIC_FACTS_REQUIRE_MANUAL_REVIEW'
+    comparisons = result.get('pdf_comparison_candidates', [])
+    expected = {
+        ('REVENUE', 'Revenue', '17739000000'),
+        ('PROFIT_LOSS', 'ProfitLoss', '270000000'),
+        ('PROFIT_PARENT', 'ProfitLossAttributableToOwnersOfParent', '240000000'),
+    }
+    observed = {(c.get('metric'),c.get('concept'),c.get('value_eur'))
+                for c in comparisons if c.get('pdf_amount_matches') is True}
+    if not expected.issubset(observed):
+        return False, 'OFFICIAL_PDF_REFERENCE_VALUES_INCOMPLETE_OR_DIFFERENT'
+    if any(c.get('pdf_amount_matches') is not True for c in comparisons):
+        return False, 'ADDITIONAL_PDF_REFERENCE_CONFLICT_REQUIRES_REVIEW'
+    if len(comparisons) != result.get('candidate_count'):
+        return False, 'UNMAPPED_OR_UNMATCHED_IFRS_CANDIDATES_REQUIRE_REVIEW'
+    return True, 'THREE_NUMERIC_PDF_REFERENCES_MATCH_IN_ESEF_REVIEW_REQUIRED'
+
+
 def main():
     try:
         result = verify_official_package(fetch_official_zip(), date.today())
@@ -181,7 +210,11 @@ def main():
     if not result['candidate_count']:
         print('LIVE ESEF INCOMPLETE: zero extractable candidates, review transformation and contexts', file=sys.stderr)
         return 2
-    print('LIVE ESEF CANDIDATE EXTRACTION COMPLETED: no certified financials')
+    accepted, reason = validate_live_reference_controls(result)
+    print('LIVE ESEF RECONCILIATION:', reason)
+    if not accepted:
+        return 2
+    print('LIVE ESEF THREE-METRIC NUMERIC CHECK COMPLETED: human audit still required')
     return 0
 
 

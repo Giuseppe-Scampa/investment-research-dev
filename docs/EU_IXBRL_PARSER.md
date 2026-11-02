@@ -98,3 +98,35 @@ Il supporto al formato esatto `num-comma-decimal` e `num-dot-decimal` di
 e scala. Gli altri formati del registro 2022 restano **non supportati**, anche
 quando semanticamente simili. Un nuovo job deve confermare quali fatti reali
 vengono estratti e il loro eventuale confronto **manuale** con il PDF.
+
+### Esito del secondo smoke live sullo ZIP ufficiale Edison (2026-11-02)
+
+Il job PR sul commit `2b917df` ha scaricato il **medesimo** package ZIP ufficiale
+(SHA-256 invariato `4ab61d8a4a959801cc487711ae0850a524b531f7aacf311ecf09ad7131711232`).
+Il supporto limitato della Transformation Registry 5 ha permesso di recuperare
+**cinque facts EUR dello stesso esercizio**, riconducibili a tre concetti:
+
+| Concetto IFRS | Valore ESEF | Voce PDF Edison, conto economico consolidato, pagina stampata 3 |
+|---|---:|---|
+| `Revenue` | €17.739.000.000 | Ricavi di vendita: €17.739 milioni |
+| `ProfitLoss` | €270.000.000 (tre occorrenze dello stesso importo) | Risultato netto: €270 milioni |
+| `ProfitLossAttributableToOwnersOfParent` | €240.000.000 | Risultato netto di competenza di Gruppo: €240 milioni |
+
+**Tutti e cinque** i valori candidati corrispondono numericamente al prospetto
+pubblicato (PDF per confronto, non la versione elettronica ufficiale ai sensi
+della direttiva Transparency). Il dato `Revenue` coincide con i **ricavi di
+vendita**, non con i **totali ricavi** (€17.986 milioni): i due non sono
+intercambiabili. Restano 25 fatti dei concetti sorvegliati scartati per periodi
+o contesti non annuali/non idonei. Non sono state adottate scorciatoie per
+richiamare retroattivamente quei valori.
+
+Il job successivo aggiunge un **gate fail-closed**: verifica che l'hash del
+package corrisponda allo snapshot verificato, che tutti e tre i riferimenti
+numerici siano presenti e che non esistano valori discordanti tra i
+candidati confrontati. Cambiamenti della versione pubblicata comportano una
+nuova revisione documentale, non una promozione automatica. Anche se il gate è
+verde, `accounting_facts_verified` resta 0 e i dati non sono usati nel ranking.
+
+Fonti per il confronto: [pagina assembleare ufficiale Edison](https://www.edison.it/it/assemblea-degli-azionisti-marzo-2026),
+[PDF del consolidato FY2025, pagina 3](https://www.edison.it/sites/default/files/documents/relazione_finanziaria_integrata_annuale_2025_bilancio_consolidato_volume_2_1.pdf)
+e [GitHub Actions run di acquisizione ed estrazione](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41445131437).
