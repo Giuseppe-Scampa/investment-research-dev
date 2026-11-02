@@ -47,3 +47,34 @@ Il contatore `accounting_facts_verified` resta sempre **0** in questa milestone.
 Il modulo yfinance rimane esclusivamente locale, opt-in, `UNVERIFIED` e **non redistribuibile** nel workflow pubblico. Per eventuali finalisti, i dati dovranno avere licenza o autorizzazione specifica all'elaborazione prevista, identificativo ISIN e MIC, date, valuta, OHLCV, metodologia di aggiustamento (split/dividendi), fonte seconda per riconciliazione e prezzo effettivamente negoziabile fornito dal broker per il pre-trade. **Una tabella web o un CSV pubblico non implica diritti di download sistematico.**
 
 Criterio per una futura integrazione: due livelli separati (`RESEARCH_UNVERIFIED_LOCAL` e `LICENSED_VALIDATED_SOURCE`), senza promuovere automaticamente il primo al secondo. Finché non esiste documentazione di diritti d'uso e corporate action, il prezzo resta un candidato da revisionare e non è utilizzabile per una raccomandazione operativa.
+
+
+## Revisione indipendente — controllo di ambiguità, 2 novembre 2026
+
+I contesti XBRL con ID duplicato sono rifiutati **anche quando uno dei contesti
+sarebbe stato escluso** per periodo, dimensione, entità o formato. La regola
+non usa soltanto gli ID dei contesti selezionati.
+
+Un medesimo indicatore operativo (`REVENUE`) può presentarsi con più concetti IFRS
+standard (`Revenue`, `RevenueFromContractsWithCustomers`). La loro mappatura
+non ne prova l'equivalenza contabile: se gli importi differiscono, il report
+contiene `conflicting_metrics=["REVENUE"]` e
+`metric_review.REVENUE.status=CROSS_CONCEPT_VALUE_CONFLICT_REVIEW_REQUIRED`.
+Se gli importi coincidono, permane `MULTIPLE_CONCEPTS_SAME_VALUE_SCOPE_REVIEW_REQUIRED`.
+Anche più importi discordanti all'interno di un solo concetto vengono segnalati.
+
+Nel CSV di revisione **tutte le righe candidate rimangono visibili** con
+`metric_review_status` e `candidate_concepts_for_metric`; il campo
+`manual_selected_concept` è intenzionalmente vuoto. La scelta del concetto
+richiede confronto con il prospetto, pagina e ambito contabile, annotando
+`manual_selection_rationale`. Il motore non sceglie mai automaticamente e
+il numero di fondamentali verificati resta zero.
+
+### Validazione reale ancora aperta
+
+Fonte ufficiale di test: bilancio consolidato Edison 2025 in ESEF ZIP e relativo
+PDF di bilancio, disponibili nella pagina assembleare di marzo 2026:
+https://www.edison.it/it/assemblea-degli-azionisti-marzo-2026 .
+Il documento deve essere scaricato localmente e sottoposto a `eu-filings
+--extract-ifrs`; il successo dei test con fixture non costituisce un collaudo
+su emittenti reali. Conservare ZIP e PDF fuori dal GitHub pubblico.

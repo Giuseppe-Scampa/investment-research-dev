@@ -235,3 +235,59 @@ def test_legacy_transformation_registry_is_explicit_and_limited():
     result=extract_ixbrl_ifrs_candidates(xml,date(2025,12,31))
     assert result['candidate_count']==1
     assert result['facts'][0]['value_eur']=='1200500000.0'
+
+
+def test_duplicate_context_rejected_even_if_first_would_be_ignored():
+    """Claude review: invalid/dimensioned context cannot mask a repeated ID."""
+    first = '<xbrli:context id="FY25"><xbrli:entity><xbrli:identifier scheme="http://standards.iso.org/iso/17442">12345678901234567890</xbrli:identifier><xbrli:segment><xbrli:explicitMember>foo</xbrli:explicitMember></xbrli:segment></xbrli:entity><xbrli:period><xbrli:startDate>2025-01-01</xbrli:startDate><xbrli:endDate>2025-12-31</xbrli:endDate></xbrli:period></xbrli:context>'
+    xml=xhtml(fact()).replace(b'<xbrli:context id="FY25">',first.encode()+b'<xbrli:context id="FY25">',1)
+    with pytest.raises(ValueError,match='duplicated XBRL context ID'):
+        extract_ixbrl_ifrs_candidates(xml,date(2025,12,31))
+
+
+def test_duplicate_context_rejected_even_if_out_of_period():
+    xml=xhtml(fact()).replace(b'</ix:resources>',
+        b'<xbrli:context id="FY24"/><' + b'/ix:resources>')
+    with pytest.raises(ValueError,match='duplicated XBRL context ID'):
+        extract_ixbrl_ifrs_candidates(xml,date(2025,12,31))
+
+
+def test_cross_concept_metric_conflict_is_visible_and_unselected(tmp_path):
+    xml=xhtml(fact('ifrs-full:Revenue',value='100',scale='6'),
+              fact('ifrs-full:RevenueFromContractsWithCustomers',value='90',scale='6'))
+    data=extract_ixbrl_ifrs_candidates(xml,date(2025,12,31))
+    assert len(data['facts']) == 2
+    assert data['conflicting_concepts'] == [] # neither individual concept duplicated
+    assert data['conflicting_metrics'] == ['REVENUE']
+    assert data['metric_review']['REVENUE']['status']=='CROSS_CONCEPT_VALUE_CONFLICT_REVIEW_REQUIRED'
+    assert data['metric_review']['REVENUE']['selected_concept'] is None
+    assert data['metric_review']['REVENUE']['candidate_concepts']==[
+        'Revenue','RevenueFromContractsWithCustomers']
+    root,spec=fixture(tmp_path,xml)
+    report=audit_eu_reports(spec,root,extract_ifrs=True)
+    out=write_eu_report(report,tmp_path/'out')
+    import csv
+    with (out/'EU_IFRS_CANDIDATES_REVIEW.csv').open() as stream:
+        rows=list(csv.DictReader(stream))
+    assert len(rows)==2
+    assert {row['value_eur'] for row in rows}=={'100000000','90000000'}
+    assert {row['metric_review_status'] for row in rows}=={'CROSS_CONCEPT_VALUE_CONFLICT_REVIEW_REQUIRED'}
+    assert all(row['manual_selected_concept']=='' for row in rows)
+    assert all(row['manual_selection_rationale']=='' for row in rows)
+    assert report['accounting_facts_verified']==0
+
+
+def test_equal_numbers_different_concepts_still_need_scope_review():
+    r=extract_ixbrl_ifrs_candidates(xhtml(fact('ifrs-full:Revenue',value='100',scale='6'),
+        fact('ifrs-full:RevenueFromContractsWithCustomers',value='100',scale='6')),date(2025,12,31))
+    assert r['conflicting_metrics']==[]
+    assert r['metric_review']['REVENUE']['status']=='MULTIPLE_CONCEPTS_SAME_VALUE_SCOPE_REVIEW_REQUIRED'
+    assert r['metric_review']['REVENUE']['selected_concept'] is None
+
+
+def test_duplicate_same_concept_conflicting_values_requires_review():
+    r=extract_ixbrl_ifrs_candidates(xhtml(fact(value='100',scale='6'),fact(value='200',scale='6')),
+                                    date(2025,12,31))
+    assert r['conflicting_concepts']==['REVENUE:Revenue']
+    assert r['conflicting_metrics']==['REVENUE']
+    assert r['metric_review']['REVENUE']['status']=='DUPLICATE_CONCEPT_VALUE_CONFLICT_REVIEW_REQUIRED'

@@ -124,11 +124,16 @@ def _parse_tree(content: bytes):
 
 def _contexts(root, fiscal_year_end: date):
     contexts = {}
+    seen_ids = set()
     identities = set()
     for node in root.iter(f'{{{XBRLI}}}context'):
         context_id = node.get('id')
-        if not context_id or context_id in contexts:
+        # IDs must be globally unique, including contexts excluded for their
+        # date, period type, reporting entity or dimensional segments. Checking
+        # only accepted contexts allows ambiguous references to slip through.
+        if not context_id or context_id in seen_ids:
             raise ValueError('Missing or duplicated XBRL context ID')
+        seen_ids.add(context_id)
         identifier = node.find(f'./{{{XBRLI}}}entity/{{{XBRLI}}}identifier')
         if identifier is None or not (identifier.text or '').strip() or not identifier.get('scheme'):
             continue
@@ -215,12 +220,39 @@ def extract_ixbrl_ifrs_candidates(content: bytes, fiscal_year_end: date) -> dict
     for fact in selected:
         grouped[(fact['metric'],fact['concept'])].add(fact['value_eur'])
     conflicts = sorted(f'{metric}:{concept}' for (metric,concept),values in grouped.items() if len(values)>1)
+    # Two *different* IFRS concepts may map to one display metric yet differ
+    # in scope (e.g. Revenue versus RevenueFromContractsWithCustomers). Do not
+    # silently choose either, even if their displayed numbers happen to match.
+    by_metric = defaultdict(lambda: {'values':set(), 'concepts':set()})
+    for fact in selected:
+        by_metric[fact['metric']]['values'].add(Decimal(fact['value_eur']))
+        by_metric[fact['metric']]['concepts'].add(fact['concept'])
+    metric_review = {}
+    for metric, group in sorted(by_metric.items()):
+        concepts = sorted(group['concepts'])
+        if len(group['values']) > 1:
+            status = ('CROSS_CONCEPT_VALUE_CONFLICT_REVIEW_REQUIRED' if len(concepts) > 1
+                      else 'DUPLICATE_CONCEPT_VALUE_CONFLICT_REVIEW_REQUIRED')
+        elif len(concepts) > 1:
+            status = 'MULTIPLE_CONCEPTS_SAME_VALUE_SCOPE_REVIEW_REQUIRED'
+        else:
+            status = 'SINGLE_CONCEPT_REQUIRES_STATEMENT_VERIFICATION'
+        metric_review[metric] = {
+            'status': status,
+            'candidate_concepts': concepts,
+            'selected_concept': None,
+            'distinct_value_count': len(group['values']),
+        }
+    conflicting_metrics = sorted(k for k,v in metric_review.items()
+                                 if 'CONFLICT' in v['status'])
     selected.sort(key=lambda f:(f['metric'],f['concept'],f['context_id'],f['value_eur']))
     return {'status':('IFRS_CANDIDATES_REQUIRE_HUMAN_TAXONOMY_AND_AUDIT_REVIEW' if selected
                        else 'NO_SUPPORTED_UNDIMENSIONED_EUR_IFRS_CANDIDATES'),
             'reporting_entity_identifier':(identity[1] if identity else None),
             'reporting_entity_scheme':(identity[0] if identity else None),
             'candidate_count':len(selected), 'conflicting_concepts':conflicts,
+            'conflicting_metrics':conflicting_metrics,
+            'metric_review':metric_review,
             'rejected_fact_reasons':dict(sorted(rejected.items())),
             'facts':selected, 'verified_fundamental_count':0,
             'limitations':['Only explicitly supported IFRS standard concepts, EUR units and current-year dimensionless duration contexts.',

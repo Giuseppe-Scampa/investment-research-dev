@@ -284,16 +284,23 @@ def write_eu_report(report: dict, output: Path) -> Path:
         review_fields = ['document_id','issuer_name','document_sha256','source_url_declared',
                          'metric','concept','value_eur','period_start','period_end',
                          'context_id','unit_id','transformation','decimals',
+                         'metric_review_status','candidate_concepts_for_metric',
+                         'manual_selected_concept','manual_selection_rationale',
                          'human_review_status','report_page_to_check','accounting_scope_to_check']
         review = io.StringIO(newline='')
         writer = csv.DictWriter(review,fieldnames=review_fields,lineterminator='\n')
         writer.writeheader()
         for row in report['results']:
             for fact in row.get('ixbrl',{}).get('facts',[]):
+                review_state = row['ixbrl'].get('metric_review',{}).get(fact['metric'],{})
                 writer.writerow({**fact,'document_id':row['id'],
                     'issuer_name':row['issuer_name'],
                     'document_sha256':row['document_sha256'],
                     'source_url_declared':row['source_url_declared'],
+                    'metric_review_status':review_state.get('status','REVIEW_REQUIRED'),
+                    'candidate_concepts_for_metric':';'.join(review_state.get('candidate_concepts',[])),
+                    'manual_selected_concept':'',
+                    'manual_selection_rationale':'',
                     'human_review_status':'UNREVIEWED_NOT_CERTIFIED',
                     'report_page_to_check':'',
                     'accounting_scope_to_check':'UNVERIFIED'})
