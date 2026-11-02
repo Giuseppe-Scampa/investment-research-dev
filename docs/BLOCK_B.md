@@ -331,3 +331,13 @@ comparable market valuations across sectors.
 - Symbol validation rejects dot-segment names (including `..`) before constructing local cache paths. GitHub Actions used by the public workflows are pinned to reviewed release SHAs.
 - No permission to redistribute Yahoo price history is assumed. Commercial or public reporting with market-derived values needs a suitable provider agreement and legal/terms review; verified SEC annual fundamentals are not a substitute for market-price verification.
 - The real fiscal decision workstream (existing holdings, documented broker tax basis, same-account wallet balance, and fiscal recognition dates) remains **private and independent of M3/M4**. No personal financial data may be committed to this public repository or attached to public workflow artifacts.
+
+## Milestone: EU ESEF document provenance and rights-gated price import
+
+- `investresearch-b eu-filings --spec ... --output ...` verifies *local* ESEF ZIP/XHTML or annual PDF bytes, SHA-256, public HTTPS source references, and as-of publication/retrieval dates. It rejects unsafe local paths, symlinks, ZIP traversal and oversized archives. **No accounting values are extracted or ranked.**
+- `MANUAL_AUTHORIZED_LOCAL_OHLCV_UNVERIFIED` is a new **local-only** alternative to Yahoo/Stooq imports. It requires the explicit `LOCAL_RESEARCH_RIGHTS_ASSERTED_NOT_VERIFIED` attestation, collection date, matching SHA-256 and declared HTTPS provenance. This assertion does **not** establish a valid license: verify your rights independently. Outputs remain unverified and never trade-ready.
+- **All non-synthetic source imports now require a matching SHA-256.** This closes an integrity gap in the previous optional-hash path.
+- Existing public Actions and their synthetic-only artifact allowlists remain unchanged. No document files or raw prices are uploaded.
+- European financial-statement figures will require future ESEF/iXBRL validation of taxonomy, contexts, units, restatements and audit provenance; European issuer identity/ISIN mapping cannot be inferred from a ticker.
+
+Detailed input schemas and operating commands: [EU_EVIDENCE_AND_MARKET_RIGHTS.md](EU_EVIDENCE_AND_MARKET_RIGHTS.md).
