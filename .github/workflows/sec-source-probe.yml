@@ -127,10 +127,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 97b26499373297fadbbada027205ae0c5849bc69
+          ref: c70dbea756f8e20baadfe5bccc6d018d4f2f9262
           persist-credentials: false
       - name: Confirm immutable source ref
-        run: test "$(git rev-parse HEAD)" = '97b26499373297fadbbada027205ae0c5849bc69'
+        run: test "$(git rev-parse HEAD)" = 'c70dbea756f8e20baadfe5bccc6d018d4f2f9262'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
