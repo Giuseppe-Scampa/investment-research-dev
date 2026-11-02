@@ -123,15 +123,23 @@ def test_yahoo_without_split_allows_unverified_research_ranking(tmp_path):
     assert row['trade_ready'] is False
 
 
-def test_secret_workflow_is_manual_and_never_distributes_downloads():
+def test_public_workflows_do_not_publish_yahoo_price_history():
+    """No public CI job may download and redistribute market-price files."""
     root=Path(__file__).resolve().parents[1]
-    yaml=(root/'.github/workflows/manual-source-probe.yml').read_text()
-    assert 'workflow_dispatch:' in yaml
-    assert 'pull_request:' not in yaml and 'push:' not in yaml
-    assert 'secrets.SEC_RESEARCH_CONTACT' in yaml
-    assert 'upload-artifact' not in yaml
-    assert 'acknowledge_yahoo_personal_terms' in yaml
-    assert 'STOOQ_FREE_KEY' not in yaml
+    workflows=root/'.github/workflows'
+    assert not (workflows/'refresh-manual.yml').exists()
+    assert not (workflows/'manual-source-probe.yml').exists()
+    manual=(workflows/'research.yml').read_text()
+    assert 'investresearch refresh' not in manual
+    assert 'refresh_history' not in manual
+    assert 'reports/generated/REPORT.md' in manual
+    assert 'path: reports/generated/' not in manual
+    assert 'reports/generated/provider_history_unverified.csv' in manual  # never allowed
+    ci=(workflows/'ci.yml').read_text()
+    assert 'investresearch refresh' not in ci
+    assert 'path: reports/generated/' not in ci
+    assert 'data/research/demo' in ci
+    # The local probe script remains opt-in, but is not automatically invoked on Actions.
     script=(root/'tools/smoke_free_sources.py').read_text()
     assert 'SEC_RESEARCH_CONTACT' in script
     assert 'print(contact)' not in script
