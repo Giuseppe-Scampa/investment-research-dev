@@ -156,5 +156,14 @@ jobs:
           assert report['annual_evidence_count']>=2, 'Insufficient SEC annual evidence; review feed and parser'
           assert all(row.get('source_url','').startswith('https://data.sec.gov/api/xbrl/companyfacts/') for row in report['results'] if row.get('source_url'))
           print(f"SEC LIVE PILOT VERIFIED: {report['annual_evidence_count']}/4 annual profiles; {report['catalog_record_count']} catalog entries; NO PRICE RANKING")
-          print('Raw SEC snapshots and contact remain on the ephemeral runner; no artifacts uploaded.')
+          print('Raw SEC payload and contact remain on the ephemeral runner; only derived public research summaries may be archived.')
           PYTHON
+
+      - name: Archive only derived public SEC research summaries (no raw source)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sec-public-annual-research
+          path: ${{ runner.temp }}/sec-pilot/SEC_ANNUAL_RESEARCH.*
+          if-no-files-found: error
+          retention-days: 14
