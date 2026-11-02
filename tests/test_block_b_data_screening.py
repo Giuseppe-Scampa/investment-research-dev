@@ -178,7 +178,7 @@ def test_source_url_must_match_provider(tmp_path):
     spec={'mode':EXTERNAL,'as_of':'2026-11-01','assets':[{'id':'TEST','name':'test','venue':'XMIL',
         'currency':'EUR','sector':'Industry',
         'prices_source':{'provider':'YFINANCE_EOD_UNVERIFIED','path':str(raw),
-                         'source_url':'https://evil.example.org/not-yahoo'}}]}
+                         'source_url':'https://evil.example.org/not-yahoo','sha256':sha256_bytes(raw.read_bytes())}}]}
     with pytest.raises(ValueError,match='Yahoo Finance'):
         build_bundle(spec,tmp_path/'bundle')
 
@@ -277,9 +277,9 @@ def test_sec_bundle_rejects_mismatched_company_cik(tmp_path):
         'id':'APPLE_EXAMPLE','name':'test','asset_type':'EQUITY',
         'venue':'XNAS','currency':'USD','sec_cik':'0000123456',
         'prices_source':{'provider':'YFINANCE_EOD_UNVERIFIED','path':str(prices),
-                         'source_url':'https://finance.yahoo.com/quote/AAPL/history/'},
+                         'source_url':'https://finance.yahoo.com/quote/AAPL/history/','sha256':sha256_bytes(prices.read_bytes())},
         'fundamentals_source':{'provider':'SEC_COMPANYFACTS','path':str(sec),
-            'source_url':'https://data.sec.gov/api/xbrl/companyfacts/CIK0000123456.json'}
+            'source_url':'https://data.sec.gov/api/xbrl/companyfacts/CIK0000123456.json','sha256':sha256_bytes(sec.read_bytes())}
     }]}
     with pytest.raises(ValueError,match='CIK does not match'):
         build_bundle(spec,tmp_path/'bundle')
@@ -297,7 +297,7 @@ def test_external_market_dataset_not_trade_ready_even_if_ranked(tmp_path):
         'currency':'EUR','asset_type':'EQUITY','sector':'Industry','oil_exposure':'none',
         'prices_source':{'provider':'YFINANCE_EOD_UNVERIFIED','path':str(raw),
             'source_url':'https://finance.yahoo.com/quote/TEST.MI/history/',
-            'retrieved_at_utc':'2026-11-01T08:00:00+00:00'}}]}
+            'sha256':sha256_bytes(raw.read_bytes()),'retrieved_at_utc':'2026-11-01T08:00:00+00:00'}}]}
     build_bundle(spec,tmp_path/'external')
     result=screen(tmp_path/'external')
     assert result['ranked_count']==1

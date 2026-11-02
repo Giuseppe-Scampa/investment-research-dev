@@ -12,12 +12,14 @@ import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from urllib.parse import urlsplit
 from .research_sources import (MAX_BYTES, SEC_HOST, ECB_URL, ECB_CSV_URL, YAHOO_HISTORY_URL, YFINANCE, sha256_bytes, parse_ohlcv, parse_ecb,
                                parse_sec_fundamentals)
 from .quality import valid_isin
 
 SYNTHETIC = 'SYNTHETIC_DEMONSTRATION_NOT_MARKET_DATA'
 EXTERNAL = 'EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE'
+MANUAL_OHLCV = 'MANUAL_AUTHORIZED_LOCAL_OHLCV_UNVERIFIED'
 
 
 def _positive(x, *, zero_ok=False):
@@ -90,7 +92,13 @@ def _get_source_bytes(meta:dict):
     raw_path=Path(meta['path']).expanduser()
     payload=raw_path.read_bytes()
     if not payload or len(payload)>MAX_BYTES: raise ValueError('Empty or oversized input')
-    if meta.get('sha256') and sha256_bytes(payload)!=meta['sha256']:
+    provider=meta['provider']
+    is_synthetic=provider.startswith('SYNTHETIC_')
+    claimed_hash=meta.get('sha256')
+    if not is_synthetic and (not isinstance(claimed_hash,str) or
+                             not re.fullmatch(r'[0-9a-f]{64}',claimed_hash)):
+        raise ValueError('External source requires a complete declared SHA-256')
+    if claimed_hash and sha256_bytes(payload)!=claimed_hash:
         raise ValueError('Source hash differs from declared snapshot; fail closed')
     source_url=str(meta.get('source_url',''))
     if meta['provider']=='SEC_COMPANYFACTS' and not source_url.startswith(SEC_HOST):
@@ -100,7 +108,18 @@ def _get_source_bytes(meta:dict):
     if meta['provider']==YFINANCE:
         if not re.fullmatch(r'https://finance\.yahoo\.com/quote/[A-Za-z0-9%._^=\-]{1,100}/history/',source_url):
             raise ValueError('Unverified price feed does not match Yahoo Finance disclosure URL')
-    if not source_url.startswith('https://') and meta['provider'] not in ('SYNTHETIC_PRICES','SYNTHETIC_FUNDAMENTALS','SYNTHETIC_FX','SYNTHETIC_EVENTS'):
+    if meta['provider']==MANUAL_OHLCV:
+        # Attestation is never a claim that the software independently checked
+        # the provider license. No automatic download or public redistribution.
+        if meta.get('usage_attestation')!='LOCAL_RESEARCH_RIGHTS_ASSERTED_NOT_VERIFIED':
+            raise ValueError('Manual price input requires explicit local-use rights attestation')
+        if not meta.get('retrieved_at_utc'):
+            raise ValueError('Manual price input requires collection provenance timestamp')
+        parsed=urlsplit(source_url)
+        if (parsed.scheme!='https' or not parsed.hostname or parsed.username or
+                parsed.password or parsed.fragment or parsed.hostname.lower() in ('localhost','127.0.0.1')):
+            raise ValueError('Manual OHLCV requires a declared HTTPS provider URL')
+    if not source_url.startswith('https://') and not is_synthetic:
         raise ValueError('External source requires HTTPS provenance URL')
     return payload
 
@@ -162,7 +181,7 @@ def build_bundle(spec:dict, output:Path):
         if mode==EXTERNAL and source['provider'].startswith('SYNTHETIC'):
             raise ValueError('Synthetic prices cannot be promoted to external research')
         payload=_get_source_bytes(source)
-        if source['provider']==YFINANCE:
+        if source['provider'] in (YFINANCE, MANUAL_OHLCV):
             records=parse_ohlcv(payload,as_of)
         elif source['provider']=='SYNTHETIC_PRICES' and mode==SYNTHETIC:
             records=parse_normalized_prices(payload,as_of)
@@ -176,9 +195,12 @@ def build_bundle(spec:dict, output:Path):
         source_note={'provider':source['provider'],'source_url':source.get('source_url',''),
                      'retrieved_at_utc':source.get('retrieved_at_utc'),
                      'raw_sha256':sha256_bytes(payload),
-                     'price_basis':source.get('price_basis','UNVERIFIED_UNADJUSTED_CLOSE'),
+                     'price_basis':('MANUAL_CLOSE_UNADJUSTED_NOT_TOTAL_RETURN' if source['provider']==MANUAL_OHLCV
+                                    else source.get('price_basis','UNVERIFIED_UNADJUSTED_CLOSE')),
                      'split_dates':source.get('split_dates',[]),
                      'data_warning':'Not an executable bid/ask quote or total-return price'}
+        if source['provider']==MANUAL_OHLCV:
+            source_note['usage_rights_status']='USER_ASSERTED_LOCAL_ONLY_NEVER_VERIFIED_BY_ENGINE'
         entry['prices']={**_write_checked(output,f'prices/{uid}.csv',_csv_bytes(records,['date','close','volume'])),**source_note}
         fmeta=row.get('fundamentals_source')
         if fmeta:
