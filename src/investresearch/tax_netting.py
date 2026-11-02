@@ -19,6 +19,8 @@ def net_realizations(realizations, wallets, account_id, year, regime='amministra
     compensable_eur (or compensable magnitude for loss) and tax_rate.
     The full raw tax result is retained in individual position results.
     """
+    if regime != 'amministrato':
+        raise ValueError('Tax netting supports only risparmio amministrato; dichiarativo is not modeled')
     dates = defaultdict(list)
     for rec in realizations:
         day = date.fromisoformat(rec['realization_date'])
@@ -119,5 +121,7 @@ def net_realizations(realizations, wallets, account_id, year, regime='amministra
         'unresolved_tax_positions':sorted(set(unresolved)),
         'timeline':timeline,
         'fiscal_status':'INCOMPLETE' if unresolved else 'ESTIMATED_NOT_CERTIFIED',
-        'note':'Order follows supplied illustrative realization dates; no broker fiscal date assumed.',
+        'loss_priority_policy':'CURRENT_YEAR_LOSSES_BEFORE_PRIOR_WALLET_ASSUMED',
+        'loss_priority_verification':'UNVERIFIED_BROKER_PROCESSING_RULE',
+        'note':'Loss priority and same-day grouping are scenario assumptions requiring fiscal validation; chronology is illustrative, not broker recognition.',
     }

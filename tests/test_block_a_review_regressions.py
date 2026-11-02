@@ -201,3 +201,63 @@ def test_netting_with_old_wallet_and_current_year_loss_first():
     assert result['wallet']['allocations']==[{'vintage':2022,'used_eur':'200.00'}]
     # No mutation of input wallet (repeatability).
     assert wallets[0]['remaining_eur']=='3300'
+
+
+def test_declared_regime_is_not_silently_treated_as_administered():
+    c = _fixture()
+    c['tax_regime'] = 'dichiarativo'
+    with pytest.raises(ValueError, match='only risparmio amministrato'):
+        evaluate_case(c, FiscalRegistry.load(FISCAL))
+    with pytest.raises(ValueError, match='only risparmio amministrato'):
+        net_realizations([_event('2026-11-02', 100)], [], 'SYNTHETIC_PRIMARY', 2026,
+                         regime='dichiarativo')
+
+
+def test_hypothetical_realization_date_defaults_to_last_venue_session():
+    c = _fixture()  # 1 November 2026 falls on a Sunday.
+    result = evaluate_case(c, FiscalRegistry.load(FISCAL))
+    for p in result['B_REALIZE_EXISTING']['positions']:
+        assert p['realization_date'] == '2026-10-30'
+        assert p['realization_date_provenance'] == 'HYPOTHETICAL_DEFAULT_LAST_VENUE_SESSION'
+    assert result['C_NEW_INVESTMENT']['realization_date'] == '2026-10-30'
+    assert result['C_NEW_INVESTMENT']['realization_date_provenance'] == 'HYPOTHETICAL_DEFAULT_LAST_VENUE_SESSION'
+    # Even explicit hypothetical dates must correspond to a supported session.
+    c['existing_positions'][0]['realization_date'] = '2026-11-01'
+    with pytest.raises(ValueError, match='trading session'):
+        evaluate_case(c, FiscalRegistry.load(FISCAL))
+    c = _fixture()
+    c['new_investment']['realization_date'] = '2026-11-01'
+    with pytest.raises(ValueError, match='trading session'):
+        evaluate_case(c, FiscalRegistry.load(FISCAL))
+    c = _fixture()
+    del c['new_investment']['venue']
+    with pytest.raises(ValueError, match='requires a known venue'):
+        evaluate_case(c, FiscalRegistry.load(FISCAL))
+
+
+@pytest.mark.parametrize('bad_price', ['0', '-0.1', 'NaN', 'Infinity', '-Infinity'])
+def test_quote_nonpositive_or_nonfinite_is_blocked(bad_price):
+    inst = [{'id':'TEST','isin':'FR0000120628','exchange':'Euronext Paris',
+             'fiscal_status':'eligible','oil_exposure':'none'}]
+    quote = [{'id':'TEST','price':bad_price,'market_date':'2026-10-30',
+              'source_url':'https://example.org','volume':'100'}]
+    statuses = audit(inst, quote, date(2026, 11, 1))
+    assert any(s.gate == 'quote' and s.severity == 'BLOCKED' for s in statuses)
+
+
+@pytest.mark.parametrize('bad_volume', ['-1', 'NaN', 'Infinity', 'invalid'])
+def test_supplied_bad_quote_volume_is_blocked(bad_volume):
+    inst = [{'id':'TEST','isin':'FR0000120628','exchange':'Euronext Paris',
+             'fiscal_status':'eligible','oil_exposure':'none'}]
+    quote = [{'id':'TEST','price':'12.30','market_date':'2026-10-30',
+              'source_url':'https://example.org','volume':bad_volume}]
+    statuses = audit(inst, quote, date(2026, 11, 1))
+    assert any(s.gate == 'volume' and s.severity == 'BLOCKED' for s in statuses)
+
+
+def test_dashboard_handles_missing_scenarios_and_decision_gracefully(tmp_path):
+    html_report(tmp_path)
+    output = (tmp_path/'dashboard.html').read_text(encoding='utf-8')
+    assert '<thead>' in output and '</thead>' in output
+    assert '<tbody></tbody>' in output
+    assert '<script' not in output
