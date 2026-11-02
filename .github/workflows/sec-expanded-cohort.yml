@@ -21,7 +21,7 @@ jobs:
       - name: Checkout exact reviewed research implementation
         uses: actions/checkout@v4
         with:
-          ref: 764322cd6144630da924f9cd42900f493951fb27
+          ref: 3cd59f47e65e440e59d849e1f5ccebee14038a1c
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
