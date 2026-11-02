@@ -110,7 +110,7 @@ def _history_quality(dated_prices, venue):
     prices=[x[1] for x in last]
     moves=[abs(prices[i]/prices[i-1]-1) for i in range(1,len(prices))]
     maximum=max(moves)
-    if maximum>Decimal('.60'):
+    if maximum>Decimal('.40'):
         return {'verified':False,'reason':'UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP',
                 'missing_sessions':0,'largest_daily_move':round(float(maximum),6)}
     return {'verified':True,'reason':None,'missing_sessions':0,

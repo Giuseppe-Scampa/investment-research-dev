@@ -86,6 +86,8 @@ def test_history_gate_detects_missing_sessions_and_extreme_moves():
     assert result['reason']=='MISSING_OR_INVALID_TRADING_SESSIONS'
     jump=data[:];jump[-5]=(jump[-5][0],jump[-5][1]*Decimal(2),jump[-5][2])
     assert _history_quality(jump,'XMIL')['reason']=='UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP'
+    split=data[:];split[-5]=(split[-5][0],split[-5][1]/Decimal(2),split[-5][2])
+    assert _history_quality(split,'XMIL')['reason']=='UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP'
 
 
 def test_full_screen_no_rank_for_missing_bar_and_future_collection(tmp_path):

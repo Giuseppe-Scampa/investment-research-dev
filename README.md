@@ -57,7 +57,7 @@ La provenienza, i requisiti dei provider e gli esempi d'importazione sono in
 ### Blocco B — catalogo società SEC e controlli data quality
 
 Nel branch di sviluppo è disponibile il catalogo SEC per costruire fino a
-10.000 candidati *non classificati*, `investresearch-b universe`, a partire da
+20.000 candidati (30.000 limite esplicito) *non classificati*, `investresearch-b universe`, a partire da
 un download **esplicito** dell'elenco ufficiale SEC. È una discovery US-only,
 non una shortlist finanziaria. La graduatoria richiede storici completi,
 provenienza verificabile, data di acquisizione coerente con `as_of` e controlli

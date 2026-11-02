@@ -188,7 +188,7 @@ Asia e altre classi di attivo servono cataloghi ulteriori e mapping documentato.
 - Le 61 osservazioni devono coincidere con **61 sedute consecutive** del
   mercato indicato, non semplicemente 61 righe. Buchi, sedute fittizie e
   calendari non supportati impediscono il punteggio.
-- Movimenti giornalieri assoluti oltre il **60%** sono uno *stop di revisione*
+- Movimenti giornalieri assoluti oltre il **40%** sono uno *stop di revisione*
   (possibile split, prezzo corrotto o evento reale): non vengono corretti
   automaticamente, ma richiedono corporate action documentate. La soglia è
   cautelativa e NON una regola universale di trading.
@@ -223,3 +223,10 @@ un controllo di freschezza (ultima osservazione non oltre 14 giorni prima
  della data corrente) e rifiuta esplicitamente feed formalmente corretti ma
  obsoleti. Lo smoke live deve mostrare un'ultima osservazione recente e non
  solo la validità del parsing. Nessun fallback nascosto o servizio a pagamento.
+
+Per default `--limit` considera fino a **20.000** candidati, in modo da
+non tagliare alfabeticamente l'elenco delle associazioni ufficiali; scegliere
+un limite inferiore riduce deliberatamente la copertura e non rappresenta un
+campione statisticamente neutro. Il dataset effettivo viene sempre tracciato
+con hash e conteggi. Un cambio prezzo del 50% (possibile split 2:1) viene ora
+intercettato dal gate del 40%; serve revisione prima di qualsiasi ranking.

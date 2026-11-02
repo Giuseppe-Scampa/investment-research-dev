@@ -44,13 +44,13 @@ def parse_sec_tickers(payload: bytes):
     return sorted(result,key=lambda x:(x['ticker'],x['cik']))
 
 
-def write_sec_candidates(raw_path:Path, metadata_path:Path, as_of:date, output:Path, *, limit=1000):
+def write_sec_candidates(raw_path:Path, metadata_path:Path, as_of:date, output:Path, *, limit=20000):
     """Generate an audit-ready, *unranked* US discovery catalog from cached bytes.
 
     Require a collection snapshot retrieved no later than as_of: current SEC
     associations cannot serve as a historical survivorship-free universe.
     """
-    if not 1<=limit<=10000:raise ValueError('Universe limit must be between 1 and 10000')
+    if not 1<=limit<=30000:raise ValueError('Universe limit must be between 1 and 30000')
     raw_path=Path(raw_path); metadata_path=Path(metadata_path)
     payload=raw_path.read_bytes()
     meta=json.loads(metadata_path.read_text(encoding='utf-8'))

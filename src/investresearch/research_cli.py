@@ -25,7 +25,7 @@ def main(argv=None):
     u.add_argument('--raw',type=Path,required=True)
     u.add_argument('--metadata',type=Path,required=True)
     u.add_argument('--as-of',required=True)
-    u.add_argument('--limit',type=int,default=1000)
+    u.add_argument('--limit',type=int,default=20000)
     u.add_argument('--output',type=Path,required=True)
     c=sp.add_parser('collect',help='EXPLICIT NETWORK REQUEST, no paywall/provider fallback')
     c.add_argument('--provider',required=True,choices=['SEC_COMPANYFACTS','SEC_TICKERS','ECB_EUR_FX','STOOQ_EOD_UNVERIFIED'])
