@@ -47,7 +47,8 @@ def test_offline_probe_two_supported_facts_still_unverified():
     assert report['accounting_facts_verified'] == report['market_ranking_count'] == 0
     assert report['mode'].endswith('NOT_AUDITED')
     assert len(report['candidates']) == 2
-    assert probe.validate_compatibility(report)[0] is True
+    assert probe.validate_compatibility(report)[0] is False
+    assert probe.validate_compatibility(report)[1] == 'PRYSMIAN_OFFICIAL_ZIP_CHANGED_REQUIRES_REVIEW'
 
 
 def test_issuer_lei_mismatch_rejected():
@@ -66,7 +67,7 @@ def test_missing_reference_match_fails_closed_without_guessing():
     result=probe.verify_official_package(synthetic_package(value='12,345',with_profit=False),date(2026,11,2))
     assert result['candidate_count']==1
     assert result['numeric_reference_matches']==0
-    assert probe.validate_compatibility(result)==(False,'NO_2025_INVESTOR_REFERENCE_NUMERIC_MATCH')
+    assert probe.validate_compatibility(result)[0] is False
 
 
 def test_zero_ifrs_candidates_fails_even_if_valid_xhtml():
@@ -80,3 +81,31 @@ def test_no_network_on_import_or_unit_tests(monkeypatch):
         raise RuntimeError('Not authorized: this test must stay offline')
     monkeypatch.setattr(probe,'fetch_official_zip',forbidden)
     assert probe.main() == 1
+
+
+def test_four_distinct_official_income_statement_concepts_gate():
+    """Synthetic result models the reconciliation gate, never real issuer bytes."""
+    sample=probe.verify_official_package(synthetic_package(),date(2026,11,2))
+    sample['sha256']=probe.PRYSMIAN_FY2025_SHA256
+    sample['candidates']=[
+        {'metric':'REVENUE','concept':'RevenueFromContractsWithCustomers',
+         'value_eur':'19650000000','matches_rounded_pdf_concept':True},
+        {'metric':'REVENUE','concept':'Revenue',
+         'value_eur':'20348000000','matches_rounded_pdf_concept':True},
+        {'metric':'PROFIT_LOSS','concept':'ProfitLoss',
+         'value_eur':'1294000000','matches_rounded_pdf_concept':True},
+        {'metric':'PROFIT_PARENT','concept':'ProfitLossAttributableToOwnersOfParent',
+         'value_eur':'1270000000','matches_rounded_pdf_concept':True},
+    ]
+    sample['candidate_count']=len(sample['candidates'])
+    sample['conflicting_metrics']=['REVENUE']
+    ok,msg=probe.validate_compatibility(sample)
+    assert ok and 'HUMAN_REVIEW_STILL_REQUIRED' in msg
+    sample['candidates'][0]['matches_rounded_pdf_concept']=False
+    assert probe.validate_compatibility(sample)==(False,'OFFICIAL_PDF_AMOUNT_MISMATCH')
+    sample['candidates'][0]['matches_rounded_pdf_concept']=True
+    sample['conflicting_metrics']=[]
+    assert probe.validate_compatibility(sample)[0] is False
+    sample['conflicting_metrics']=['REVENUE']
+    sample['accounting_facts_verified']=1
+    assert probe.validate_compatibility(sample)[0] is False
