@@ -35,4 +35,21 @@ Run **Actions → Manual offline analysis (no paid API)** or CI. Actions only us
 
 ## Publication boundary
 
-This distribution is exported from an internal development snapshot, **without historical commits**, secrets, historical portfolio memos, broker-specific contract assumptions or billable AI workflow. It must be published to a **new empty GitHub repository**, not by making an older repository public: deleting current files does not erase the old commit history.
+This public development repository contains **synthetic cases only**, no historical commits from the private project, no private trading records and no billable AI workflow. Never import private case files or raw provider records with restricted redistribution rights into this public history.
+
+## Blocco B — fonti gratuite e screening verificabile (sviluppo)
+
+Il **Blocco B** aggiunge un percorso di ricerca separato da quello fiscale, con
+bundle locali verificati SHA-256, punteggi storici deterministici e un overlay
+fondamentale per le azioni. Per provare l'intera pipeline **senza rete**:
+
+```bash
+investresearch-b screen --bundle data/research/demo --output reports/generated/block_b
+# In alternativa: python -m investresearch.research_cli screen
+```
+
+Il dataset incluso contiene **esclusivamente dati sintetici**: i punteggi NON
+sono classifiche reali, previsioni né raccomandazioni. L'acquisizione live è
+**solo su comando esplicito** con limiti conservativi; nessuna API a pagamento.
+La provenienza, i requisiti dei provider e gli esempi d'importazione sono in
+[`docs/BLOCK_B.md`](docs/BLOCK_B.md). Nessun ordine viene trasmesso.

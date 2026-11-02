@@ -16,6 +16,7 @@ test = ["pytest>=8"]
 [project.scripts]
 investresearch = "investresearch.cli:main"
 investresearch-dashboard = "investresearch.dashboard:main"
+investresearch-b = "investresearch.research_cli:main"
 
 [tool.setuptools.packages.find]
 where=["src"]

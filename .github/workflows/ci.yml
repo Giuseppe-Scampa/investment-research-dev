@@ -24,6 +24,14 @@ jobs:
           test -s reports/generated/decision_comparison.json
           test -s reports/generated/decision_ledger.json
           test -s reports/generated/dashboard.html
+      - name: Offline Block B research (synthetic dataset only)
+        run: investresearch-b screen --bundle data/research/demo --output reports/generated/block_b
+      - name: Verify Block B deterministic artifacts
+        run: |
+          test -s reports/generated/block_b/BLOCK_B_SCREENING.json
+          test -s reports/generated/block_b/BLOCK_B_SCREENING.csv
+          test -s reports/generated/block_b/BLOCK_B_SCREENING.md
+          test -s reports/generated/block_b/block_b_dashboard.html
       - uses: actions/upload-artifact@v4
         with:
           name: offline-analysis
