@@ -323,3 +323,11 @@ records. Derived public-data reports can be retained temporarily as GitHub
 Actions artifacts. **Neither raw SEC payloads nor the contact email are
 published**. The SEC annual metrics are not an investment ranking or
 comparable market valuations across sectors.
+
+## Independent review hardening — 2 November 2026
+
+- The SEC cohort's previous 18/18 live result was verified with strict ticker/status/comparability assertions, rather than an always-true 0–18 bound. See the preserved historical GitHub Actions run. The cohort workflow that executed an unmerged branch with a secret has subsequently been **suspended from main** until reviewed code is promoted. Main retains an independent, inline SEC connectivity check with the contact available to the HTTP step only.
+- Yahoo/yfinance raw history is **local, opt-in, unverified research only**: the public `refresh-manual.yml` and duplicate `manual-source-probe.yml` workflows were removed. Public offline analysis and CI use allowlisted **synthetic-only** artifacts; neither executes a Yahoo download. Never upload generated market price CSV, provider cache, personal holdings, or restricted-license raw data to public Actions, commits or reports.
+- Symbol validation rejects dot-segment names (including `..`) before constructing local cache paths. GitHub Actions used by the public workflows are pinned to reviewed release SHAs.
+- No permission to redistribute Yahoo price history is assumed. Commercial or public reporting with market-derived values needs a suitable provider agreement and legal/terms review; verified SEC annual fundamentals are not a substitute for market-price verification.
+- The real fiscal decision workstream (existing holdings, documented broker tax basis, same-account wallet balance, and fiscal recognition dates) remains **private and independent of M3/M4**. No personal financial data may be committed to this public repository or attached to public workflow artifacts.
