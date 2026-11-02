@@ -83,3 +83,11 @@ bounded, explicit requests. It requires `SEC_RESEARCH_CONTACT` in the process
 environment (not in the repository) and produces **issuer coverage and net
 margin only**, **not** a real investment ranking. See `docs/BLOCK_B.md` for
 security, scope and local-only report instructions.
+
+### SEC — bounded expanded annual research cohort (new milestone)
+
+For an explicit, limited SEC evidence exercise (not a market ranking), use
+`investresearch-b sec-pilot --live-confirm --cohort config/sec_cohort_example.json`.
+The 18-ticker sample uses only public SEC records; comparable revenue growth is
+reported **only for same-accession prior-year annual observations**. It never
+inventories ISINs, prices or sector labels. See [SEC cohort methods](docs/SEC_COHORT.md).

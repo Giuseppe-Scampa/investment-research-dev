@@ -46,7 +46,7 @@ def _filing(tmp_path, cik='0000320193', *, income=200, revenue=1000,
 def test_parse_symbols_strict_and_bounded():
     assert parse_symbols(' aapl,msft,NVDA ') == ['AAPL','MSFT','NVDA']
     for bad in ['', 'AAPL,', 'AAPL,AAPL', 'AAPL;DROP', 'AAPL,../../x',
-                ','.join('A'+str(i) for i in range(9))]:
+                ','.join('A'+str(i) for i in range(25))]:
         with pytest.raises(ValueError):parse_symbols(bad)
 
 

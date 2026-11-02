@@ -323,3 +323,65 @@ def parse_sec_fundamentals(data: bytes, as_of: date):
             'source_filing_accession':accession,
             'revenue_filed_date':r[1].isoformat(), 'earnings_filed_date':n[1].isoformat(),
             'revenue_concept':r[3], 'earnings_concept':n[3], 'status':'SEC_ANNUAL_FILED_BY_AS_OF'}
+
+
+def parse_sec_annual_comparison(data: bytes, as_of: date, latest: dict) -> dict:
+    """Comparable preceding FY from the SAME SEC accession as the latest FY.
+
+    Companyfacts can contain later restatements and parallel revenue concepts.
+    Never combine annual periods from different accessions or concepts simply
+    because the fiscal year matches. Missing comparatives are explicit, not zero.
+    """
+    accession = latest.get('source_filing_accession')
+    if not accession:
+        return {'status':'NO_SEC_FILING_ACCESSION', 'previous_period_end':None}
+    facts = _sec_facts(data, as_of)
+    current_end = date.fromisoformat(latest['period_end'])
+    choices = []
+    for name, tag in [('revenue', latest['revenue_concept']),
+                      ('net_income', latest['earnings_concept'])]:
+        found = {}
+        for r in facts.get(tag, {}).get('units', {}).get('USD', []):
+            if r.get('accn') != accession or r.get('form') not in ('10-K','10-K/A') or r.get('fp') != 'FY':
+                continue
+            try:
+                end = date.fromisoformat(r['end'])
+                start = date.fromisoformat(r['start'])
+                filed = date.fromisoformat(r['filed'])
+                val = Decimal(str(r['val']))
+            except (ValueError, KeyError, TypeError, InvalidOperation):
+                continue
+            if (filed > as_of or end > filed or end >= current_end
+                    or not 300 <= (end-start).days <= 390
+                    or not 300 <= (current_end-end).days <= 430
+                    or not val.is_finite()):
+                continue
+            found.setdefault(end, set()).add(val)
+        choices.append(found)
+    shared = sorted(set(choices[0]) & set(choices[1]), reverse=True)
+    if not shared:
+        return {'status':'PRIOR_FY_NOT_COMPARABLE_SAME_FILING', 'previous_period_end':None}
+    end = shared[0]
+    if len(choices[0][end]) != 1 or len(choices[1][end]) != 1:
+        return {'status':'CONFLICTING_PRIOR_FY_FACTS', 'previous_period_end':end.isoformat()}
+    previous_revenue = next(iter(choices[0][end]))
+    previous_income = next(iter(choices[1][end]))
+    latest_revenue = Decimal(latest['revenue_usd'])
+    latest_income = Decimal(latest['net_income_usd'])
+    if not previous_revenue.is_finite() or previous_revenue <= 0:
+        return {'status':'INVALID_PREVIOUS_FY_REVENUE', 'previous_period_end':end.isoformat()}
+    def pct(n):
+        return str(n.quantize(Decimal('0.01')))
+    return {
+        'status':'COMPARABLE_SAME_SEC_FILING',
+        'previous_period_end':end.isoformat(),
+        'previous_revenue_usd':str(previous_revenue),
+        'previous_net_income_usd':str(previous_income),
+        'previous_net_margin_pct':pct(previous_income/previous_revenue*100),
+        'revenue_yoy_pct':pct((latest_revenue/previous_revenue-1)*100),
+        'net_income_yoy_pct':(pct((latest_income/previous_income-1)*100)
+                              if previous_income > 0 and latest_income >= 0 else None),
+        'net_income_change_usd':str(latest_income-previous_income),
+        'net_margin_change_pp':pct((latest_income/latest_revenue-previous_income/previous_revenue)*100),
+        'source_filing_accession':accession,
+    }

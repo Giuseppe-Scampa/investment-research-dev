@@ -16,11 +16,13 @@ from pathlib import Path
 
 from .research_sources import (
     SEC_HOST, SEC_TICKERS_URL, MAX_BYTES, collect, parse_sec_fundamentals,
+    parse_sec_annual_comparison,
     sha256_bytes,
 )
 from .research_universe import parse_sec_tickers
 
-MAX_SYMBOLS = 8
+MAX_SYMBOLS = 24
+MAX_ANNUAL_AGE_DAYS = 550
 SYMBOL_RE = re.compile(r"[A-Z][A-Z0-9.\-]{0,15}\Z")
 
 
@@ -85,7 +87,11 @@ def analyze_sec_evidence(catalog_meta: dict, company_metas: dict,
                              "cik": "", "name": "", "exchange": "", "venue": "",
                              "period_end": "", "filing_date": "", "revenue_usd": "",
                              "net_income_usd": "", "net_margin_pct": "",
-                             "filing_accession": "", "source_url": "", "source_sha256": ""})
+                             "filing_accession": "", "source_url": "", "source_sha256": "",
+                             "comparison_status": "", "previous_period_end": "",
+                             "previous_revenue_usd": "", "previous_net_income_usd": "",
+                             "revenue_yoy_pct": "", "net_income_yoy_pct": "",
+                             "net_margin_change_pp": "", "annual_age_days": ""})
             continue
         issuer = listings[0]
         cik = issuer["cik"]
@@ -95,7 +101,11 @@ def analyze_sec_evidence(catalog_meta: dict, company_metas: dict,
                "exchange": issuer["exchange"], "venue": issuer["venue"],
                "status": "NOT_RESEARCH_READY", "period_end": "", "filing_date": "",
                "revenue_usd": "", "net_income_usd": "", "net_margin_pct": "",
-               "filing_accession": "", "source_url": url, "source_sha256": ""}
+               "filing_accession": "", "source_url": url, "source_sha256": "",
+               "comparison_status": "", "previous_period_end": "",
+               "previous_revenue_usd": "", "previous_net_income_usd": "",
+               "revenue_yoy_pct": "", "net_income_yoy_pct": "",
+               "net_margin_change_pp": "", "annual_age_days": ""}
         if issuer["venue"] == "UNMAPPED":
             row["status"] = "UNSUPPORTED_VENUE"
         elif meta is None:
@@ -115,10 +125,24 @@ def analyze_sec_evidence(catalog_meta: dict, company_metas: dict,
                 margin = ((income / revenue) * 100).quantize(Decimal("0.01"))
                 if not margin.is_finite():
                     raise ValueError("Invalid annual net margin")
+                comparison = parse_sec_annual_comparison(raw, as_of, fact)
+                age = (as_of - date.fromisoformat(fact["period_end"])).days
+                if age < 0:
+                    raise ValueError("Annual period ends after as_of")
             except ValueError:
                 row["status"] = "REVIEW_SEC_ANNUAL_FACTS_UNAVAILABLE"
             else:
-                row.update({"status": "SEC_ANNUAL_EVIDENCE_AVAILABLE_NO_MARKET_RANK",
+                row.update({"status": ("SEC_ANNUAL_EVIDENCE_AVAILABLE_NO_MARKET_RANK"
+                              if age <= MAX_ANNUAL_AGE_DAYS
+                              else "SEC_ANNUAL_STALE_REVIEW_NO_MARKET_RANK"),
+                    "annual_age_days": age,
+                    "comparison_status": comparison["status"],
+                    "previous_period_end": comparison.get("previous_period_end") or "",
+                    "previous_revenue_usd": comparison.get("previous_revenue_usd") or "",
+                    "previous_net_income_usd": comparison.get("previous_net_income_usd") or "",
+                    "revenue_yoy_pct": comparison.get("revenue_yoy_pct") or "",
+                    "net_income_yoy_pct": comparison.get("net_income_yoy_pct") or "",
+                    "net_margin_change_pp": comparison.get("net_margin_change_pp") or "",
                     "period_end": fact["period_end"],
                     "filing_date": max(fact["revenue_filed_date"], fact["earnings_filed_date"]),
                     "revenue_usd": str(revenue), "net_income_usd": str(income),
@@ -126,18 +150,23 @@ def analyze_sec_evidence(catalog_meta: dict, company_metas: dict,
                     "filing_accession": fact.get("source_filing_accession") or ""})
         findings.append(row)
     evidence_count = sum(x["status"] == "SEC_ANNUAL_EVIDENCE_AVAILABLE_NO_MARKET_RANK" for x in findings)
+    comparable_count = sum(x["comparison_status"] == "COMPARABLE_SAME_SEC_FILING" for x in findings)
+    stale_count = sum(x["status"] == "SEC_ANNUAL_STALE_REVIEW_NO_MARKET_RANK" for x in findings)
     return {"as_of": as_of.isoformat(), "mode": "SEC_REAL_ANNUAL_RESEARCH_COVERAGE_NOT_RANKING",
             "source_provider": "SEC EDGAR (official)",
             "catalog_source_url": SEC_TICKERS_URL,
             "catalog_sha256": catalog_meta["sha256"],
             "catalog_record_count": len(catalog),
             "selected_count": len(selected_symbols), "annual_evidence_count": evidence_count,
+            "comparable_prior_year_count": comparable_count, "stale_annual_count": stale_count,
             "market_ranking_count": 0, "results": findings,
             "limitations": [
                 "Current SEC tickers are not a survivorship-bias-free historical universe",
                 "Annual US GAAP revenue and net income are not standardized valuations across industries",
                 "No verified historical prices, split/dividend adjustment, sector, ISIN or oil exposure",
                 "Net margin is a factual ratio, not a buy signal or forecast",
+                "Prior-year growth requires same SEC filing accession and identical revenue/income concepts",
+                "Non-comparable prior periods and stale annual filings are not forced into growth or rankings",
                 "Past filings are filtered by filed date; future restatements are excluded",
                 "No market ranking or trade-ready shortlist is produced",
             ]}
@@ -150,7 +179,10 @@ def write_sec_evidence(report: dict, output: Path):
     rows = report["results"]
     fields = ["ticker", "cik", "name", "exchange", "venue", "status",
               "period_end", "filing_date", "revenue_usd", "net_income_usd",
-              "net_margin_pct", "filing_accession", "source_url", "source_sha256"]
+              "net_margin_pct", "filing_accession", "source_url", "source_sha256",
+              "comparison_status", "previous_period_end", "previous_revenue_usd",
+              "previous_net_income_usd", "revenue_yoy_pct", "net_income_yoy_pct",
+              "net_margin_change_pp", "annual_age_days"]
     if any(set(r) != set(fields) for r in rows):
         raise ValueError("Unexpected SEC report row schema")
     csv_stream = io.StringIO(newline="")
@@ -165,12 +197,14 @@ def write_sec_evidence(report: dict, output: Path):
              f"- As-of: **{report['as_of']}**",
              f"- SEC catalog entries: **{report['catalog_record_count']}**",
              f"- Selected: **{report['selected_count']}**; usable annual evidence: **{report['annual_evidence_count']}**",
+             f"- Comparable annual growth pairs: **{report['comparable_prior_year_count']}**; stale filings: **{report['stale_annual_count']}**",
              "- Market ranking / buy shortlist: **NOT PRODUCED**", "",
-             "| Ticker | Filing period | Revenue USD | Net income USD | Margin | Quality |",
-             "|---|---|---:|---:|---:|---|"]
+             "| Ticker | Filing period | Revenue USD | Net income USD | Margin | Revenue YoY | Comparison | Quality |",
+             "|---|---|---:|---:|---:|---:|---|---|"]
     for row in rows:
         lines.append("| " + " | ".join(str(row[c]).replace("|", "\\|") for c in
-            ("ticker", "period_end", "revenue_usd", "net_income_usd", "net_margin_pct", "status")) + " |")
+            ("ticker", "period_end", "revenue_usd", "net_income_usd", "net_margin_pct",
+             "revenue_yoy_pct", "comparison_status", "status")) + " |")
     lines += ["", "**Limitations:**", *("- " + x for x in report["limitations"]), ""]
     (output / "SEC_ANNUAL_RESEARCH.md").write_text("\n".join(lines), encoding="utf-8")
     return {"output": str(output), "rows": len(rows), "annual_evidence_count": report["annual_evidence_count"],
@@ -179,7 +213,7 @@ def write_sec_evidence(report: dict, output: Path):
 
 def collect_sec_pilot(symbols: list[str], as_of: date, cache: Path,
                       sec_contact: str, *, collector=collect, pause=time.sleep):
-    """Explicit ≤9 SEC requests, 1.2s spacing, no retry or alternate providers."""
+    """Explicit ≤25 SEC requests, 1.2s spacing, no retry or alternate providers."""
     if as_of != date.today():
         raise ValueError("Live SEC pilot requires today's as-of date (no backdated current universe)")
     if not isinstance(sec_contact, str) or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", sec_contact):

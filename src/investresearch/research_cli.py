@@ -30,6 +30,7 @@ def main(argv=None):
     u.add_argument('--output',type=Path,required=True)
     sec=sp.add_parser('sec-pilot',help='One manual SEC-only current-catalog/annual-evidence pilot, no market ranking')
     sec.add_argument('--symbols',default='AAPL,MSFT,NVDA,AMZN')
+    sec.add_argument('--cohort',type=Path,help='JSON file with symbols list (max 24); overrides --symbols')
     sec.add_argument('--as-of',default=date.today().isoformat())
     sec.add_argument('--live-confirm',action='store_true',help='Explicit authorization for SEC requests')
     sec.add_argument('--cache',type=Path,default=ROOT/'.cache/research')
@@ -62,7 +63,15 @@ def main(argv=None):
         from .research_sec_pilot import parse_symbols, collect_sec_pilot, write_sec_evidence
         if not args.live_confirm:
             p.error('sec-pilot requires --live-confirm; never fetch implicitly')
-        result=collect_sec_pilot(parse_symbols(args.symbols),date.fromisoformat(args.as_of),
+        if args.cohort:
+            group=json.loads(args.cohort.read_text(encoding='utf-8'))
+            symbols=group.get('symbols')
+            if not isinstance(symbols,list) or not all(isinstance(s,str) for s in symbols):
+                p.error('SEC cohort must have an array of ticker strings in symbols')
+            chosen=parse_symbols(','.join(symbols))
+        else:
+            chosen=parse_symbols(args.symbols)
+        result=collect_sec_pilot(chosen,date.fromisoformat(args.as_of),
             args.cache,args.sec_contact)
         summary=write_sec_evidence(result,args.output)
         print(f"SEC pilot: {summary['annual_evidence_count']} / {summary['rows']} annual profiles; no market ranking; saved {args.output}")
