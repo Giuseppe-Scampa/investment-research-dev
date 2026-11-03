@@ -40,5 +40,6 @@ def test_architecture_review_prompts_are_independent_and_actionable():
     assert 'Prompt A — Claude' in prompts
     assert 'Prompt B — Gemini' in prompts
     assert 'NON VERIFICATO' in prompts
-    assert 'Mediolanum non sono un prerequisito' not in prompts or True
-    assert 'non' in prompts.lower()
+    assert 'non è un prerequisito' in prompts or 'NON un prerequisito' in prompts or 'non sono un prerequisito' in prompts
+    assert 'R-001' in prompts and 'R-013' in prompts
+    assert 'Critical path' in prompts or 'Critical path' in prompts.lower().title()
