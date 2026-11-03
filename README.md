@@ -1,5 +1,7 @@
 # Investment Research Engine — public technical demonstration
 
+> **Architettura ufficiale condivisa:** [indice e versione V3.0.0](docs/architecture/README.md) · [roadmap M1–M6](docs/architecture/ROADMAP.md) · [assessment Claude/Gemini](docs/architecture/ASSESSMENT_PROMPTS.md). Il perimetro permanente del Research Engine resta distinto dal percorso fiscale personale 2026. Ogni revisione architetturale segue SemVer + ADR.
+
 This is a **synthetic, public technical example** of an independent financial research engine with a modular Italian taxation and investment-cost simulation. It is provided for review and development, not for personal financial advice or trade signals.
 
 **All portfolio capital, loss carryforwards, broker information, commission schedules and positions are fictitious.** They are test inputs, not a person's actual financial data. Prices in `data/snapshots/` are historical public-source research references, **not executable bid/ask quotes**.
