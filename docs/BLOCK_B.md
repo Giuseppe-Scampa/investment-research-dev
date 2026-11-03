@@ -188,7 +188,7 @@ Asia e altre classi di attivo servono cataloghi ulteriori e mapping documentato.
 - Le 61 osservazioni devono coincidere con **61 sedute consecutive** del
   mercato indicato, non semplicemente 61 righe. Buchi, sedute fittizie e
   calendari non supportati impediscono il punteggio.
-- Movimenti giornalieri assoluti oltre il **40%** sono uno *stop di revisione*
+- Movimenti giornalieri assoluti **pari o superiori al 15%** sono uno *stop prudenziale di revisione*
   (possibile split, prezzo corrotto o evento reale): non vengono corretti
   automaticamente, ma richiedono corporate action documentate. La soglia è
   cautelativa e NON una regola universale di trading.
@@ -228,8 +228,8 @@ Per default `--limit` considera fino a **20.000** candidati, in modo da
 non tagliare alfabeticamente l'elenco delle associazioni ufficiali; scegliere
 un limite inferiore riduce deliberatamente la copertura e non rappresenta un
 campione statisticamente neutro. Il dataset effettivo viene sempre tracciato
-con hash e conteggi. Un cambio prezzo del 50% (possibile split 2:1) viene ora
-intercettato dal gate del 40%; serve revisione prima di qualsiasi ranking.
+con hash e conteggi. Un cambio prezzo del 20-33% (possibile split 5:4, 4:3 o 3:2) viene ora
+intercettato dal gate del 15%; serve revisione prima di qualsiasi ranking. Il gate può bloccare anche un vero movimento di mercato >=15% e non prova l'assenza di azioni societarie sotto soglia.
 
 
 ## Collegamento del secret SEC a GitHub Actions (novembre 2026)
@@ -341,3 +341,8 @@ comparable market valuations across sectors.
 - European financial-statement figures will require future ESEF/iXBRL validation of taxonomy, contexts, units, restatements and audit provenance; European issuer identity/ISIN mapping cannot be inferred from a ticker.
 
 Detailed input schemas and operating commands: [EU_EVIDENCE_AND_MARKET_RIGHTS.md](EU_EVIDENCE_AND_MARKET_RIGHTS.md).
+
+
+## Errata e fonte temporale FX — 3 novembre 2026
+
+Il conversione nel motore usa il **fixing BCE dello stesso calendario** del close USA, per confronti di ricerca in EUR. La pubblicazione BCE avviene prima della chiusura azionaria USA: i due prezzi NON sono simultanei, la conversione NON è un cambio negoziabile al close e non certifica il P/L fiscale Mediolanum. La variabile e i report documentano questa limitazione; per comparazioni sensibili all'orario occorrono feed sincronizzati e fonte autorizzata.

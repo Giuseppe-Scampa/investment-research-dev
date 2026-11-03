@@ -9,6 +9,8 @@ Questa pagina e il **link stabile** a cui tornare per conoscere la specifica vig
 - [Versioning e change control](CHANGE_CONTROL.md)
 - [Prompt di assessment per Claude e Gemini](ASSESSMENT_PROMPTS.md)
 - [ADR-0001 — adozione della baseline](adr/ADR-0001-v3-baseline.md)
+- [Riconciliazione assessment Claude/Gemini — 3 novembre 2026](ASSESSMENT_RECONCILIATION_2026-11-03.md)
+- [ADR-0002 — requisiti V2 da recuperare (PROPOSTA, non approvata)](adr/ADR-0002-v3-1-recovered-requirements-proposed.md)
 
 **Source of truth:** i file docs/architecture/ di questo repository pubblico contengono soltanto architettura e requisiti generici, senza dati finanziari personali. Eventuali implementazioni private e dati fiscali personali restano nel repository privato e in locale. Le due basi di codice hanno responsabilità diverse, ma la numerazione delle milestone è **unica**.
 

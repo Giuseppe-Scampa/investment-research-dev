@@ -50,3 +50,5 @@ Ogni riga ha id immutabile, requirement, owner/repo, stato, evidenza, criterio d
 | 2026-11-01 | V3 (accordo originale) | Due percorsi, M1–M6, separazione A/B/C, API non obbligatorie | Decisioni nella conversazione di progetto |
 | 2026-11-03 | V3.0.0 | Baseline formalizzata senza riduzione dello screening globale | ADR-0001 |
 | 2026-11-03 | Nessuna nuova versione | Correzione Prysmian minoritaria e continuità ISIN Fresenius come fixing implementativo | PR tecnica esistente; non ridimensiona la specifica |
+
+| 2026-11-03 | Nessuna modifica alla V3.0.0 | Correzione D1–D4 e PR metadata CI, rilievi D5 e requisiti V2 ancora da valutare | CI pubblica 41736873470, 201 test; ADR-0002 Proposed |
