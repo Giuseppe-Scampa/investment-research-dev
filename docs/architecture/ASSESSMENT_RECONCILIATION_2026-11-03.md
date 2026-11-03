@@ -20,7 +20,7 @@ La revisione di Claude è una fonte di ipotesi e test indicati dall'autore, non 
 
 ## Osservazioni Gemini che NON costituiscono verifiche
 
-- Conteggi 96/192 sono superati dai test correnti; la PR privata non è stata rivalutata durante l'intervento pubblico.
+- Conteggi 96/192 sono superati dai test correnti; la PR privata è stata verificata anche dopo l'allineamento della tassonomia Oil & Gas, con 104 test passati nella CI 41737383649. Non sono stati verificati dati fiscali personali.
 - M5 multi-provider **MISSING**, non parzialmente implementata in questo repository. Un runner legacy a pagamento in privato non equivale alla milestone.
 - La presenza di unit test fiscali non certifica normativa, broker o correttezza del portafoglio reale.
 - `data/private/` e un checksum riducono rischio di pubblicazione accidentale, ma non costituiscono garanzia generale di privacy o autenticità dell'estratto bancario.
