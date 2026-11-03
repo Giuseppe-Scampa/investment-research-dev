@@ -104,9 +104,11 @@ def test_yfinance_invalid_data_fail_closed_without_cache(tmp_path):
         collect(YFINANCE,'TEST.MI',tmp_path,acknowledge_yahoo_terms=True,
                 history_loader=lambda *args:(_ for _ in ()).throw(RuntimeError('SECRET123')))
     assert not list(tmp_path.rglob('*.bin'))
+    # Regression: '2027-01-01' ceased to be future in 2027; guard must be relative.
     with pytest.raises(ValueError,match='Future'):
         collect(YFINANCE,'TEST.MI',tmp_path,acknowledge_yahoo_terms=True,
-                as_of='2027-01-01',history_loader=lambda *args:sample_frame())
+                as_of=(date.today()+timedelta(days=1)).isoformat(),
+                history_loader=lambda *args:sample_frame())
 
 
 def test_yahoo_canonical_import_hash_and_split_gate(tmp_path):
