@@ -42,6 +42,10 @@ PDF_REFERENCE_BY_CONCEPT = {
 MAX_DOWNLOAD = MAX_DOCUMENT_BYTES
 
 
+class SourceUnavailable(RuntimeError):
+    """Provider connectivity or HTTP availability, not a verified source document."""
+
+
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise RuntimeError('Issuer download redirected: endpoint needs review')
@@ -58,9 +62,9 @@ def fetch_official_zip() -> bytes:
                 raise RuntimeError('Issuer returned unexpected final download URL')
             payload = response.read(MAX_DOWNLOAD + 1)
     except HTTPError as exc:
-        raise RuntimeError(f'PRYSMIAN_ESEF_HTTP_{exc.code}') from None
-    except URLError:
-        raise RuntimeError('PRYSMIAN_ESEF_NETWORK_UNAVAILABLE') from None
+        raise SourceUnavailable(f'PRYSMIAN_ESEF_HTTP_{exc.code}') from None
+    except (URLError, TimeoutError):
+        raise SourceUnavailable('PRYSMIAN_ESEF_NETWORK_UNAVAILABLE') from None
     if not 0 < len(payload) <= MAX_DOWNLOAD or not zipfile.is_zipfile(io.BytesIO(payload)):
         raise ValueError('Issuer ESEF payload must be a bounded ZIP')
     return payload
@@ -182,10 +186,13 @@ def main() -> int:
                   'selected_xhtml_compressed_bytes=',info.compress_size,
                   flush=True)
         report = verify_official_package(payload,date.today())
-    except Exception as exc:
-        # Do not print response bodies, raw XHTML, or local paths.
-        print('PRYSMIAN LIVE ESEF INCOMPLETE:',type(exc).__name__,str(exc)[:160],file=sys.stderr)
+    except SourceUnavailable as exc:
+        print('PRYSMIAN LIVE ESEF SOURCE_UNAVAILABLE:', str(exc)[:120], file=sys.stderr)
         return 1
+    except Exception as exc:
+        # Received data that cannot pass parsing/authenticity checks must fail CI.
+        print('PRYSMIAN LIVE ESEF VALIDATION_FAILED:',type(exc).__name__,str(exc)[:160],file=sys.stderr)
+        return 2
     print(json.dumps(report,indent=2,sort_keys=True,ensure_ascii=False))
     okay, message = validate_compatibility(report)
     print('PRYSMIAN ESEF PROBE:',message)

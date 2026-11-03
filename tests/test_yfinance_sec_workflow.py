@@ -12,6 +12,24 @@ from investresearch.research_bundle import EXTERNAL, build_bundle
 from investresearch.research_screen import screen
 
 
+@pytest.fixture(autouse=True)
+def freeze_synthetic_yahoo_snapshot_clock(monkeypatch):
+    """The as-of 2026-11-02 test uses a synthetic same-day retrieval time.
+
+    Production collection always records actual UTC; no backdated live data.
+    """
+    from datetime import datetime as RealDatetime, timezone
+    import investresearch.research_sources as source_module
+
+    class FrozenDatetime(RealDatetime):
+        @classmethod
+        def now(cls, tz=None):
+            stamp = RealDatetime(2026, 11, 2, 12, tzinfo=timezone.utc)
+            return stamp.astimezone(tz) if tz is not None else stamp.replace(tzinfo=None)
+
+    monkeypatch.setattr(source_module, 'datetime', FrozenDatetime)
+
+
 class Frame:
     def __init__(self, rows, columns=None):
         self.rows=rows

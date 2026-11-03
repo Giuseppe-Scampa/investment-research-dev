@@ -151,3 +151,24 @@ I test sintetici coprono collisioni EUR/EUR, EUR/USD, unità a rapporto,
 ordine invertito, unità senza ID e documenti validi con più unità distinte.
 La modifica mantiene il gate `accounting_facts_verified=0`: non certifica
 la correttezza IFRS, non introduce prezzi né ranking operativi.
+
+
+### Stabilizzazione test e gate di validazione live — 3 novembre 2026
+
+Il timestamp di raccolta dei test sintetici è congelato esplicitamente al
+2026-11-02, uguale alla data `as_of` dei rispettivi test; l'acquisizione reale
+usa invariabilmente l'orologio UTC effettivo. Un test negativo prova che un
+fatto raccolto il 3 novembre **non** può essere presentato come acquisito
+entro il 2 novembre. Anche i test Yahoo con snapshot simulati applicano lo
+stesso principio senza ricorrere a prezzi reali.
+
+I probe Edison/Prysmian ora distinguono: `0` = confronto numerico candidato
+superato, ancora da revisionare; `1` = indisponibilità HTTP/rete della fonte,
+non prova di estrazione; `2` = ZIP, parser, LEI, cutoff, checksum o confronto
+numerico non valido. Nei job GitHub Actions della PR il codice `2` rende la
+CI **rossa**; solo `1` *con il marker esatto di fonte indisponibile* produce
+un warning senza bloccare i test offline. Il riepilogo riporta esattamente
+`NUMERIC_RECONCILIATION_PASSED_REVIEW_REQUIRED`,
+`SOURCE_UNAVAILABLE_NO_VALIDATION` oppure `VALIDATION_FAILED`.
+Il verde non costituisce comunque certificazione contabile e, se la fonte
+non è raggiungibile, non può essere descritto come collaudo live superato.

@@ -14,6 +14,24 @@ probe = module_from_spec(spec)
 spec.loader.exec_module(probe)
 
 
+@pytest.fixture(autouse=True)
+def fixed_offline_collection_clock(monkeypatch):
+    """Synthetic 2026-11-02 as-of tests cannot use real 2026-11-03+ retrieval time.
+
+    The production probe still timestamps every real download with real UTC.
+    Only offline test invocation is time-frozen; do not weaken the PIT gate.
+    """
+    from datetime import datetime as RealDatetime, timezone
+
+    class FrozenDatetime(RealDatetime):
+        @classmethod
+        def now(cls, tz=None):
+            instant = RealDatetime(2026, 11, 2, 12, tzinfo=timezone.utc)
+            return instant.astimezone(tz) if tz is not None else instant.replace(tzinfo=None)
+
+    monkeypatch.setattr(probe, 'datetime', FrozenDatetime)
+
+
 def sample_esef(lei=probe.EDISON_LEI):
     content = f'''<html xmlns="http://www.w3.org/1999/xhtml"
         xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
@@ -72,8 +90,8 @@ def test_probe_no_candidates_is_incomplete_even_when_zip_download_succeeded(monk
     monkeypatch.setattr(probe, 'fetch_official_zip', lambda: payload.getvalue())
     # The real LEI field is not available in this empty XHTML, so a strictly
     # validated run should fail loudly, rather than pretending the sample works.
-    assert probe.main() == 1
-    assert 'NOT VALIDATED' in capsys.readouterr().err
+    assert probe.main() == 2
+    assert 'VALIDATION_FAILED' in capsys.readouterr().err
 
 
 def test_probe_reports_parseable_but_zero_coverage_as_incomplete(monkeypatch, capsys):
@@ -110,3 +128,24 @@ def test_real_zip_reference_gate_requires_all_three_distinct_accounting_metrics(
     result['conflicting_metrics']=[]
     result['pdf_comparison_candidates'][1]['pdf_amount_matches']=False
     assert probe.validate_live_reference_controls(result)[0] is False
+
+
+def test_asof_guard_still_rejects_retrieval_timestamp_after_cutoff(monkeypatch):
+    from datetime import datetime as RealDatetime, timezone
+
+    class LateDatetime(RealDatetime):
+        @classmethod
+        def now(cls, tz=None):
+            stamp = RealDatetime(2026, 11, 3, 12, tzinfo=timezone.utc)
+            return stamp.astimezone(tz) if tz is not None else stamp.replace(tzinfo=None)
+
+    monkeypatch.setattr(probe, 'datetime', LateDatetime)
+    with pytest.raises(ValueError, match='Future or inconsistent publication/collection'):
+        probe.verify_official_package(sample_esef(), date(2026, 11, 2))
+
+
+def test_probe_network_unavailable_has_separate_exit_code(monkeypatch, capsys):
+    monkeypatch.setattr(probe, 'fetch_official_zip', lambda: (_ for _ in ()).throw(
+        probe.SourceUnavailable('simulated offline')))
+    assert probe.main() == 1
+    assert 'SOURCE_UNAVAILABLE' in capsys.readouterr().err

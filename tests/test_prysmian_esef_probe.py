@@ -15,6 +15,24 @@ probe = module_from_spec(spec)
 spec.loader.exec_module(probe)
 
 
+@pytest.fixture(autouse=True)
+def fixed_offline_collection_clock(monkeypatch):
+    """Synthetic 2026-11-02 as-of tests cannot use real 2026-11-03+ retrieval time.
+
+    The production probe still timestamps every real download with real UTC.
+    Only offline test invocation is time-frozen; do not weaken the PIT gate.
+    """
+    from datetime import datetime as RealDatetime, timezone
+
+    class FrozenDatetime(RealDatetime):
+        @classmethod
+        def now(cls, tz=None):
+            instant = RealDatetime(2026, 11, 2, 12, tzinfo=timezone.utc)
+            return instant.astimezone(tz) if tz is not None else instant.replace(tzinfo=None)
+
+    monkeypatch.setattr(probe, 'datetime', FrozenDatetime)
+
+
 def synthetic_package(*, lei=probe.ISSUER_LEI, value='19,650', concept='Revenue',
                       with_profit=True, filename=None):
     """Fixture invented here: no official issuer bytes are checked into Git."""
@@ -80,7 +98,7 @@ def test_zero_ifrs_candidates_fails_even_if_valid_xhtml():
 
 def test_no_network_on_import_or_unit_tests(monkeypatch):
     def forbidden():
-        raise RuntimeError('Not authorized: this test must stay offline')
+        raise probe.SourceUnavailable('Simulated offline network failure')
     monkeypatch.setattr(probe,'fetch_official_zip',forbidden)
     assert probe.main() == 1
 
@@ -111,3 +129,23 @@ def test_four_distinct_official_income_statement_concepts_gate():
     sample['conflicting_metrics']=['REVENUE']
     sample['accounting_facts_verified']=1
     assert probe.validate_compatibility(sample)[0] is False
+
+
+def test_asof_guard_rejects_retrieval_after_cutoff(monkeypatch):
+    from datetime import datetime as RealDatetime, timezone
+
+    class LateDatetime(RealDatetime):
+        @classmethod
+        def now(cls, tz=None):
+            stamp = RealDatetime(2026, 11, 3, 12, tzinfo=timezone.utc)
+            return stamp.astimezone(tz) if tz is not None else stamp.replace(tzinfo=None)
+
+    monkeypatch.setattr(probe, 'datetime', LateDatetime)
+    with pytest.raises(ValueError, match='Future or inconsistent publication/collection'):
+        probe.verify_official_package(synthetic_package(), date(2026, 11, 2))
+
+
+def test_invalid_download_payload_is_validation_failure_not_network(monkeypatch, capsys):
+    monkeypatch.setattr(probe, 'fetch_official_zip', lambda: b'not a ZIP')
+    assert probe.main() == 2
+    assert 'VALIDATION_FAILED' in capsys.readouterr().err

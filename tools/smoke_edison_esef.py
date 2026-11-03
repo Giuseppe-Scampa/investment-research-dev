@@ -35,6 +35,10 @@ PDF_CONTROL_EUR = {
 }
 
 
+class SourceUnavailable(RuntimeError):
+    """Transport or HTTP availability issue; not a validated filing result."""
+
+
 class _NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise RuntimeError('Issuer redirected download: new endpoint requires review')
@@ -49,9 +53,9 @@ def fetch_official_zip() -> bytes:
         with build_opener(_NoRedirect()).open(req, timeout=25) as response:
             payload = response.read(MAX_DOCUMENT_BYTES + 1)
     except HTTPError as exc:
-        raise RuntimeError(f'EDISON_ESEF_DOWNLOAD_HTTP_{exc.code}') from None
-    except URLError:
-        raise RuntimeError('EDISON_ESEF_DOWNLOAD_NETWORK_UNAVAILABLE') from None
+        raise SourceUnavailable(f'EDISON_ESEF_DOWNLOAD_HTTP_{exc.code}') from None
+    except (URLError, TimeoutError):
+        raise SourceUnavailable('EDISON_ESEF_DOWNLOAD_NETWORK_UNAVAILABLE') from None
     if not 0 < len(payload) <= MAX_DOCUMENT_BYTES or not zipfile.is_zipfile(io.BytesIO(payload)):
         raise ValueError('Issuer ESEF response not a valid bounded ZIP')
     return payload
@@ -202,10 +206,13 @@ def validate_live_reference_controls(result: dict) -> tuple[bool, str]:
 def main():
     try:
         result = verify_official_package(fetch_official_zip(), date.today())
-    except Exception as exc:
-        # No raw bytes or local cache paths, no tokens/secrets in the log.
-        print('LIVE ESEF NOT VALIDATED:', type(exc).__name__, str(exc)[:180], file=sys.stderr)
+    except SourceUnavailable as exc:
+        print('LIVE ESEF SOURCE_UNAVAILABLE:', str(exc)[:120], file=sys.stderr)
         return 1
+    except Exception as exc:
+        # A response with invalid ZIP, LEI, date or XBRL facts MUST fail CI.
+        print('LIVE ESEF VALIDATION_FAILED:', type(exc).__name__, str(exc)[:180], file=sys.stderr)
+        return 2
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
     if not result['candidate_count']:
         print('LIVE ESEF INCOMPLETE: zero extractable candidates, review transformation and contexts', file=sys.stderr)

@@ -81,7 +81,7 @@ jobs:
 
   live_esef_smoke:
     # Official 2025 Edison iXBRL download, without secrets or raw-data uploads.
-    # Failure is explicitly visible but cannot invalidate deterministic tests.
+    # A received invalid issuer file FAILS this job; only source unavailability is nonblocking.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -95,20 +95,33 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -e .
-      - name: Download and audit one official Edison 2025 ESEF ZIP (best effort)
+      - name: Audit official Edison ESEF — fail on validation, allow network outage
         id: esef
-        continue-on-error: true
-        run: python tools/smoke_edison_esef.py
-      - name: Report validation status without uploading the issuer ZIP
+        shell: bash
+        run: |
+          set +e
+          python tools/smoke_edison_esef.py > "$RUNNER_TEMP/edison-esef-probe.log" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/edison-esef-probe.log"
+          if [ "$rc" -eq 0 ]; then
+            echo "classification=NUMERIC_RECONCILIATION_PASSED_REVIEW_REQUIRED" >> "$GITHUB_OUTPUT"
+          elif [ "$rc" -eq 1 ] && grep -Fq 'LIVE ESEF SOURCE_UNAVAILABLE:' "$RUNNER_TEMP/edison-esef-probe.log"; then
+            echo "classification=SOURCE_UNAVAILABLE_NO_VALIDATION" >> "$GITHUB_OUTPUT"
+            echo "::warning::Edison ESEF source unavailable; numeric validation NOT performed"
+          else
+            echo "classification=VALIDATION_FAILED" >> "$GITHUB_OUTPUT"
+            echo "::error::Edison ESEF parser, integrity or numeric reference validation failed"
+            exit 2
+          fi
+      - name: Report explicit Edison validation classification (no issuer artifacts)
         if: always()
         env:
-          ESEF_PROBE_OUTCOME: ${{ steps.esef.outcome }}
+          CLASSIFICATION: ${{ steps.esef.outputs.classification }}
         run: |
-          echo "Live ESEF audit outcome: $ESEF_PROBE_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
-          echo "Issuer ZIP is temporary and never uploaded or committed." >> "$GITHUB_STEP_SUMMARY"
-          if [ "$ESEF_PROBE_OUTCOME" != success ]; then
-            echo "ESEF real-world compatibility NOT validated; request manual file upload." >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "Edison ESEF: ${CLASSIFICATION:-NO_RESULT_STEP_FAILED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Successful numeric reconciliation remains provisional and requires manual audit." >> "$GITHUB_STEP_SUMMARY"
+          echo "No issuer ZIP/XHTML or provider prices uploaded." >> "$GITHUB_STEP_SUMMARY"
 
   live_prysmian_esef_smoke:
     # Additional independent FY2025 issuer. Its outcome is diagnostic, not an
@@ -126,18 +139,31 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -e .
-      - name: Validate official Prysmian FY2025 ESEF candidate coverage
+      - name: Audit official Prysmian ESEF — fail on validation, allow network outage
         id: prysmian
-        continue-on-error: true
-        run: python tools/smoke_prysmian_esef.py
-      - name: Publish explicit result status (no issuer file artifacts)
+        shell: bash
+        run: |
+          set +e
+          python tools/smoke_prysmian_esef.py > "$RUNNER_TEMP/prysmian-esef-probe.log" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/prysmian-esef-probe.log"
+          if [ "$rc" -eq 0 ]; then
+            echo "classification=NUMERIC_RECONCILIATION_PASSED_REVIEW_REQUIRED" >> "$GITHUB_OUTPUT"
+          elif [ "$rc" -eq 1 ] && grep -Fq 'PRYSMIAN LIVE ESEF SOURCE_UNAVAILABLE:' "$RUNNER_TEMP/prysmian-esef-probe.log"; then
+            echo "classification=SOURCE_UNAVAILABLE_NO_VALIDATION" >> "$GITHUB_OUTPUT"
+            echo "::warning::Prysmian ESEF source unavailable; numeric validation NOT performed"
+          else
+            echo "classification=VALIDATION_FAILED" >> "$GITHUB_OUTPUT"
+            echo "::error::Prysmian ESEF parser, integrity or numeric reference validation failed"
+            exit 2
+          fi
+      - name: Publish explicit Prysmian classification (no raw issuer artifacts)
         if: always()
         env:
-          OUTCOME: ${{ steps.prysmian.outcome }}
+          CLASSIFICATION: ${{ steps.prysmian.outputs.classification }}
         run: |
-          echo "Prysmian ESEF 2025 live diagnostic: $OUTCOME" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$OUTCOME" != success ]; then
-            echo "NOT VALIDATED: no verified Prysmian accounting facts or investment score." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "Preliminary parser coverage only; PDF statement reconciliation and pinned SHA still required." >> "$GITHUB_STEP_SUMMARY"
+          echo "Prysmian ESEF: ${CLASSIFICATION:-NO_RESULT_STEP_FAILED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Numeric reconciliation is not a full ESEF taxonomy or audit certificate." >> "$GITHUB_STEP_SUMMARY"
+          echo "No issuer ZIP/XHTML or provider prices uploaded." >> "$GITHUB_STEP_SUMMARY"
           fi
