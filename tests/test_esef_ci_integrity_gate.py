@@ -24,3 +24,24 @@ def test_production_probes_keep_actual_utc_retrieval_timestamps():
         assert "'retrieved_at_utc':datetime.now(timezone.utc).isoformat()" in content.replace(" ", "")
         assert 'class SourceUnavailable' in content
         assert 'return 1' in content and 'return 2' in content
+
+
+def test_multiline_ci_shell_steps_parse_with_bash():
+    """Prevents orphaned fi/done and other shell syntax mistakes in CI YAML."""
+    import subprocess
+
+    lines = (ROOT / '.github/workflows/ci.yml').read_text().splitlines()
+    scripts = []
+    for index, line in enumerate(lines):
+        if line.strip() != 'run: |' or not line.startswith('        run: |'):
+            continue
+        body = []
+        for candidate in lines[index + 1:]:
+            if candidate.strip() and not candidate.startswith('          '):
+                break
+            body.append(candidate[10:] if candidate.startswith('          ') else '')
+        scripts.append('\\n'.join(body))
+    assert len(scripts) >= 4
+    for number, script in enumerate(scripts, 1):
+        result = subprocess.run(['bash', '-n'], input=script, capture_output=True, text=True, check=False)
+        assert result.returncode == 0, f'CI multiline script {number}: {result.stderr}'

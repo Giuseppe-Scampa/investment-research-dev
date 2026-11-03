@@ -166,4 +166,3 @@ jobs:
           echo "Prysmian ESEF: ${CLASSIFICATION:-NO_RESULT_STEP_FAILED}" >> "$GITHUB_STEP_SUMMARY"
           echo "Numeric reconciliation is not a full ESEF taxonomy or audit certificate." >> "$GITHUB_STEP_SUMMARY"
           echo "No issuer ZIP/XHTML or provider prices uploaded." >> "$GITHUB_STEP_SUMMARY"
-          fi
