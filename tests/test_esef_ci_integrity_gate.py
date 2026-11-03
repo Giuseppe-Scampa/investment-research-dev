@@ -21,6 +21,6 @@ def test_production_probes_keep_actual_utc_retrieval_timestamps():
     # Unit-test-only clock patching must not rewrite the real-source timestamp.
     for script in ('smoke_edison_esef.py', 'smoke_prysmian_esef.py'):
         content = (ROOT / 'tools' / script).read_text()
-        assert "'retrieved_at_utc': datetime.now(timezone.utc).isoformat()" in content
+        assert "'retrieved_at_utc':datetime.now(timezone.utc).isoformat()" in content.replace(" ", "")
         assert 'class SourceUnavailable' in content
         assert 'return 1' in content and 'return 2' in content
