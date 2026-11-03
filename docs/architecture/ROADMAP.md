@@ -7,7 +7,7 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 
 | Requisito | Milestone | Stato | Evidenza disponibile | Prossimo gate per DONE |
 |---|---|---|---|---|
-| R-001 anagrafiche, integrità, anti-lookahead | M1 | PARTIAL | Private Blocco A PR #2: quality, market_calendar, security_identity; 103 test CI | E2E con schema comune e serie reali autorizzate |
+| R-001 anagrafiche, integrità, anti-lookahead | M1 | PARTIAL | Private Blocco A PR #2: quality, market_calendar, security_identity; 104 test CI | E2E con schema comune e serie reali autorizzate |
 | R-002 fiscalità, redditi, vintage | M2 | PARTIAL | Private Blocco A PR #2: tax_engine, tax_netting, broker_import | Revisioni di interpretazione fiscale + copertura casi e strumenti richiesti |
 | R-003 scenari A/B/C e costi | M2 | PARTIAL | Private: decision, cost_engine, broker_preflight, dashboard; test sintetici | E2E completo con caso anonimo realistico, no input inventati |
 | R-004 fonti reali/provenance e rights | M3 | PARTIAL | Public Blocco B PR #2: SEC reale, BCE, ESEF validazione campionaria, manual local prices | Fonte prezzi reale autorizzata e affidabile per ricerca riproducibile |
@@ -37,7 +37,7 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 
 ## Evidenza CI e limiti
 
-- Private PR #2 Blocco A: 103 test passati nella Actions run 41717867386 (ultimo esito controllato il 3 novembre 2026).
+- Private PR #2 Blocco A: **104 test passati**, CI PR 41737383649 (verifica del 3 novembre 2026); tassonomia Oil & Gas allineata al pubblico.
 - Public PR #2 Blocco B: **201 test passati**, CI PR 41736873470 (verifica del 3 novembre 2026). Controllo governance PR eseguito con esito positivo.
 - Entrambe PR aperte. Nessun merge del corpus V3.0.0 all'origine di questa roadmap.
 - La CI testata riguarda i casi implementati, NON i milestone ancora parziali o mancanti.
