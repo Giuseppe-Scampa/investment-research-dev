@@ -66,7 +66,13 @@ def write_sec_candidates(raw_path:Path, metadata_path:Path, as_of:date, output:P
         raise ValueError('SEC ticker snapshot was retrieved after as_of; would introduce look-ahead')
     rows=parse_sec_tickers(payload)
     mapped=[r for r in rows if r['venue']!='UNMAPPED']
-    chosen=mapped[:limit]
+    # A small limit must not silently select only alphabetically early tickers.
+    # Stable SHA256-based subset is a reproducible *discovery sample*, never
+    # a representative market sample or an investment ranking.
+    by_hash=sorted(mapped,key=lambda r:(
+        hashlib.sha256((r['cik']+'|'+r['ticker']).encode('utf-8')).hexdigest(),
+        r['ticker'],r['cik']))
+    chosen=sorted(by_hash[:limit],key=lambda r:(r['ticker'],r['cik']))
     for r in chosen:
         r['status']='CANDIDATE_ONLY_MISSING_SECTOR_ISIN_PRICES_AND_TAX_VERIFICATION'
         r['source_url']=SEC_TICKERS_URL
@@ -80,8 +86,11 @@ def write_sec_candidates(raw_path:Path, metadata_path:Path, as_of:date, output:P
               'retrieved_at_utc':meta['retrieved_at_utc'],'total_sec_records':len(rows),
               'mapped_exchange_records':len(mapped),'candidate_limit':limit,
               'candidate_count':len(chosen),'candidate_csv_sha256':hashlib.sha256(h.getvalue().encode()).hexdigest(),
+              'subset_selection_method': ('ALL_MAPPED' if len(mapped)<=limit else 'STABLE_SHA256_CIK_TICKER_NOT_REPRESENTATIVE'),
+              'omitted_mapped_candidates':max(0,len(mapped)-len(chosen)),
               'limitations':['Current ticker association data is not a survivorship-free historical universe',
                  'SEC list is US-only; global universe requires further documented listings',
-                 'No ISIN, sector, ethical exposure, historical price, FX, fundamental or ranking is inferred']}
+                 'No ISIN, sector, ethical exposure, historical price, FX, fundamental or ranking is inferred',
+                 'A limit below the mapped universe uses a deterministic hash subset; not a statistically representative random sample']}
     (output/'SEC_CANDIDATES_MANIFEST.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n',encoding='utf-8')
     return manifest

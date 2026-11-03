@@ -2,6 +2,9 @@
 import re
 from dataclasses import dataclass
 
+OIL_EXPOSURE_VALUES = frozenset({'none', 'direct', 'predominant', 'primary',
+                                 'minority', 'material', 'indirect'})
+
 @dataclass(frozen=True)
 class Constraint:
     level: str
@@ -15,8 +18,15 @@ def instrument_constraints(instrument: dict, settings: dict, *, new_purchase=Tru
     name = (instrument.get('name') or '').lower()
     if new_purchase and settings.get('exclude_additional_gold') and (sector in ('gold', 'precious metal gold') or re.search(r'\bgold\b', name)):
         out.append(Constraint('BLOCKED', 'gold', 'No additional gold'))
-    if new_purchase and settings.get('exclude_primary_oil') and instrument.get('oil_exposure') in ('direct', 'predominant'):
-        out.append(Constraint('BLOCKED', 'oil', 'Direct/predominant oil excluded'))
+    if new_purchase and settings.get('exclude_primary_oil'):
+        exposure = str(instrument.get('oil_exposure') or '').strip().lower()
+        if exposure in ('direct', 'predominant', 'primary'):
+            out.append(Constraint('BLOCKED', 'oil', 'Direct/primary/predominant oil business excluded'))
+        elif exposure == 'minority':
+            out.append(Constraint('REVIEW', 'oil_minority', 'Minority oil exposure: validate issuer-level exposure'))
+        elif exposure in ('material', 'indirect'):
+            out.append(Constraint('REVIEW', 'oil_materiality_unverified',
+                                  'Oil exposure magnitude not established: rank requires verification'))
     if settings.get('avoid_duplicate_eurostoxx50'):
         memberships = instrument.get('index_memberships', [])
         if isinstance(memberships, str):

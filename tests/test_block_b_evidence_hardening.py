@@ -40,7 +40,20 @@ def test_official_sec_universe_parsing_and_as_of(tmp_path):
     assert res['mapped_exchange_records']==3
     assert res['mode']=='DISCOVERY_ONLY_UNRANKED'
     csv=(tmp_path/'catalog/SEC_CANDIDATES.csv').read_text()
-    assert 'AAPL' in csv and 'JPM' in csv and 'MSFT' not in csv
+    assert res['subset_selection_method']=='STABLE_SHA256_CIK_TICKER_NOT_REPRESENTATIVE'
+    assert res['omitted_mapped_candidates']==1
+    import csv as csv_module
+    with (tmp_path/'catalog/SEC_CANDIDATES.csv').open(newline='') as f:
+        subset=list(csv_module.DictReader(f))
+    assert len(subset)==2
+    import hashlib
+    # Only NYSE/Nasdaq are subset eligible: UNMAPPED is never selected.
+    expected=sorted(
+        sorted([x for x in parse_sec_tickers(_catalog()) if x['venue']!='UNMAPPED'],
+               key=lambda x:(hashlib.sha256((x['cik']+'|'+x['ticker']).encode()).hexdigest(),
+                             x['ticker']))[:2], key=lambda x:(x['ticker'],x['cik']))
+    assert [x['ticker'] for x in subset]==[x['ticker'] for x in expected]
+    assert write_sec_candidates(raw,meta,date(2026,11,2),tmp_path/'catalog2',limit=2)['candidate_csv_sha256']==res['candidate_csv_sha256']
     assert 'MISSING_SECTOR_ISIN_PRICES' in csv
     with pytest.raises(ValueError,match='look-ahead'):
         write_sec_candidates(raw,meta,date(2026,10,31),tmp_path/'bad')
@@ -88,6 +101,15 @@ def test_history_gate_detects_missing_sessions_and_extreme_moves():
     assert _history_quality(jump,'XMIL')['reason']=='UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP'
     split=data[:];split[-5]=(split[-5][0],split[-5][1]/Decimal(2),split[-5][2])
     assert _history_quality(split,'XMIL')['reason']=='UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP'
+    for ratio in (Decimal('1.5'), Decimal(4)/Decimal(3), Decimal('1.25')):
+        candidate=data[:]
+        candidate[-5]=(candidate[-5][0],candidate[-5][1]/ratio,candidate[-5][2])
+        result=_history_quality(candidate,'XMIL')
+        assert not result['verified']
+        assert result['reason']=='UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP'
+    large_real_move=data[:]
+    large_real_move[-5]=(large_real_move[-5][0],large_real_move[-5][1]*Decimal('1.16'),large_real_move[-5][2])
+    assert not _history_quality(large_real_move,'XMIL')['verified']
 
 
 def test_full_screen_no_rank_for_missing_bar_and_future_collection(tmp_path):
@@ -132,3 +154,32 @@ def test_ecb_xml_realistic_envelope_and_stale_provider_rejected(tmp_path):
     class Fake(io.BytesIO):pass
     with pytest.raises(ValueError,match='stale'):
         collect('ECB_EUR_FX','',tmp_path,transport=lambda req,timeout:Fake(old))
+
+
+def test_oil_taxonomy_agrees_between_constraints_and_screen(tmp_path):
+    from investresearch.constraints import instrument_constraints
+    from investresearch.demo_dataset import create
+    create(tmp_path/'demo')
+    manifest_path=tmp_path/'demo/manifest.json'
+    original=json.loads(manifest_path.read_text(encoding='utf-8'))
+    for exposure in ('none','minority','direct','primary','predominant','indirect','material','unknown'):
+        changed=json.loads(json.dumps(original))
+        asset=next(x for x in changed['assets'] if x['id']=='DEMO_GRID')
+        asset['oil_exposure']=exposure
+        manifest_path.write_text(json.dumps(changed),encoding='utf-8')
+        r=next(x for x in screen(tmp_path/'demo')['results'] if x['id']=='DEMO_GRID')
+        flags=instrument_constraints(asset,{'exclude_primary_oil':True},new_purchase=True)
+        if exposure in ('direct','primary','predominant'):
+            assert r['status']=='BLOCKED_BY_POLICY', exposure
+            assert 'oil' in r['blocking_constraints']
+            assert any(f.level=='BLOCKED' for f in flags)
+        elif exposure=='minority':
+            assert 'oil_minority' in r['warnings']
+            assert r['market_score'] is not None
+            assert not r['blocking_constraints']
+        elif exposure in ('indirect','material','unknown'):
+            assert 'UNVERIFIED_OIL_MATERIALITY' in r['warnings']
+            assert r['market_score'] is None
+        else:
+            assert r['market_score'] is not None
+            assert 'oil_minority' not in r['warnings']

@@ -15,7 +15,7 @@ from decimal import Decimal
 from pathlib import Path
 from statistics import mean, stdev
 from .analytics import wilder_rsi
-from .constraints import instrument_constraints
+from .constraints import instrument_constraints, OIL_EXPOSURE_VALUES
 from .market_calendar import session_age, session
 from .research_bundle import load_bundle, SYNTHETIC
 
@@ -110,7 +110,10 @@ def _history_quality(dated_prices, venue):
     prices=[x[1] for x in last]
     moves=[abs(prices[i]/prices[i-1]-1) for i in range(1,len(prices))]
     maximum=max(moves)
-    if maximum>Decimal('.40'):
+    # Conservative review threshold: catches 3:2, 4:3 and 5:4 unadjusted
+    # split-like discontinuities. Legitimate large moves are also flagged;
+    # this does NOT prove a split or validate sub-15% corporate actions.
+    if maximum>=Decimal('.15'):
         return {'verified':False,'reason':'UNVERIFIED_CORPORATE_ACTION_OR_EXTREME_PRICE_JUMP',
                 'missing_sessions':0,'largest_daily_move':round(float(maximum),6)}
     return {'verified':True,'reason':None,'missing_sessions':0,
@@ -174,11 +177,16 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
         split_dates=asset['prices'].get('split_dates',[])
         if any(isinstance(d,str) and d>=bars[max(0,len(bars)-61)]['date'] and d<=latest for d in split_dates):
             warnings.append('UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW')
-        if manifest['mode']!=SYNTHETIC and (not asset.get('sector') or asset.get('oil_exposure') not in ('none','direct','primary','material','indirect')):
+        exposure = str(asset.get('oil_exposure') or '').strip().lower()
+        if exposure not in OIL_EXPOSURE_VALUES or exposure in ('indirect', 'material'):
+            # Indirect/material is NOT proof of a non-predominant position.
+            warnings.append('UNVERIFIED_OIL_MATERIALITY')
+        if manifest['mode']!=SYNTHETIC and not asset.get('sector'):
             warnings.append('UNVERIFIED_SECTOR_OR_OIL_EXPOSURE')
         market_ready=(not blocks and stale is not None and stale<=max_age_sessions
                       and not fx_issue and history['verified'] and not pit_issues
                       and 'UNVERIFIED_SECTOR_OR_OIL_EXPOSURE' not in warnings
+                      and 'UNVERIFIED_OIL_MATERIALITY' not in warnings
                       and 'UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW' not in warnings)
         if market_ready:
             m=_score_indicators(data)
@@ -249,13 +257,14 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
         'universe_size':len(items),'documented_event_count':len(events),
         'documented_events':events,'ranked_count':len(ordered),
         'fundamentals_ranked_count':len(equity),'weights':WEIGHTS,
-        'method':'Fixed bounded transparent 20/60 aligned-session momentum + volatility/drawdown + EUR turnover. Fundamentals optional separate scoreboard.',
+        'method':'Fixed bounded transparent 20/60 aligned-session momentum + volatility/drawdown + EUR turnover. Optional net-margin-only equity overlay, NOT a fundamental valuation.',
         'results':results,'limitations':[
             'Not a forecast or trade recommendation; no real bid/ask, corporate actions, intraday or broker verification.',
             'Closing dates for US/EU markets may not represent synchronous information sets.',
             'Continuity gate requires every last 61 trading sessions (2026 calendars only).',
             'Source bytes collected after as_of do not qualify as point-in-time evidence.',
-            'Extreme daily price jumps (>40%) block ranking pending corporate-action review.',
+            'Daily absolute close-to-close moves >=15% block ranking pending corporate-action/price review; heuristic can flag real moves and cannot detect all smaller actions.',
+            'ECB same-calendar-date fixings precede US equity close by hours: USD/EUR conversion is an asynchronous reference convention, not an executable synchronous P/L or hedge.',
             'Yahoo/yfinance Close (auto_adjust=False) excludes dividends from returns; split adjustments depend on the provider and require review; research use subject to provider license.',
             'Annual SEC net margin is not a substitute for sector-specific valuations, debt, guidance or catalysts.',
             'Ranking only considers EUR-converted same-date aligned observations and available evidence.',
