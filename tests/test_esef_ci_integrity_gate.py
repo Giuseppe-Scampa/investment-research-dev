@@ -40,7 +40,7 @@ def test_multiline_ci_shell_steps_parse_with_bash():
             if candidate.strip() and not candidate.startswith('          '):
                 break
             body.append(candidate[10:] if candidate.startswith('          ') else '')
-        scripts.append('\\n'.join(body))
+        scripts.append('\n'.join(body))
     assert len(scripts) >= 4
     for number, script in enumerate(scripts, 1):
         result = subprocess.run(['bash', '-n'], input=script, capture_output=True, text=True, check=False)
