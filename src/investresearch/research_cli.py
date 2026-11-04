@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from .research_bundle import build_bundle
 from .research_sources import collect
@@ -59,7 +59,7 @@ def main(argv=None):
         help='R-004: one opt-in Alpha Vantage raw DAILY symbol pilot, LOCAL ONLY / NO RANKING')
     av.add_argument('--symbol',required=True,help='Provider symbol; not ISIN or verified venue')
     av.add_argument('--venue',required=True,choices=['XNYS','XNAS','XMIL','XETR','XPAR'])
-    av.add_argument('--as-of',default=date.today().isoformat(),
+    av.add_argument('--as-of',default=datetime.now(timezone.utc).date().isoformat(),
                     help='Must be current UTC collection date, no backdated source claim')
     av.add_argument('--live-confirm',action='store_true',
                     help='Explicit authorization for exactly one live Alpha Vantage request')
