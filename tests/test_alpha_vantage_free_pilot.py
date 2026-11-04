@@ -129,7 +129,7 @@ def test_explicit_consent_required_without_touching_network(tmp_path):
     with pytest.raises(ValueError,match="confirmation"):
         av.run_pilot(**base,live_confirm=True)
     with pytest.raises(ValueError,match="MIC"):
-        av.run_pilot(**base,live_confirm=True,terms_confirm=True,venue="UNKNOWN")
+        av.run_pilot(**{**base,"venue":"UNKNOWN"},live_confirm=True,terms_confirm=True)
 
 
 def test_pilot_refuses_backdated_source_and_public_repository_outputs(tmp_path):
