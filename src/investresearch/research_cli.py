@@ -49,6 +49,17 @@ def main(argv=None):
     c.add_argument('--acknowledge-yahoo-terms',action='store_true',
                    help='Explicit opt-in for personal research under Yahoo Finance data terms')
     c.add_argument('--as-of',default=None,help='Historical cutoff YYYY-MM-DD; future snapshots prohibited')
+    ai=sp.add_parser('ai-countercheck',
+        help='R-009: optional public-only AI counteranalysis; local Ollama or offline imported provider response')
+    ai.add_argument('--spec',type=Path,required=True,help='Public issuer research only; no bank/personal data')
+    ai.add_argument('--provider',choices=['ollama-local','gemini','groq','openrouter'],required=True)
+    ai.add_argument('--model',required=True,help='Explicit model identifier; no default or paid API')
+    ai.add_argument('--response-json',type=Path,help='Offline JSON response produced elsewhere, no API calls')
+    ai.add_argument('--invoke-local-ollama',action='store_true',
+                    help='Explicit opt-in: localhost:11434 only; no remote fallback')
+    ai.add_argument('--acknowledge-public-only',action='store_true',
+                    help='Confirm all quoted content is public issuer research, never broker data')
+    ai.add_argument('--output',type=Path,required=True,help='Private/ignored local folder for generated artifacts')
     args=p.parse_args(argv)
     if args.command=='screen':
         if args.max_age_sessions not in (0,1,2,3,4,5):
@@ -92,6 +103,29 @@ def main(argv=None):
             acknowledge_yahoo_terms=args.acknowledge_yahoo_terms,as_of=args.as_of)
         # Never print SEC contact or download credentials; prints hash + safe source.
         print(json.dumps({k:meta[k] for k in ('provider','identifier','source_url','sha256','path','bytes')},indent=2))
+    elif args.command=='ai-countercheck':
+        from .ai_counteranalysis import (
+            MAX_RESPONSE_BYTES, validate_public_spec, parse_response,
+            invoke_local_ollama, counteranalysis_record, write_counteranalysis)
+        if not args.acknowledge_public_only:
+            p.error('ai-countercheck requires --acknowledge-public-only')
+        if bool(args.response_json)==bool(args.invoke_local_ollama):
+            p.error('Choose exactly one: --response-json OR --invoke-local-ollama')
+        if args.invoke_local_ollama and args.provider!='ollama-local':
+            p.error('Only local Ollama may be invoked; other providers are offline import only')
+        spec=validate_public_spec(json.loads(args.spec.read_text(encoding='utf-8')))
+        if args.invoke_local_ollama:
+            answer=invoke_local_ollama(spec,args.model,explicitly_authorized=True)
+        else:
+            if args.response_json.stat().st_size>MAX_RESPONSE_BYTES:
+                p.error('Offline model response exceeds size limit')
+            answer=parse_response(spec,args.provider,args.model,
+                 args.response_json.read_text(encoding='utf-8'))
+        record=counteranalysis_record(spec,args.provider,args.model,answer,
+                local_call=args.invoke_local_ollama)
+        write_counteranalysis(record,args.output,repo_root=ROOT)
+        print('R-009: unverified public-source counteranalysis saved locally; '
+              'citation IDs are not fact-checked; no trade authorization')
     else:
         p.error('Unknown command')
 
