@@ -137,3 +137,29 @@ pagina ufficiale [Edison – Assemblea marzo 2026](https://www.edison.it/it/asse
 che pubblica il consolidato 2025 in ZIP ESEF e il corrispondente PDF di
 revisione. Non abbiamo ancora verificato tramite il parser i suoi byte reali:
 nessun risultato Edison è presentato come estratto o verificato.
+
+
+## Controlli aggiuntivi R-004 / R-005 — 4 novembre 2026
+
+Il percorso `MANUAL_AUTHORIZED_LOCAL_OHLCV_UNVERIFIED` è stato rafforzato
+prima di poter considerare un dataset in un ranking di ricerca:
+
+- `retrieved_at_utc` deve contenere **data, ora e timezone UTC esplicita**
+  (`Z` oppure `+00:00`): data senza orario, stringhe malformate e offset
+  non UTC non sono ammessi;
+- la data di acquisizione non deve superare `as_of` e non può essere
+  **anteriore all'ultima seduta presente nel CSV**: questo impedisce
+  l'inserimento di una serie che apparentemente conosce prezzi futuri;
+- `split_dates`, se presente, deve essere un elenco di date valide,
+  non duplicate e non successive ad `as_of`;
+- uno split dichiarato nella finestra delle ultime 61 sedute mantiene
+  bloccato lo score anche quando la variazione dei prezzi non raggiunge il
+  gate del 15% (p.es. split 11:10); il salto del 15% resta soltanto
+  un *segnale di anomalia*, non prova dell'assenza di corporate action.
+
+Questi controlli sono **solo strutturali**: non verificano indipendentemente
+licenza, fonte dell'URL dichiarato, rettifiche di split/dividendi, orario della
+chiusura né bid/ask effettivamente negoziabile. Il flag di rischio rimane
+`UNVERIFIED / NOT TRADE READY`.
+
+**Evidenza:** [CI Blocco B — 213 test superati](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41826625950).
