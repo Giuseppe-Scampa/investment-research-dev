@@ -129,3 +129,11 @@ has two semantically different revenue concepts (19,650m / 20,348m EUR).
 and parsed; it is not marked validated. See
 [real issuer comparison and unresolved Terna evidence](docs/EU_ESEF_REAL_VALIDATION_PRYSMIAN_TERNA.md)
 and [Edison validation](docs/EU_ESEF_REAL_VALIDATION_EDISON.md).
+
+### V3.0.0 R-007 — funnel di ricerca auditable (demo non trade-ready)
+
+Il comando `investresearch-b funnel --bundle data/research/demo --output reports/generated/block_b_funnel`
+applica i gate di copertura, qualità e diversificazione; su 7 titoli demo
+restituisce correttamente **nessuna shortlist**. Per il contratto di screening
+200+ → 30–60 → 5–7 → 0–3 e i limiti sulle fonti reali vedere
+[metodologia e controlli R-007](docs/architecture/R007_FUNNEL_RESEARCH.md).

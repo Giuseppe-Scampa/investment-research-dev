@@ -12,8 +12,8 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 | R-003 scenari A/B/C e costi | M2 | PARTIAL | Private: decision, cost_engine, broker_preflight, dashboard; E2E sintetico realistico A/B/C con 2 vintage e 6 eventi | E2E completo con caso anonimo realistico, no input inventati |
 | R-004 fonti reali/provenance e rights | M3 | PARTIAL | Public Blocco B PR #2: SEC reale, BCE, ESEF campionaria, prezzi locali con UTC/range sessioni/hashes (04/11) | Fonte prezzi reale autorizzata e affidabile per ricerca riproducibile |
 | R-005 prezzi, corporate actions, FX | M3 | PARTIAL | Parsing, checksums, anti-lookahead; mapping Fresenius; gate >=15% e split_dates validati (anche split <15%); FX BCE asincrono non risolto | Corporate actions/FX/adjustment verificati su storici reali rappresentativi, non solo euristica |
-| R-006 universo globale multi-asset | M4 | PARTIAL | SEC ticker discovery US ampia, campionamento hash non alfabetico (non rappresentativo); universo ancora candidato non classificato | Mercati non-US, classi alternative, mappatura, filtri tracciati |
-| R-007 funnel e shortlist indipendente | M4 | MISSING | Documento obiettivo, nessuno screening ampio real-world validato | E2E centinaia -> 30–60 -> 5–7 -> <= 3 con ragioni/limiti |
+| R-006 universo globale multi-asset | M4 | PARTIAL | Discovery SEC US ampia; funnel aggiunge conteggio delle classi, settori e venue effettivamente ordinabili, senza inventare identità/coverage | Mercati non-US e classi alternative con dati autentici, mappatura ISIN, prezzi/diritti, filtri tracciati |
+| R-007 funnel e shortlist indipendente | M4 | PARTIAL | CLI di funnel offline: gate >=200 strumenti / >=100 ordinabili, pool 40, deep dive 6, finalisti provvisori 0–3 solo con diligence manuale; demo 7→0; 254 test CI | E2E reale multi-asset 200+ -> 30–60 -> 5–7 -> <=3, dati autorizzati, tesi/valutazioni comparabili e fonti verificate |
 | R-008 ranking multi-fattore | M4 | PARTIAL | Indicatori e scoring su demo 7 titoli fittizi; overlay margine SEC | Reali fondamentali, valutazioni, rischio, settori, controtesi, macro |
 | R-009 AI gratuita e multi-provider | M5 | PARTIAL | Modulo public-only opt-in: Ollama locale loopback e importazione offline di risposte Gemini/Groq/OpenRouter/Ollama; 230 test CI, nessuna API commerciale automatica | Test live Ollama; termini/quote e billing provider remoti; fact-check sostanziale fonti, hardening privacy e integrazione M6 |
 | R-010 dashboard e audit unificati | M6 | PARTIAL | Dashboard separate Blocco A e B, decision ledger e report statici | Contratto dati B->A e dashboard unica provata E2E |
@@ -38,7 +38,7 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 ## Evidenza CI e limiti
 
 - Private PR #2 Blocco A: **109 test passati**, CI PR [41826154840](https://github.com/Giuseppe-Scampa/investment-research-2026/actions/runs/41826154840) (4 novembre 2026); caso sintetico R-003 con 2 vintage e 6 eventi, tassonomia Oil & Gas allineata.
-- Public PR #2 Blocco B: **230 test passati**, CI PR [41842478740](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41842478740) (4 novembre 2026). Gate UTC/split_dates e primo modulo R-009 opt-in: CI verde, governance PR verificata.
+- Public PR #2 Blocco B: **254 test passati**, CI PR [41869669069](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41869669069) (4 novembre 2026). Gate prezzi, R-009 opzionale e R-007 funnel offline con coverage/esclusioni esplicite.
 - Entrambe PR aperte. Nessun merge del corpus V3.0.0 all'origine di questa roadmap.
 - La CI testata riguarda i casi implementati, NON i milestone ancora parziali o mancanti.
 
@@ -66,7 +66,7 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
 
 - **R-003 / M2:** prova E2E sintetica su 3 posizioni, 2 vintage, 6 eventi 2026; verifica aritmetica B/C, non-compensazione capital income, rigetto di data riconoscimento incoerente e saldo wallet manipolato, preflight non trade-ready. Fonte in repository privato: `docs/R003_SYNTHETIC_E2E_2026-11-04.md`. Stato **PARTIAL** in attesa dei restanti requisiti e delle verifiche fiscali.
 - **R-004/R-005 / M3:** per OHLCV manuali, blocco di timestamp non UTC/futuri/precedenti alla quotazione più recente, date split malformate/duplicate/future, stop allo score per split dichiarati anche sotto il 15%. Lo storico reale con diritti comprovati e corporate actions controllate **non** è ancora validato; stato **PARTIAL**.
-- **R-007 (funnel globale)** rimane **MISSING**; **R-009** è passato a **PARTIAL** con il solo gateway locale/offline, senza prova live del modello né contratto API free. Nessuna milestone viene rinominata o dichiarata completata dalla sola CI verde. La V3.0.0 e ADR-0001 restano immutati.
+- **R-007 (funnel globale)** era **MISSING** alla data di questa revisione; il nuovo incremento qui sotto lo porta a **PARTIAL** (solo algoritmo e test sintetici). **R-009** resta **PARTIAL** senza prova live del modello. V3.0.0 e ADR-0001 immutati.
 
 ## Incremento verificato — 4 novembre 2026, R-009 / M5
 
@@ -74,4 +74,12 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
 - Confronto **offline** di risposte etichettate Gemini, Groq, OpenRouter o Ollama; etichetta dichiarata dall'operatore, non certificazione di free tier o provenienza.
 - Input limitato a ricerca societaria pubblica con check `as_of`/data fonte, registri di ID, citazioni riferite soltanto a ID disponibili, filtri privacy *best effort*, documentazione e output locali ignorati da Git. I contenuti dei documenti e le citazioni NON sono fattualmente verificati dal motore.
 - **Evidenza:** CI [41842478740](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41842478740), **230 test superati**, nessuna chiamata AI in Actions; esempio end-to-end interamente sintetico `config/ai_public_review_example.json` + `config/ai_public_response_example.json`.
-- **Per DONE:** prova locale Ollama documentata, valutazione costi/termini delle API gratuite prima di eventuale live integration, verifica sostanziale citazioni su documenti autentici e integrazione M5→M6. R-009 **PARTIAL**, R-007 **MISSING**. Nessuna modifica a V3.0.0 o ADR-0001.
+- **Per DONE:** prova locale Ollama documentata, valutazione costi/termini delle API gratuite prima di eventuale live integration, verifica sostanziale citazioni su documenti autentici e integrazione M5→M6. R-009 **PARTIAL**, R-007 ora **PARTIAL** con solo funnel sintetico, non completo. Nessuna modifica a V3.0.0 o ADR-0001.
+
+## Incremento verificato — 4 novembre 2026, R-006/R-007/R-008 / M4
+
+- `research_funnel.py` e `investresearch-b funnel` applicano limiti parametrizzabili compatibili con V3.0.0: ≥200 candidati e ≥100 ordinabili, research pool 30–60 (default 40), due diligence 5–7 (default 6), finalisti 0–3 **soltanto con revisioni manuali documentate**, mantenendo tutti gli output `trade_ready=false`.
+- Non si riempiono quote artificialmente; gli strumenti incompleti vengono esclusi con ragioni esplicite. Diversificazione per settore, conteggi reali per mercato/classe/settore, hash della ricerca, protezione CSV/Markdown e directory private per input esterni/manual review.
+- Test su **250 candidati interamente sintetici**, non 250 emittenti reali: `254 passed` [CI](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41869669069). Demo ufficiale da sette strumenti correttamente produce **nessuna shortlist**.
+- **R-007: MISSING → PARTIAL**, senza dichiarare screening globale completato. **R-006/R-008: PARTIAL** invariati per mancanza di copertura reale multi-asset, comparabilità fondamentali, valuation e verifica di catalizzatori; R-004/R-005 ancora limitati ai prezzi con diritti non verificati. V3.0.0/ADR-0001 invariati.
+- Guida e gate: [R007_FUNNEL_RESEARCH.md](R007_FUNNEL_RESEARCH.md).
