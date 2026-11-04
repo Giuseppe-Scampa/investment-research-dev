@@ -169,3 +169,14 @@ are synthetic. The real-source variant requires a personally authorized bundle
 and writes only to ignored `data/private/` (or outside the repo).
 
 See [runbook and private B→A transfer](docs/architecture/DECISION_2026_TACTICAL_EXECUTION.md).
+
+### Twelve Data Basic (next verified US price source; no real API call yet)
+
+`investresearch-b twelve-pilot --symbol FSLR --venue XNAS
+--live-confirm --acknowledge-personal-terms --output data/private/twelve-FSLR`
+makes one local-only 100-bar daily request (`adjust=splits`) using
+`TWELVE_DATA_API_KEY` from the environment. Its response is diagnostic,
+**not** automatically ranked, with no API key or prices committed/uploaded.
+
+Details: [Twelve Data Basic runbook](docs/architecture/TWELVE_DATA_BASIC_PILOT.md)
+and [market source rights triage](docs/architecture/REAL_DATA_PROVIDER_TRIAGE_2026-11-05.md).
