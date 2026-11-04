@@ -55,6 +55,18 @@ def main(argv=None):
     c.add_argument('--acknowledge-yahoo-terms',action='store_true',
                    help='Explicit opt-in for personal research under Yahoo Finance data terms')
     c.add_argument('--as-of',default=None,help='Historical cutoff YYYY-MM-DD; future snapshots prohibited')
+    av=sp.add_parser('alpha-pilot',
+        help='R-004: one opt-in Alpha Vantage raw DAILY symbol pilot, LOCAL ONLY / NO RANKING')
+    av.add_argument('--symbol',required=True,help='Provider symbol; not ISIN or verified venue')
+    av.add_argument('--venue',required=True,choices=['XNYS','XNAS','XMIL','XETR','XPAR'])
+    av.add_argument('--as-of',default=date.today().isoformat(),
+                    help='Must be current UTC collection date, no backdated source claim')
+    av.add_argument('--live-confirm',action='store_true',
+                    help='Explicit authorization for exactly one live Alpha Vantage request')
+    av.add_argument('--acknowledge-source-terms',action='store_true',
+                    help='Confirm local diagnostic use, no external redistribution')
+    av.add_argument('--output',type=Path,required=True,
+                    help='Local ignored data/private directory or outside repository')
     ai=sp.add_parser('ai-countercheck',
         help='R-009: optional public-only AI counteranalysis; local Ollama or offline imported provider response')
     ai.add_argument('--spec',type=Path,required=True,help='Public issuer research only; no bank/personal data')
@@ -125,6 +137,18 @@ def main(argv=None):
             acknowledge_yahoo_terms=args.acknowledge_yahoo_terms,as_of=args.as_of)
         # Never print SEC contact or download credentials; prints hash + safe source.
         print(json.dumps({k:meta[k] for k in ('provider','identifier','source_url','sha256','path','bytes')},indent=2))
+    elif args.command=='alpha-pilot':
+        from .research_alpha_pilot import run_pilot
+        if not args.live_confirm or not args.acknowledge_source_terms:
+            p.error('alpha-pilot requires --live-confirm and --acknowledge-source-terms')
+        # Never accept a key on the CLI or in a public file.
+        result=run_pilot(symbol=args.symbol,venue=args.venue,
+              as_of=date.fromisoformat(args.as_of),output=args.output,
+              repo_root=ROOT,api_key=os.getenv('ALPHAVANTAGE_API_KEY'),
+              live_confirm=True,terms_confirm=True)
+        print(f"Alpha Vantage local pilot: {result['symbol']} "
+              f"{result['session_count']} RAW unverified sessions; "
+              "no market score, no redistribution, no broker execution")
     elif args.command=='ai-countercheck':
         from .ai_counteranalysis import (
             MAX_RESPONSE_BYTES, validate_public_spec, parse_response,
