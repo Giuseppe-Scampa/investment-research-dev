@@ -110,3 +110,20 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
 - Stati canonici invariati: R-004/R-005/R-006/R-007/R-008/R-009/R-010
   **PARTIAL**; V3.0.0/ADR-0001 invariati. Per R-007 `DONE` serve ancora
   almeno un funnel **reale** multi-market e multi-asset, non un test 250 synthetic.
+
+## Riscontro live e piano di esecuzione — 5 novembre 2026
+
+- **Alpha Vantage FSLR:** [GitHub manual run 41930022872](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41930022872)
+  conclusa con `success`; i log confermano **100 sessioni RAW non verificate**,
+  integrità del formato e nessun CSV pubblicato. Primo **pilot di connettività**
+  reale: R-004/R-005 **ancora PARTIAL** fino a rettifiche corporate actions,
+  provenienza certificata, licenza e riproducibilità.
+- **Calendario indicative, utenze e gate:** il documento operativo versionato
+  [INTEGRATION_EXECUTION_PLAN_2026-11-05.md](INTEGRATION_EXECUTION_PLAN_2026-11-05.md)
+  separa Decision 2026 (prima A/B/C 1–2 settimane, verifica 3–5)
+  da V3 completa (8–14 settimane con fonti adeguate); nuove API AI sono
+  opzionali e successive alla stabilizzazione del contratto dati.
+- La chiave Alpha Vantage è già nel secret GitHub (inserita dall'operatore):
+  non esportare né leggere dati grezzi o segreti nel repository pubblico.
+  **R-007/M4 non è DONE**: 250 fixture sintetiche non sostituiscono
+  un universo realmente analizzato e multi-mercato.
