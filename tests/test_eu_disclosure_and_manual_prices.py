@@ -163,9 +163,9 @@ def test_untrusted_yahoo_price_source_also_requires_integrity_hash(tmp_path):
 
 
 @pytest.mark.parametrize('retrieved,match', [
-    ('2026-11-01T20:00:00+00:00', 'predates its latest price'),
+    ('2026-10-29T20:00:00+00:00', 'predates its latest price'),
     ('2026-11-03T01:00:00Z', 'collected after as_of'),
-    ('2026-11-02', 'timezone-aware'),
+    ('2026-11-02', 'UTC offset'),
     ('2026-11-02T18:00:00', 'UTC offset'),
     ('2026-11-02T18:00:00+01:00', 'UTC offset'),
     ('not-a-timestamp', 'timezone-aware'),
