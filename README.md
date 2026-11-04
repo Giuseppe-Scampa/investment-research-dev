@@ -137,3 +137,16 @@ applica i gate di copertura, qualità e diversificazione; su 7 titoli demo
 restituisce correttamente **nessuna shortlist**. Per il contratto di screening
 200+ → 30–60 → 5–7 → 0–3 e i limiti sulle fonti reali vedere
 [metodologia e controlli R-007](docs/architecture/R007_FUNNEL_RESEARCH.md).
+
+### R-004/R-005 — diagnosi gratuita dei prezzi, senza ranking automatico
+
+Il connettore opzionale `investresearch-b alpha-pilot` usa esclusivamente
+il `TIME_SERIES_DAILY` raw `compact` gratuito di Alpha Vantage: una richiesta
+autorizzata per un simbolo, output locale ignorato da Git, chiave solo in
+`ALPHAVANTAGE_API_KEY`. I prezzi, non rettificati per corporate action,
+**non vengono promossi automaticamente** al ranking o a uno stato trade-ready.
+
+Prima di creare account, leggere la [matrice delle utenze e delle dipendenze
+V3](docs/architecture/ACCOUNT_AND_SOURCE_READINESS_2026.md) e le
+[note del pilot](docs/architecture/ALPHA_PILOT_NOTES.md). Sono già
+utilizzabili senza nuove utenze il discovery SEC e i riferimenti FX BCE.
