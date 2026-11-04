@@ -144,6 +144,7 @@ def parse_response(spec, provider, model, response):
         _public_text(item["claim"], "counterargument", 1500)
         cited = item["source_ids"]
         if (not isinstance(cited, list) or not 1 <= len(cited) <= len(valid) or
+                not all(isinstance(x,str) for x in cited) or
                 len(cited) != len(set(cited)) or not set(cited).issubset(valid)):
             raise ValueError("Counterargument references missing/invalid citation IDs")
     for item in doubts:
@@ -165,8 +166,14 @@ def invoke_local_ollama(spec, model, *, explicitly_authorized=False):
     request = urllib.request.Request(
         "http://127.0.0.1:11434/api/generate", data=payload,
         headers={"Content-Type": "application/json"}, method="POST")
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            raise ValueError("Local Ollama redirects are forbidden")
+
+    # No system proxy and no redirect: prompt must not escape loopback.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
     try:
-        with urllib.request.urlopen(request, timeout=35) as reply:
+        with opener.open(request, timeout=35) as reply:
             raw = reply.read(MAX_RESPONSE_BYTES + 1)
     except (OSError, TimeoutError) as exc:
         raise ValueError("Local Ollama request unavailable; no remote fallback") from exc
