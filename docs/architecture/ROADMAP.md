@@ -127,3 +127,25 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
   non esportare né leggere dati grezzi o segreti nel repository pubblico.
   **R-007/M4 non è DONE**: 250 fixture sintetiche non sostituiscono
   un universo realmente analizzato e multi-mercato.
+
+## Decision 2026 tactical bridge e seconda fonte dati — 5 novembre 2026
+
+- Blocco B `investresearch-b tactical` usa lo screening originale, i
+  gate per singolo ISIN di R-007, e il registro fiscale; classi
+  EQUITY/ETF_UCITS/ETC/ETN/CERTIFICATE, nessuna ricerca globale
+  dichiarata senza universo autentico, nessun `trade_ready`.
+- Blocco A privato `investresearch tactical-c` accoppia il report di
+  priorità con lo screening sorgente tramite hash, identità, score,
+  provenienza e **riproduzione dell'ordine deterministico**; simula
+  commissioni, rendimenti ipotetici e fiscalità in privato. Non riporta
+  un elenco d'ordine o prezzi eseguibili.
+- [Runbook B→A](DECISION_2026_TACTICAL_EXECUTION.md), test in Blocco A e
+  [valutazione fonti](REAL_DATA_PROVIDER_TRIAGE_2026-11-05.md).
+- Nuovo `twelve-pilot`: client **opt-in** Basic solo US XNAS/XNYS,
+  100 barre, `adjust=splits` richiesto e NON certificato,
+  mai alimentato automaticamente nel ranking. Unit test tutti offline.
+- **Il nuovo feed live NON è stato chiamato**: manca la chiave Twelve Data.
+  Il pilot Alpha Vantage FSLR era riuscito con 100 barre RAW,
+  ma non basta per un universe di centinaia di strumenti.
+- Stati invariati: R-003/R-004/R-005/R-006/R-007/R-008/R-010
+  **PARTIAL**. Solo R-013 DONE. Nessuna modifica a V3.0.0/ADR-0001.
