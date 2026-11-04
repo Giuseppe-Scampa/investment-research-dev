@@ -171,7 +171,7 @@ def invoke_local_ollama(spec, model, *, explicitly_authorized=False):
             raise ValueError("Local Ollama redirects are forbidden")
 
     # No system proxy and no redirect: prompt must not escape loopback.
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     try:
         with opener.open(request, timeout=35) as reply:
             raw = reply.read(MAX_RESPONSE_BYTES + 1)
@@ -241,7 +241,7 @@ def write_counteranalysis(record, output, *, repo_root):
         "", "**Not a source fact-check, trading signal, or fiscal opinion.**",
         f"Provider: {html.escape(record['provider'])} / {html.escape(record['model'])}",
         f"Research as-of: {record['research_as_of']}",
-        f"Input SHA256: \`{record['input_sha256']}\`",
+        f"Input SHA256: {record['input_sha256']}",
         "", "## Summary", "", html.escape(record["summary"]), "",
         "## Counterarguments", "",
     ]
@@ -251,6 +251,7 @@ def write_counteranalysis(record, output, *, repo_root):
     lines += ["", "## Uncertainties", ""]
     lines += ["- " + html.escape(x) for x in record["uncertainties"]]
     lines += ["", "## Provenance limitation", "",
+              "Citation IDs are present but not fact-checked against original documents.",
               "Citation identifiers exist in the supplied register. Their meaning,",
               "source authenticity, original content and factual support are NOT verified.",
               "No API-paid service is invoked by this module. AI never updates ranking or trades.", ""]
