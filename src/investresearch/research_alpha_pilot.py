@@ -22,7 +22,7 @@ ENDPOINT = "https://www.alphavantage.co/query"
 PROVIDER = "ALPHAVANTAGE_DAILY_RAW_UNVERIFIED"
 SCHEMA = "r004-alphavantage-free-daily-pilot-v1"
 MAX_RESPONSE_BYTES = 200_000
-SYMBOL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.\\-]{0,19}$")
+SYMBOL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.-]{0,19}$")
 VENUES = frozenset({"XNYS", "XNAS", "XMIL", "XETR", "XPAR"})
 PRICE_KEYS = {
     "1. open": "Open", "2. high": "High", "3. low": "Low",
@@ -168,7 +168,7 @@ def run_pilot(*, symbol, venue, as_of, output, repo_root, api_key,
         relative=None
     if relative is not None and relative.parts[:2]!=("data","private"):
         raise ValueError("Market-data pilot output inside repo must be ignored data/private/")
-    if out.exists() and any(out.iterdir()):
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
         raise ValueError("Output already exists; refuse overwrite/accidental repeated pilot")
     url=_url(symbol,api_key)
     payload=(_fetch_once(url) if transport is None else transport(url))
