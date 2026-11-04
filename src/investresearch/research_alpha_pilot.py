@@ -103,10 +103,12 @@ def parse_daily(payload, symbol, as_of):
             raise ValueError("Daily OHLCV fields malformed or missing")
         vals={out:_number(raw[src],zero_ok=out=="Volume")
               for src,out in PRICE_KEYS.items()}
-        if vals["High"] < max(vals["Open"], vals["Close"], vals["Low"]):
+        if vals["High"] < max(vals["Open"], vals["Close"]):
             raise ValueError("OHLC high inconsistent")
         if vals["Low"] > min(vals["Open"], vals["Close"]):
             raise ValueError("OHLC low inconsistent")
+        if vals["Low"] > vals["High"]:
+            raise ValueError("OHLC range inconsistent")
         if vals["Volume"] != vals["Volume"].to_integral_value():
             raise ValueError("Daily market volume not an integer")
         output.append({"Date":session.isoformat(),
