@@ -1,0 +1,107 @@
+name: Twelve Data Basic - manual US daily pilot (no market artifacts)
+
+# Manual only; never expose a repository secret to PR/push code.
+# Read a pinned reviewed commit, never the moving public feature branch.
+on:
+  workflow_dispatch:
+    inputs:
+      instrument:
+        description: "One US test instrument; no trade signal"
+        type: choice
+        required: true
+        default: FSLR
+        options:
+          - FSLR
+          - IBM
+
+permissions:
+  contents: read
+
+concurrency:
+  group: twelve-data-basic-single-symbol-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: github.repository == 'Giuseppe-Scampa/investment-research-dev' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout immutably pinned reviewed research pilot
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: 211d5d3cc039ec97729d89aef165b09a15000b9b
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+      - name: Install pilot without optional data subscriptions
+        run: python -m pip install -e .
+      - name: Make one explicit Twelve Data Basic request
+        shell: bash
+        env:
+          TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+          PILOT_INSTRUMENT: ${{ inputs.instrument }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [[ -z "${TWELVE_DATA_API_KEY:-}" ]]; then
+            echo "::error::Add TWELVE_DATA_API_KEY as repository secret before this pilot"
+            exit 2
+          fi
+          case "$PILOT_INSTRUMENT" in
+            FSLR) MIC="XNAS" ;;
+            IBM) MIC="XNYS" ;;
+            *)
+              echo "::error::Unreviewed symbol not allowed by this manual diagnostic"
+              exit 2
+              ;;
+          esac
+          python -m investresearch.research_cli twelve-pilot \
+            --symbol "$PILOT_INSTRUMENT" --venue "$MIC" \
+            --live-confirm --acknowledge-personal-terms \
+            --output "$RUNNER_TEMP/twelve_basic_only"
+          # Never display full request URL (contains secret), raw prices,
+          # session closes, or source payload in logs / report artifacts.
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          path=Path(os.environ['RUNNER_TEMP'])/'twelve_basic_only'/'TWELVE_PILOT_METADATA.json'
+          obj=json.loads(path.read_text(encoding='utf-8'))
+          if obj['research_status']!='DIAGNOSTIC_ONLY_NOT_RANKABLE_NOT_TRADE_READY':
+              raise SystemExit('Unexpected diagnostic readiness')
+          safe={
+             'Symbol':obj['symbol'],'Venue':obj['venue_reported'],
+             'Provider type':obj['provider_type'],
+             'Sessions':obj['session_count'],
+             'First session':obj['first_session'],
+             'Last session':obj['last_session'],
+             'Source SHA256':obj['source_raw_sha256'],
+             'Normalized SHA256':obj['normalized_csv_sha256'],
+             'Requested adjustment':obj['requested_adjust'],
+             'Independently verified adjustment':str(obj['actual_adjustment_independently_verified']),
+             'Readiness':obj['research_status']
+          }
+          text=['## Twelve Data Basic — private-source pilot',
+                '', '| Field | Result |','|---|---|']
+          for k,v in safe.items():
+              v=str(v)
+              if any(c in v for c in '|\r\n'):
+                  raise SystemExit('Unsafe field in summary')
+              text.append(f'| {k} | {v} |')
+          text += [
+             '', '**No prices uploaded as artifacts; this is a diagnostic only.**',
+             '**No certified adjustment, ISIN, license or buy signal.**'
+          ]
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write('\n'.join(text)+'\n')
+          print('Twelve Data Basic diagnostic passed; NOT trade ready.')
+          PY
+      - name: Confirm no intentionally published market-data artifacts
+        if: always()
+        run: |
+          test ! -e reports/generated/TWELVE_SPLIT_REQUESTED_UNVERIFIED.csv
+          echo "No raw market-data upload step exists."
