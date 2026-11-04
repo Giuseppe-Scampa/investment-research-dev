@@ -150,3 +150,22 @@ Prima di creare account, leggere la [matrice delle utenze e delle dipendenze
 V3](docs/architecture/ACCOUNT_AND_SOURCE_READINESS_2026.md) e le
 [note del pilot](docs/architecture/ALPHA_PILOT_NOTES.md). Sono già
 utilizzabili senza nuove utenze il discovery SEC e i riferimenti FX BCE.
+
+### Decision 2026 — audited tactical multi-asset research (not R-007 global funnel)
+
+The new `investresearch-b tactical` command **re-runs** Block B's source-checked
+`screen()` against an actual bundle and the existing R-007 per-instrument
+eligibility gates, grouped by instrument class. It reports an auditable research
+queue for stocks, ETF UCITS, ETC, ETN and certificates **only when data support
+it**; it never lowers R-007's 200+ threshold or creates buy signals.
+
+```bash
+investresearch-b tactical --bundle data/research/demo \
+  --output reports/generated/block_b_tactical_demo
+```
+
+The demo MUST produce **zero real research priorities**, because all its data
+are synthetic. The real-source variant requires a personally authorized bundle
+and writes only to ignored `data/private/` (or outside the repo).
+
+See [runbook and private B→A transfer](docs/architecture/DECISION_2026_TACTICAL_EXECUTION.md).
