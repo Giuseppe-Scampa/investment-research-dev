@@ -19,6 +19,12 @@ def main(argv=None):
     s.add_argument('--bundle',type=Path,default=ROOT/'data/research/demo')
     s.add_argument('--output',type=Path,default=ROOT/'reports/generated/block_b')
     s.add_argument('--max-age-sessions',type=int,default=1)
+    funnel=sp.add_parser('funnel',help='R-007 offline funnel: broad screened universe to evidence review queue')
+    funnel.add_argument('--bundle',type=Path,required=True,help='Source checked Block B bundle, not an arbitrary rank CSV')
+    funnel.add_argument('--output',type=Path,required=True,help='External data inside repo only in data/private/')
+    funnel.add_argument('--policy',type=Path,help='Optional R-007 validated limits JSON')
+    funnel.add_argument('--diligence',type=Path,help='Optional manual public issuer due-diligence JSON')
+    funnel.add_argument('--max-age-sessions',type=int,default=1)
     b=sp.add_parser('build',help='Normalize local raw provider snapshots to immutable bundle')
     b.add_argument('--spec',type=Path,required=True)
     b.add_argument('--output',type=Path,required=True)
@@ -68,6 +74,22 @@ def main(argv=None):
         result=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
         write_screening(result,args.output)
         print(f"Block B: {result['ranked_count']} / {result['universe_size']} ranked; mode {result['dataset_mode']}; output {args.output}")
+    elif args.command=='funnel':
+        from .research_funnel import build_funnel, write_funnel
+        if args.max_age_sessions not in (0,1,2,3,4,5):
+            p.error('max-age-sessions must be between 0 and 5')
+        settings=json.loads((ROOT/'config/settings.json').read_text(encoding='utf-8'))
+        report=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
+        policy=json.loads(args.policy.read_text(encoding='utf-8')) if args.policy else None
+        diligence=json.loads(args.diligence.read_text(encoding='utf-8')) if args.diligence else None
+        result=build_funnel(report,policy=policy,diligence=diligence)
+        write_funnel(result,args.output,repo_root=ROOT)
+        print(f"R-007 funnel: {result['status']} | "
+              f"{result['input_universe_count']} in universe; "
+              f"{len(result['stage_1_pool'])} research / "
+              f"{len(result['stage_2_deep_dive'])} deep-dive / "
+              f"{len(result['stage_3_provisional_finalists'])} provisional. "
+              "NOT trade-ready.")
     elif args.command=='build':
         spec=json.loads(args.spec.read_text(encoding='utf-8'))
         result=build_bundle(spec,args.output)
