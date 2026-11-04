@@ -83,3 +83,30 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
 - Test su **250 candidati interamente sintetici**, non 250 emittenti reali: `254 passed` [CI](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41869669069). Demo ufficiale da sette strumenti correttamente produce **nessuna shortlist**.
 - **R-007: MISSING → PARTIAL**, senza dichiarare screening globale completato. **R-006/R-008: PARTIAL** invariati per mancanza di copertura reale multi-asset, comparabilità fondamentali, valuation e verifica di catalizzatori; R-004/R-005 ancora limitati ai prezzi con diritti non verificati. V3.0.0/ADR-0001 invariati.
 - Guida e gate: [R007_FUNNEL_RESEARCH.md](R007_FUNNEL_RESEARCH.md).
+
+## Incremento 4 novembre 2026 — account readiness e prezzo pilota R-004/R-005
+
+- Connettore **opt-in singolo simbolo** `investresearch-b alpha-pilot` per
+  Alpha Vantage `TIME_SERIES_DAILY` free `compact` (ultime ≤100 osservazioni
+  **raw**, NON split/dividend-adjusted). La chiave è letta **solo**
+  da `ALPHAVANTAGE_API_KEY` locale; mai in codice, report, output, Actions o
+  URL di provenienza. Una richiesta HTTPS, no retry/fallback, solo
+  `data/private/` o percorso esterno, nessuna promozione a ranking.
+- Input e output verificati con parser rigoroso, symbol match, date non future,
+  OHLCV coerente, hash raw/normalizzato, limite byte, rifiuto rate limit e
+  dichiarazione legale/qualitativa `NOT_TRADE_READY`.
+- Il pilot non è stato ancora eseguito contro un account/API reale: richiede
+  **l'utenza gratuita e il consenso esplicito** dell'operatore; non certifica
+  licenze di uso non-display, storico rettificato, ISIN/MIC o trading.
+- Matrice utenze e ordine di creazione:
+  [ACCOUNT_AND_SOURCE_READINESS_2026.md](ACCOUNT_AND_SOURCE_READINESS_2026.md).
+  Per ricerca SEC/BCE non occorrono nuovi account. Gemini/Groq/OpenRouter sono
+  **successivi e opzionali**, così come Euronext/Cloudflare AI/Oracle.
+- Il percorso **Decision 2026** può usare il saldo 2022 di circa **5.000 €
+  dichiarato dall'utente**, con status diverso da `BROKER_VERIFIED`, senza
+  richiedere il replay completo dei movimenti bancari per iniziare A/B/C.
+  La verifica fiscale finale dell'intermediario resta necessaria prima di
+  fare affidamento su compensazioni reali.
+- Stati canonici invariati: R-004/R-005/R-006/R-007/R-008/R-009/R-010
+  **PARTIAL**; V3.0.0/ADR-0001 invariati. Per R-007 `DONE` serve ancora
+  almeno un funnel **reale** multi-market e multi-asset, non un test 250 synthetic.
