@@ -73,6 +73,15 @@ def main(argv=None):
                     help='Confirm local diagnostic use, no external redistribution')
     av.add_argument('--output',type=Path,required=True,
                     help='Local ignored data/private directory or outside repository')
+    td=sp.add_parser('twelve-pilot',
+        help='R-004 opt-in Twelve Data Basic US one-symbol adjusted-request diagnostic; no ranking')
+    td.add_argument('--symbol',required=True,help='Provider symbol, never inferred from ISIN')
+    td.add_argument('--venue',required=True,choices=['XNYS','XNAS'])
+    td.add_argument('--as-of',default=datetime.now(timezone.utc).date().isoformat())
+    td.add_argument('--live-confirm',action='store_true')
+    td.add_argument('--acknowledge-personal-terms',action='store_true',
+                    help='Confirm personal internal-only noncommercial use; no raw redistribution')
+    td.add_argument('--output',type=Path,required=True)
     ai=sp.add_parser('ai-countercheck',
         help='R-009: optional public-only AI counteranalysis; local Ollama or offline imported provider response')
     ai.add_argument('--spec',type=Path,required=True,help='Public issuer research only; no bank/personal data')
@@ -170,6 +179,17 @@ def main(argv=None):
         print(f"Alpha Vantage local pilot: {result['symbol']} "
               f"{result['session_count']} RAW unverified sessions; "
               "no market score, no redistribution, no broker execution")
+    elif args.command=='twelve-pilot':
+        from .research_twelve_pilot import run_pilot
+        if not args.live_confirm or not args.acknowledge_personal_terms:
+            p.error('twelve-pilot requires --live-confirm and --acknowledge-personal-terms')
+        meta=run_pilot(symbol=args.symbol,venue=args.venue,
+            as_of=date.fromisoformat(args.as_of),output=args.output,
+            repo_root=ROOT,api_key=os.getenv('TWELVE_DATA_API_KEY'),
+            live_confirm=True,terms_confirm=True)
+        print(f"Twelve Data Basic diagnostic: {meta['symbol']} "
+              f"{meta['session_count']} bars, split adjustment requested "
+              "not independently verified; NO RANKING/ORDERS")
     elif args.command=='ai-countercheck':
         from .ai_counteranalysis import (
             MAX_RESPONSE_BYTES, validate_public_spec, parse_response,
