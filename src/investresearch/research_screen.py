@@ -231,6 +231,7 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
                    'source_url':event['source_url']}
                   for event in events if event['asset_id'] in (uid,'*')]
         results.append({'id':uid,'name':asset['name'],'isin':asset.get('isin',''),
+            'asset_type':asset.get('asset_type','EQUITY'),
             'sector':asset.get('sector',''),'venue':asset['venue'],
             'currency':asset['currency'],'status':status,'blocking_constraints':blocks,
             'warnings':warnings,'price_source':asset['prices']['provider'],
