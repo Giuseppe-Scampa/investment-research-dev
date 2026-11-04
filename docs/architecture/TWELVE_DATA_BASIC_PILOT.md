@@ -62,3 +62,24 @@ must NOT be inferred from general provider marketing.
 Use SEC filings for US issuer fundamentals and approved local
 EU/ESEF issuer reports for fundamentals; individual providers
 do not replace the global evidence and license gates.
+
+## GitHub Actions (no local terminal required)
+
+A separate **manual-only** workflow is already installed on `main`
+without merging the V3 draft PR:
+[Actions — Twelve Data Basic pilot](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/workflows/twelve-data-manual-pilot.yml).
+
+1. If/when creating the **Free Basic** account, add repository secret
+   `TWELVE_DATA_API_KEY` under Settings → Secrets and variables → Actions.
+   Never paste this key into ChatGPT or source code.
+2. Select `Run workflow`, branch **main**, instrument FSLR (or IBM), and
+   execute manually. No push event triggers market collection.
+3. The job pins reviewed code to commit
+   `211d5d3cc039ec97729d89aef165b09a15000b9b`,
+   reports **only** symbol, venue, type, session counts, dates and
+   SHA256 hashes to Job Summary, and never uploads raw price files.
+4. A missing/unsupported free entitlement or secret fails the job;
+   it never upgrades a plan or silently switches provider.
+
+**The workflow has been added but NOT dispatched or validated against
+the live Twelve Data API; all price/ranking/data-license gates remain open.**
