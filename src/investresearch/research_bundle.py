@@ -9,7 +9,7 @@ import hashlib
 import io
 import json
 import re
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -124,6 +124,43 @@ def _get_source_bytes(meta:dict):
     return payload
 
 
+
+def _validate_manual_price_evidence(source:dict, as_of:date, bars:list[dict]):
+    """Fail closed when a claimed local snapshot could not yet contain its bars.
+
+    Attested source rights are still NOT authenticated; this is a structural
+    point-in-time and metadata check only, not a market data certification.
+    """
+    raw=source.get('retrieved_at_utc')
+    if not isinstance(raw,str):
+        raise ValueError('Manual price retrieval timestamp must be timezone-aware UTC ISO 8601')
+    try:
+        retrieved=datetime.fromisoformat(raw.replace('Z','+00:00'))
+    except ValueError:
+        raise ValueError('Manual price retrieval timestamp must be timezone-aware UTC ISO 8601') from None
+    if retrieved.tzinfo is None or retrieved.utcoffset()!=timedelta(0):
+        raise ValueError('Manual price retrieval timestamp requires an explicit UTC offset')
+    if retrieved.date()>as_of:
+        raise ValueError('Manual price snapshot collected after as_of date')
+    if retrieved.date()<date.fromisoformat(bars[-1]['date']):
+        raise ValueError('Manual price snapshot predates its latest price session')
+    split_dates=source.get('split_dates',[])
+    if not isinstance(split_dates,list):
+        raise ValueError('Declared split_dates must be a list of ISO dates')
+    seen=set()
+    for raw_split in split_dates:
+        if not isinstance(raw_split,str):
+            raise ValueError('Declared split_dates must contain ISO dates')
+        try:
+            split=date.fromisoformat(raw_split)
+        except ValueError:
+            raise ValueError('Declared split_dates must contain ISO dates') from None
+        if split>as_of:
+            raise ValueError('Declared split date is after the research as_of')
+        if split in seen:
+            raise ValueError('Duplicate declared split date')
+        seen.add(split)
+
 def _write_checked(base:Path, relpath:str, payload:bytes):
     target=base / relpath
     target.parent.mkdir(parents=True,exist_ok=True)
@@ -188,6 +225,8 @@ def build_bundle(spec:dict, output:Path):
         else: raise ValueError('Unsupported price source; do not infer provider format')
         if mode==EXTERNAL and source['provider'].startswith('SYNTHETIC'):
             raise ValueError('Synthetic prices cannot be promoted to external research')
+        if source['provider']==MANUAL_OHLCV:
+            _validate_manual_price_evidence(source,as_of,records)
         source_kinds.add(source['provider'])
         entry={k:row.get(k,'') for k in ('id','name','isin','asset_type','sector','venue','currency','oil_exposure','index_memberships','index_membership_status')}
         if entry.get('isin') and not valid_isin(entry['isin']):
