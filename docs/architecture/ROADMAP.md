@@ -7,11 +7,11 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 
 | Requisito | Milestone | Stato | Evidenza disponibile | Prossimo gate per DONE |
 |---|---|---|---|---|
-| R-001 anagrafiche, integrità, anti-lookahead | M1 | PARTIAL | Private Blocco A PR #2: quality, market_calendar, security_identity; 104 test CI | E2E con schema comune e serie reali autorizzate |
+| R-001 anagrafiche, integrità, anti-lookahead | M1 | PARTIAL | Private Blocco A PR #2: quality, market_calendar, security_identity; 109 test CI (04/11) | E2E con schema comune e serie reali autorizzate |
 | R-002 fiscalità, redditi, vintage | M2 | PARTIAL | Private Blocco A PR #2: tax_engine, tax_netting, broker_import | Revisioni di interpretazione fiscale + copertura casi e strumenti richiesti |
-| R-003 scenari A/B/C e costi | M2 | PARTIAL | Private: decision, cost_engine, broker_preflight, dashboard; test sintetici | E2E completo con caso anonimo realistico, no input inventati |
-| R-004 fonti reali/provenance e rights | M3 | PARTIAL | Public Blocco B PR #2: SEC reale, BCE, ESEF validazione campionaria, manual local prices | Fonte prezzi reale autorizzata e affidabile per ricerca riproducibile |
-| R-005 prezzi, corporate actions, FX | M3 | PARTIAL | Parsing, checksums, anti-lookahead; mapping Fresenius nel privato; gate >=15% e warning FX asincrono nel pubblico (CI 41736873470) | Corporate actions/FX/adjustment verificati su storici reali rappresentativi, non solo euristica |
+| R-003 scenari A/B/C e costi | M2 | PARTIAL | Private: decision, cost_engine, broker_preflight, dashboard; E2E sintetico realistico A/B/C con 2 vintage e 6 eventi | E2E completo con caso anonimo realistico, no input inventati |
+| R-004 fonti reali/provenance e rights | M3 | PARTIAL | Public Blocco B PR #2: SEC reale, BCE, ESEF campionaria, prezzi locali con UTC/range sessioni/hashes (04/11) | Fonte prezzi reale autorizzata e affidabile per ricerca riproducibile |
+| R-005 prezzi, corporate actions, FX | M3 | PARTIAL | Parsing, checksums, anti-lookahead; mapping Fresenius; gate >=15% e split_dates validati (anche split <15%); FX BCE asincrono non risolto | Corporate actions/FX/adjustment verificati su storici reali rappresentativi, non solo euristica |
 | R-006 universo globale multi-asset | M4 | PARTIAL | SEC ticker discovery US ampia, campionamento hash non alfabetico (non rappresentativo); universo ancora candidato non classificato | Mercati non-US, classi alternative, mappatura, filtri tracciati |
 | R-007 funnel e shortlist indipendente | M4 | MISSING | Documento obiettivo, nessuno screening ampio real-world validato | E2E centinaia -> 30–60 -> 5–7 -> <= 3 con ragioni/limiti |
 | R-008 ranking multi-fattore | M4 | PARTIAL | Indicatori e scoring su demo 7 titoli fittizi; overlay margine SEC | Reali fondamentali, valutazioni, rischio, settori, controtesi, macro |
@@ -37,8 +37,8 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 
 ## Evidenza CI e limiti
 
-- Private PR #2 Blocco A: **104 test passati**, CI PR 41737383649 (verifica del 3 novembre 2026); tassonomia Oil & Gas allineata al pubblico.
-- Public PR #2 Blocco B: **201 test passati**, CI PR 41736873470 (verifica del 3 novembre 2026). Controllo governance PR eseguito con esito positivo.
+- Private PR #2 Blocco A: **109 test passati**, CI PR [41826154840](https://github.com/Giuseppe-Scampa/investment-research-2026/actions/runs/41826154840) (4 novembre 2026); caso sintetico R-003 con 2 vintage e 6 eventi, tassonomia Oil & Gas allineata.
+- Public PR #2 Blocco B: **213 test passati**, CI PR [41826625950](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41826625950) (4 novembre 2026). Aggiunti gate UTC per OHLCV locali e validazione split_dates; governance PR verificata.
 - Entrambe PR aperte. Nessun merge del corpus V3.0.0 all'origine di questa roadmap.
 - La CI testata riguarda i casi implementati, NON i milestone ancora parziali o mancanti.
 
@@ -61,3 +61,9 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
 - **Governance**: enforcement su metadata PR (V3.0.0, R-ID, M-ID, change class); protezione automatica della baseline ai diff e policy dipendenze ancora aperte.
 
 [Audit e confronto delle evidenze](ASSESSMENT_RECONCILIATION_2026-11-03.md). [ADR-0002 proposto](adr/ADR-0002-v3-1-recovered-requirements-proposed.md) raccoglie funzioni che Claude attribuisce alla precedente V2; **non** sono state inserite retroattivamente nella baseline V3.0.0 né date per approvate senza confronto con il testo originale e consenso.
+
+## Incremento verificato — 4 novembre 2026
+
+- **R-003 / M2:** prova E2E sintetica su 3 posizioni, 2 vintage, 6 eventi 2026; verifica aritmetica B/C, non-compensazione capital income, rigetto di data riconoscimento incoerente e saldo wallet manipolato, preflight non trade-ready. Fonte in repository privato: `docs/R003_SYNTHETIC_E2E_2026-11-04.md`. Stato **PARTIAL** in attesa dei restanti requisiti e delle verifiche fiscali.
+- **R-004/R-005 / M3:** per OHLCV manuali, blocco di timestamp non UTC/futuri/precedenti alla quotazione più recente, date split malformate/duplicate/future, stop allo score per split dichiarati anche sotto il 15%. Lo storico reale con diritti comprovati e corporate actions controllate **non** è ancora validato; stato **PARTIAL**.
+- **R-007 (funnel globale)** e **R-009 (AI gratuita multi-provider)** rimangono **MISSING**; nessuna milestone viene rinominata o dichiarata completata dalla sola CI verde. La V3.0.0 e ADR-0001 restano immutati.
