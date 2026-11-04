@@ -32,6 +32,21 @@ jobs:
           test -s reports/generated/dashboard.html
       - name: Offline Block B research (synthetic dataset only)
         run: investresearch-b screen --bundle data/research/demo --output reports/generated/block_b
+      - name: Decision 2026 tactical mode — synthetic demo must produce no actual candidates
+        run: |
+          investresearch-b tactical --bundle data/research/demo --output reports/generated/block_b_tactical_demo
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('reports/generated/block_b_tactical_demo/TACTICAL_RESEARCH.json')
+          r=json.loads(p.read_text())
+          assert r['dataset_mode']=='SYNTHETIC_DEMONSTRATION_NOT_MARKET_DATA'
+          assert r['status']=='SYNTHETIC_DIAGNOSTIC_NO_INVESTMENT_QUEUE'
+          assert r['final_investment_shortlist']==[]
+          assert r['research_priorities_by_type']==[]
+          assert r['trade_ready'] is False
+          print('PASS: Decision 2026 demo refuses to fabricate investment shortlist')
+          PY
       - name: Verify Block B deterministic artifacts
         run: |
           test -s reports/generated/block_b/BLOCK_B_SCREENING.json
@@ -58,6 +73,8 @@ jobs:
             reports/generated/block_b/BLOCK_B_SCREENING.csv
             reports/generated/block_b/BLOCK_B_SCREENING.md
             reports/generated/block_b/block_b_dashboard.html
+            reports/generated/block_b_tactical_demo/TACTICAL_RESEARCH.json
+            reports/generated/block_b_tactical_demo/TACTICAL_RESEARCH.md
           retention-days: 14
           if-no-files-found: error
 
