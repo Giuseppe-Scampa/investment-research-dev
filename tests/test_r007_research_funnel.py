@@ -209,3 +209,38 @@ def test_cli_demo_funnel_end_to_end_no_invented_finalists(tmp_path,capsys):
     assert report["status"]=="INSUFFICIENT_RESEARCH_UNIVERSE_NO_SHORTLIST"
     assert len(report["stage_3_provisional_finalists"])==0
     assert "NOT trade-ready" in capsys.readouterr().out
+
+
+def test_funnel_coverage_reports_actual_eligible_market_and_asset_class_counts():
+    f=build_funnel(simulated_large_report())
+    assert sum(f["coverage"]["eligible_by_venue"].values()) == 250
+    assert sum(f["coverage"]["eligible_by_asset_type"].values()) == 250
+    assert sum(f["coverage"]["eligible_by_sector"].values()) == 250
+    assert f["coverage"]["coverage_verification"] == (
+        "ONLY_REPORTED_CANDIDATES_NOT_GLOBAL_MARKET_COVERAGE")
+    assert "EQUITY" in f["coverage"]["eligible_by_asset_type"]
+    assert "ETF_UCITS" in f["coverage"]["eligible_by_asset_type"]
+
+
+def test_public_export_escapes_formula_and_html_issuer_names(tmp_path):
+    r=simulated_large_report()
+    r["results"][0]["name"]='=HYPERLINK("https://malicious.test")<script>alert(1)</script>'
+    f=build_funnel(r)
+    output=write_funnel(f,tmp_path/"out",repo_root=tmp_path/"repo")
+    csv=(output/"RESEARCH_FUNNEL.csv").read_text()
+    md=(output/"RESEARCH_FUNNEL.md").read_text()
+    assert "'=HYPERLINK" in csv
+    assert "<script>" not in md
+    assert "&lt;script&gt;" in md
+
+
+def test_manual_diligence_exports_cannot_be_written_to_public_repo(tmp_path):
+    r=simulated_large_report()
+    deep=build_funnel(r)["stage_2_deep_dive"]
+    f=build_funnel(r,diligence=diligence_for(r,deep))
+    with pytest.raises(ValueError,match="ignored data/private"):
+        write_funnel(f,tmp_path/"repo"/"reports"/"generated",
+                     repo_root=tmp_path/"repo")
+    output=write_funnel(f,tmp_path/"repo"/"data"/"private"/"funnel",
+                        repo_root=tmp_path/"repo")
+    assert (output/"RESEARCH_FUNNEL.json").exists()
