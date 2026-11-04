@@ -15,7 +15,7 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 | R-006 universo globale multi-asset | M4 | PARTIAL | SEC ticker discovery US ampia, campionamento hash non alfabetico (non rappresentativo); universo ancora candidato non classificato | Mercati non-US, classi alternative, mappatura, filtri tracciati |
 | R-007 funnel e shortlist indipendente | M4 | MISSING | Documento obiettivo, nessuno screening ampio real-world validato | E2E centinaia -> 30–60 -> 5–7 -> <= 3 con ragioni/limiti |
 | R-008 ranking multi-fattore | M4 | PARTIAL | Indicatori e scoring su demo 7 titoli fittizi; overlay margine SEC | Reali fondamentali, valutazioni, rischio, settori, controtesi, macro |
-| R-009 AI gratuita e multi-provider | M5 | MISSING | Runner OpenAI commerciale legacy nel repo privato, non equiparabile a M5 | Validare provider free/quote/termini, creare multi-provider facoltativo e controlli fonti |
+| R-009 AI gratuita e multi-provider | M5 | PARTIAL | Modulo public-only opt-in: Ollama locale loopback e importazione offline di risposte Gemini/Groq/OpenRouter/Ollama; 230 test CI, nessuna API commerciale automatica | Test live Ollama; termini/quote e billing provider remoti; fact-check sostanziale fonti, hardening privacy e integrazione M6 |
 | R-010 dashboard e audit unificati | M6 | PARTIAL | Dashboard separate Blocco A e B, decision ledger e report statici | Contratto dati B->A e dashboard unica provata E2E |
 | R-011 privacy e trust boundary | Trasversale | PARTIAL | Public solo sintetico, private dossier locale, negative tests | Assessment globale PR/CI/artifact/data rights |
 | R-012 versioning / governance | Trasversale | PARTIAL | Baseline V3.0.0, ADR-0001 e PR-body gate per R-ID/M-ID/versione (CI 41736873470) | Proteggere baseline e ADR anche tramite diff, verificare governance cross-repo |
@@ -38,7 +38,7 @@ Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non an
 ## Evidenza CI e limiti
 
 - Private PR #2 Blocco A: **109 test passati**, CI PR [41826154840](https://github.com/Giuseppe-Scampa/investment-research-2026/actions/runs/41826154840) (4 novembre 2026); caso sintetico R-003 con 2 vintage e 6 eventi, tassonomia Oil & Gas allineata.
-- Public PR #2 Blocco B: **213 test passati**, CI PR [41826625950](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41826625950) (4 novembre 2026). Aggiunti gate UTC per OHLCV locali e validazione split_dates; governance PR verificata.
+- Public PR #2 Blocco B: **230 test passati**, CI PR [41842478740](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41842478740) (4 novembre 2026). Gate UTC/split_dates e primo modulo R-009 opt-in: CI verde, governance PR verificata.
 - Entrambe PR aperte. Nessun merge del corpus V3.0.0 all'origine di questa roadmap.
 - La CI testata riguarda i casi implementati, NON i milestone ancora parziali o mancanti.
 
@@ -66,4 +66,12 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
 
 - **R-003 / M2:** prova E2E sintetica su 3 posizioni, 2 vintage, 6 eventi 2026; verifica aritmetica B/C, non-compensazione capital income, rigetto di data riconoscimento incoerente e saldo wallet manipolato, preflight non trade-ready. Fonte in repository privato: `docs/R003_SYNTHETIC_E2E_2026-11-04.md`. Stato **PARTIAL** in attesa dei restanti requisiti e delle verifiche fiscali.
 - **R-004/R-005 / M3:** per OHLCV manuali, blocco di timestamp non UTC/futuri/precedenti alla quotazione più recente, date split malformate/duplicate/future, stop allo score per split dichiarati anche sotto il 15%. Lo storico reale con diritti comprovati e corporate actions controllate **non** è ancora validato; stato **PARTIAL**.
-- **R-007 (funnel globale)** e **R-009 (AI gratuita multi-provider)** rimangono **MISSING**; nessuna milestone viene rinominata o dichiarata completata dalla sola CI verde. La V3.0.0 e ADR-0001 restano immutati.
+- **R-007 (funnel globale)** rimane **MISSING**; **R-009** è passato a **PARTIAL** con il solo gateway locale/offline, senza prova live del modello né contratto API free. Nessuna milestone viene rinominata o dichiarata completata dalla sola CI verde. La V3.0.0 e ADR-0001 restano immutati.
+
+## Incremento verificato — 4 novembre 2026, R-009 / M5
+
+- Gateway AI **facoltativo** `src/investresearch/ai_counteranalysis.py`, avvio manuale dalla CLI `investresearch-b ai-countercheck`. Unico provider chiamabile: Ollama in **loopback** con opt-in esplicito, senza proxy, redirect o provider fallback. Nessuna API commerciale preconfigurata, obbligatoria o usata in CI.
+- Confronto **offline** di risposte etichettate Gemini, Groq, OpenRouter o Ollama; etichetta dichiarata dall'operatore, non certificazione di free tier o provenienza.
+- Input limitato a ricerca societaria pubblica con check `as_of`/data fonte, registri di ID, citazioni riferite soltanto a ID disponibili, filtri privacy *best effort*, documentazione e output locali ignorati da Git. I contenuti dei documenti e le citazioni NON sono fattualmente verificati dal motore.
+- **Evidenza:** CI [41842478740](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/41842478740), **230 test superati**, nessuna chiamata AI in Actions; esempio end-to-end interamente sintetico `config/ai_public_review_example.json` + `config/ai_public_response_example.json`.
+- **Per DONE:** prova locale Ollama documentata, valutazione costi/termini delle API gratuite prima di eventuale live integration, verifica sostanziale citazioni su documenti autentici e integrazione M5→M6. R-009 **PARTIAL**, R-007 **MISSING**. Nessuna modifica a V3.0.0 o ADR-0001.
