@@ -112,7 +112,7 @@ def _manual_spec(tmp_path, *, source_override=None):
         'provider':MANUAL_OHLCV, 'path':str(prices),
         'source_url':'https://market-data.example.test/authorized/series.csv',
         'sha256':sha256_bytes(prices.read_bytes()),
-        'retrieved_at_utc':'2026-11-01T09:00:00+00:00',
+        'retrieved_at_utc':'2026-11-02T18:00:00+00:00',
         'usage_attestation':'LOCAL_RESEARCH_RIGHTS_ASSERTED_NOT_VERIFIED',
     }
     if source_override: source.update(source_override)
@@ -160,3 +160,42 @@ def test_untrusted_yahoo_price_source_also_requires_integrity_hash(tmp_path):
     p.pop('sha256')
     with pytest.raises(ValueError,match='SHA-256'):
         build_bundle(spec,tmp_path/'bundle')
+
+
+@pytest.mark.parametrize('retrieved,match', [
+    ('2026-11-01T20:00:00+00:00', 'predates its latest price'),
+    ('2026-11-03T01:00:00Z', 'collected after as_of'),
+    ('2026-11-02', 'timezone-aware'),
+    ('2026-11-02T18:00:00', 'UTC offset'),
+    ('2026-11-02T18:00:00+01:00', 'UTC offset'),
+    ('not-a-timestamp', 'timezone-aware'),
+])
+def test_r004_manual_price_retrieval_timestamp_must_support_point_in_time(retrieved, match, tmp_path):
+    spec,_ = _manual_spec(tmp_path, source_override={'retrieved_at_utc':retrieved})
+    with pytest.raises(ValueError, match=match):
+        build_bundle(spec,tmp_path/'bundle')
+
+
+@pytest.mark.parametrize('value,match', [
+    ('2026-10-30', 'must be a list'),
+    (['2026-11-03'], 'after the research as_of'),
+    (['2026-10-30','2026-10-30'], 'Duplicate'),
+    (['invalid-date'], 'ISO dates'),
+    ([None], 'ISO dates'),
+])
+def test_r005_manual_declared_split_dates_are_strict_and_point_in_time(value,match,tmp_path):
+    spec,_ = _manual_spec(tmp_path,source_override={'split_dates':value})
+    with pytest.raises(ValueError,match=match):
+        build_bundle(spec,tmp_path/'bundle')
+
+
+def test_r005_small_declared_split_blocks_ranking_even_without_15pct_jump(tmp_path):
+    # The historical closes have no large discontinuity; documented corporate
+    # actions, including e.g. 11-for-10, still require independent review.
+    spec,_ = _manual_spec(tmp_path,source_override={'split_dates':['2026-10-30']})
+    build_bundle(spec,tmp_path/'bundle')
+    report=screen(tmp_path/'bundle')
+    asset=report['results'][0]
+    assert 'UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW' in asset['warnings']
+    assert asset['market_score'] is None
+    assert asset['trade_ready'] is False
