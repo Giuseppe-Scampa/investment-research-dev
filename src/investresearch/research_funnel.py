@@ -218,6 +218,7 @@ def build_funnel(screening, *, policy=None, diligence=None):
     def entry(row, stage):
         return {
             "id": row["id"], "name": row["name"], "isin": row.get("isin", ""),
+            "asset_type": row.get("asset_type", "UNKNOWN"),
             "sector": row["sector"], "venue": row["venue"],
             "market_score": row["market_score"], "stage": stage,
             "price_session": row["last_price_session"],
@@ -245,6 +246,12 @@ def build_funnel(screening, *, policy=None, diligence=None):
         "screening_sha256": hashlib.sha256(_canonical(screening)).hexdigest(),
         "policy": p, "status": status, "trade_ready": False,
         "input_universe_count": len(rows), "research_eligible_count": len(accepted),
+        "coverage": {
+            "eligible_by_venue": dict(sorted(Counter(r.get("venue", "UNKNOWN") for r in accepted).items())),
+            "eligible_by_asset_type": dict(sorted(Counter(r.get("asset_type", "UNKNOWN") for r in accepted).items())),
+            "eligible_by_sector": dict(sorted(Counter(r.get("sector", "UNKNOWN") for r in accepted).items())),
+            "coverage_verification": "ONLY_REPORTED_CANDIDATES_NOT_GLOBAL_MARKET_COVERAGE",
+        },
         "excluded_count": len(excluded), "exclusion_reasons": excluded,
         "stage_1_pool": [entry(r, "RESEARCH_POOL") for r in pool],
         "stage_2_deep_dive": [entry(r, "NEEDS_DILIGENCE") for r in deep],
@@ -267,24 +274,27 @@ def write_funnel(result, outdir, *, repo_root):
     """Public demo can write generated output; external research stays private."""
     out = Path(outdir).resolve()
     repo = Path(repo_root).resolve()
-    if result["dataset_mode"] != SYNTHETIC:
+    if result["dataset_mode"] != SYNTHETIC or result["manual_diligence_status"] != "NO_MANUAL_DILIGENCE":
         try:
             rel = out.relative_to(repo)
         except ValueError:
             rel = None
         if rel is not None and rel.parts[:2] != ("data", "private"):
-            raise ValueError("External funnel output inside repo requires ignored data/private/")
+            raise ValueError("External/manual funnel output inside repo requires ignored data/private/")
     out.mkdir(parents=True, exist_ok=True)
     (out / "RESEARCH_FUNNEL.json").write_bytes(
         json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2).encode("utf-8") + b"\n")
-    fields = ["stage", "id", "name", "isin", "sector", "market_score",
+    fields = ["stage", "id", "name", "isin", "asset_type", "sector", "market_score",
               "quality_status", "price_session", "reason"]
     h = io.StringIO(newline="")
     writer = csv.DictWriter(h, fieldnames=fields, lineterminator="\n")
     writer.writeheader()
     for key in ("stage_1_pool", "stage_2_deep_dive", "stage_3_provisional_finalists"):
         for row in result[key]:
-            writer.writerow({f:row[f] for f in fields})
+            # Escape spreadsheet formula prefixes in untrusted issuer names.
+            writer.writerow({f:("'" + str(row[f]) if isinstance(row[f], str)
+                              and row[f].lstrip().startswith(("=", "+", "-", "@"))
+                              else row[f]) for f in fields})
     (out / "RESEARCH_FUNNEL.csv").write_text(h.getvalue(), encoding="utf-8")
     lines = [
         "# R-007 — Selection funnel (research only)", "",
@@ -306,7 +316,7 @@ def write_funnel(result, outdir, *, repo_root):
     ):
         lines += ["", "## " + label, ""]
         for row in result[key]:
-            safe_name = row["name"].replace("\n", " ").replace("|", "/")[:150]
+            safe_name = html.escape(row["name"].replace("\n", " ").replace("|", "/")[:150])
             lines.append(f"- {row['id']} — {safe_name}: historical score {row['market_score']} "
                          "(not a recommendation)")
     lines += ["", "## Limitations", ""] + ["- " + x for x in result["limitations"]]
