@@ -17,7 +17,7 @@
         "path": "REPLACE_WITH_LOCAL_LICENSED_CSV_PATH",
         "sha256": "REPLACE_WITH_ACTUAL_64_CHARACTER_SHA256",
         "source_url": "https://provider.example.org/authorized-history.csv",
-        "retrieved_at_utc": "2026-11-02T09:00:00+00:00",
+        "retrieved_at_utc": "2026-11-02T18:00:00+00:00",
         "usage_attestation": "LOCAL_RESEARCH_RIGHTS_ASSERTED_NOT_VERIFIED"
       }
     }
