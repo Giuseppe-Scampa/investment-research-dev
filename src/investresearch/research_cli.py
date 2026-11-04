@@ -25,6 +25,12 @@ def main(argv=None):
     funnel.add_argument('--policy',type=Path,help='Optional R-007 validated limits JSON')
     funnel.add_argument('--diligence',type=Path,help='Optional manual public issuer due-diligence JSON')
     funnel.add_argument('--max-age-sessions',type=int,default=1)
+    tactical=sp.add_parser('tactical',
+        help='Decision 2026: honest multi-asset tactical *research queue* from source-checked Block B screen')
+    tactical.add_argument('--bundle',type=Path,required=True,help='Hashed research bundle, never authored scores')
+    tactical.add_argument('--output',type=Path,required=True,help='External-source output is private-only in repo')
+    tactical.add_argument('--fiscal-rules',type=Path,default=ROOT/'config/fiscal/rules_2026.json')
+    tactical.add_argument('--max-age-sessions',type=int,default=1)
     b=sp.add_parser('build',help='Normalize local raw provider snapshots to immutable bundle')
     b.add_argument('--spec',type=Path,required=True)
     b.add_argument('--output',type=Path,required=True)
@@ -102,6 +108,21 @@ def main(argv=None):
               f"{len(result['stage_2_deep_dive'])} deep-dive / "
               f"{len(result['stage_3_provisional_finalists'])} provisional. "
               "NOT trade-ready.")
+    elif args.command=='tactical':
+        from .tactical_research import build_tactical, write_tactical
+        from .tax_engine import FiscalRegistry
+        if args.max_age_sessions not in (0,1,2,3,4,5):
+            p.error('max-age-sessions must be between 0 and 5')
+        settings=json.loads((ROOT/'config/settings.json').read_text(encoding='utf-8'))
+        report=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
+        fiscal=FiscalRegistry.load(args.fiscal_rules)
+        result=build_tactical(report,fiscal_registry=fiscal)
+        write_tactical(result,args.output,repo_root=ROOT)
+        print(f"Decision 2026 tactical: {result['status']}; "
+              f"{result['instrument_count']} instruments, "
+              f"{result['research_eligible_count']} research-eligible, "
+              f"{len(result['research_priorities_by_type'])} priorities, "
+              "0 final investments or orders")
     elif args.command=='build':
         spec=json.loads(args.spec.read_text(encoding='utf-8'))
         result=build_bundle(spec,args.output)
