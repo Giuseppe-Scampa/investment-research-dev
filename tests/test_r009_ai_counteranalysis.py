@@ -206,3 +206,25 @@ def test_model_provider_adapter_is_offline_until_validated():
                                            "unverified-explicit-model", response())
         assert result["execution"] == "IMPORTED_RESPONSE_NO_NETWORK"
     assert "openai" not in ai.PROVIDERS
+
+
+def test_committed_public_demo_runs_end_to_end_without_any_api(tmp_path, monkeypatch):
+    from investresearch.cli import ROOT
+
+    def network_forbidden(*args, **kwargs):
+        raise AssertionError("Demo must not contact a model provider")
+    monkeypatch.setattr(ai.urllib.request, "build_opener", network_forbidden)
+
+    out = tmp_path / "r009-demo"
+    main([
+        "ai-countercheck",
+        "--spec", str(ROOT / "config/ai_public_review_example.json"),
+        "--provider", "gemini", "--model", "imported-response",
+        "--response-json", str(ROOT / "config/ai_public_response_example.json"),
+        "--acknowledge-public-only", "--output", str(out),
+    ])
+    result = json.loads((out / "AI_COUNTERANALYSIS.json").read_text())
+    assert result["execution"] == "IMPORTED_RESPONSE_NO_NETWORK"
+    assert result["rank_or_tax_authorization"] is False
+    assert result["research_as_of"] == "2026-11-04"
+    assert result["counterarguments"][0]["source_ids"] == ["SRC1"]
