@@ -182,7 +182,8 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
             for d in split_dates)
         basis=asset['prices'].get('price_basis','')
         if has_split_in_window:
-            if basis=='EODHD_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN':
+            if basis in ('EODHD_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN',
+                         'TIINGO_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN'):
                 warnings.append('SPLITS_APPLIED_FROM_SAME_PROVIDER_NOT_INDEPENDENTLY_VERIFIED')
             else:
                 warnings.append('UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW')
