@@ -14,7 +14,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from investresearch.research_xetra_universe import (
-    MAX_BYTES, PROVIDER, parse_xetra,
+    MAX_BYTES, PROVIDER, parse_xetra, select_xetra_price_coverage_probe,
 )
 
 URL = (
@@ -55,7 +55,8 @@ def probe(*, transport=None, now=None):
         "encoding": "utf-8-sig",
     }
     try:
-        _candidates, manifest = parse_xetra(raw, metadata, as_of=now.date())
+        candidates, manifest = parse_xetra(raw, metadata, as_of=now.date())
+        _probe_rows, probe_manifest = select_xetra_price_coverage_probe(candidates, manifest)
     except (ValueError, UnicodeError, KeyError, TypeError, IndexError) as exc:
         # These are static parser messages only, not row contents. Publishing a
         # missing-field/header diagnosis is safe; never print raw instrument
@@ -104,6 +105,10 @@ def probe(*, transport=None, now=None):
         "by_source_type": manifest["source_type_counts"],
         "skipped_counts": manifest["skipped_counts"],
         "raw_sha256": manifest["source_raw_sha256"],
+        "price_source_probe_selected_count": probe_manifest["selected_count"],
+        "price_source_probe_by_type": probe_manifest["by_type"],
+        "price_source_probe_identity_sha256": probe_manifest["cohort_identity_sha256"],
+        "price_source_probe_status": probe_manifest["mode"],
         "status": "UNRANKED_NO_PRICE_TAX_RIGHTS_OR_TRADE_CERTIFICATION",
     }
 
