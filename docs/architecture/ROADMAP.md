@@ -3,6 +3,40 @@
 **Data di revisione iniziale:** 2026-11-03. **Spec:** [V3.0.0.md](V3.0.0.md).
 **Questa è una fotografia del lavoro verificato, non una promessa di ETA.**
 
+
+## Stato esecutivo corrente — 2026-11-05 (integrazioni M1–M6)
+
+La **baseline V3.0.0 è approvata** da ADR-0001, non è una release di software con tutti i gate passati. L'eventuale ADR-0002/V3.1.0 è ancora **PROPOSED**, non approvata. La presente matrice **non modifica milestone, scope, R-ID o criteri di DONE**. Lavoro svolto sul branch draft pubblico e sul branch privato, ancora non mergiati.
+
+**Evidenza tecnica aggiornata:** Blocco B [CI 42087414991](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/42087414991) **323 test PASS**, commit `ba3cf85d6075cf2a157619d91b16f884941e62fc`; Blocco A privato [CI 41934363975](https://github.com/Giuseppe-Scampa/investment-research-2026/actions/runs/41934363975) **123 test PASS**, commit `a15403cd0d8242d6a7e3e8b195d08bf53368af18`. Sono evidenze di codice e fixture, non certificazione fiscale o pre-trade.
+
+| Gate V3 | Owner / repository | Stato | Evidenza corrente | Criterio concreto di accettazione ancora mancante |
+|---|---|---|---|---|
+| M1 / R-001 | A privato + B pubblico | PARTIAL | Parsing sicuro, hash, identità, calendario 2026, test negativi | E2E real-source identity/price/FX su contratto B→A e prova fail-closed |
+| M2 / R-002,R-003 | A privato | PARTIAL | Fiscal registry, wallet e A/B/C su scenario sintetico | Copertura e revisione trattamento redditi/costi per asset e prove integrate; caso bancario personale è **gate esterno** |
+| M3 / R-004,R-005 | B pubblico | PARTIAL — **BLOCCO CRITICO** | Alpha Vantage 100 barre RAW FSLR; SEC/ESEF/BCE; Xetra reale **5.548** listing validati | Fonte storica utilizzabile con diritti documentati, minimo 61 sedute continue, split/dividendi/FX e identità/venue riscontrati; test live su più asset class |
+| M4 / R-006 | B pubblico | PARTIAL | [Xetra reale 5.548 e coorte 40](XETRA_LIVE_DISCOVERY_AND_PRICE_COVERAGE_PROBE_2026-11-05.md); SEC USA | Scoperta indipendente multi-venue con categorie/ISIN e rischi sottostanti verificati, ampliamento certificati (BFZ distinto), copertura prezzi |
+| M4 / R-007,R-008 | B pubblico | PARTIAL | Funnel + scoring/tactical testati prevalentemente su fixture, nessun ranking finanziario reale della coorte 40 | Real-source screening e ranking con fondamentali/valuation/fattori/correlazioni/controtesi, 200+ globale → 40 → 6 → 0–3 (tattico più piccolo etichettato separatamente) |
+| M5 / R-009 | B pubblico | PARTIAL — **NON BLOCCANTE per Decision 2026** | Ollama loopback opt-in, replay AI offline | Test live nel rispetto dei terms, benchmark provider gratuiti, fact-check materiale delle citazioni e quote protette |
+| M6 / R-010 | B pubblico → A privato | PARTIAL | `tactical` e `tactical-c` con hash, fiscalità privata e dashboard separate | Un solo run E2E con source bundle verificato, dashboard/memo/ledger e report di esclusioni, rischi, limiti e provenance |
+| Trasversali / R-011,R-012 | entrambi | PARTIAL | Repository separati, commit sintetici e source checks; baseline/ADR | Audit privacy/artifact/secret e diritti fonti; governance su diff e compatibilità cross-repo |
+| Trasversale / R-013 | entrambi | DONE | Nessuna integrazione di trading automatico | Non regredire, nessun ordine |
+
+### Sequenza operativa senza riprogettazione (work packages)
+
+1. **P0 — Sbloccare M3/R-004,R-005 con dati reali.** La coorte Xetra da 40 è un *test di copertura dei provider*, NON un ranking finanziario. Cercare e verificare un feed storico effettivamente utilizzabile senza costo obbligatorio; provare prima un campione di ISIN EU e US in modo controllato, registrando entitlement, contratto d'uso, provenienza, adattamenti, calendari, split/dividendi, volume e FX. `NO_DATA_LICENSE` o `INCOMPLETE_NO_RANK` sono esiti accettabili e vanno mostrati senza fallback. Se le fonti gratuite non lo permettono, documentare precisamente il blocco: NON chiamare DONE M3/M4 né attivare abbonamenti.
+2. **P0 in parallelo — Chiudere contratto e test d'integrazione M1/M2/M6.** Usare schemi e hash **già implementati** `screen → tactical → tactical-c`; predisporre una prova automatica inter-repository su bundle solo sintetico + casi negativi (schema incompatibile, fonte non autorizzata, currency/ISIN discordanti, fiscal status REVIEW_REQUIRED). Dati bancari mai nel repo pubblico. `tactical-c` resta analisi condizionale e non certificazione.
+3. **P0 dopo i dati — Decision 2026 tattica:** sottocoorte multi-asset **derivata da regole di fonte**, non selezionata manualmente ad hoc; screening su storico verificato, comparazioni di rischio/concentrazione e correlazione, indicatori fondamentali/valuation pertinenti, evento/catalizzatore con data/fonte, controtesi. Evidenziare `REVIEW` per overlap Euro Stoxx 50, oro/petrolio indiretti ed ETC/ETN/certificati senza fiscalità per ISIN. Passare in privato ad A/B/C, inclusa opzione non operare e verifica deadline vendita/regolamento tramite intermediario. Nessuna forzatura di due acquisti.
+4. **P1 permanente — M4 completo:** espandere dopo la modalità tattica verso discovery globale realmente misurata (denominatore, classi, venue, gap fonte) e funnel originale 200+/100+/40/6/0–3, senza sostituire la coorte di 40 al requisito globale.
+5. **P1 — M6 definitivo:** report unico con traccia `source → ingest → quality → score → research priorities → decision scenarios`, prove replay, rischio aggregato, costi/spread/FTT/FX, privacy e audit. Separare il dossier Mediolanum personale dal DONE di codice generale.
+6. **P2 — M5 AI gratuita e hardening:** solo dopo un percorso quantitativo leggibile; controanalisi non autorevole sui prezzi, controllo citazioni su fonte reale, rate limits, zero paid fallback. Concludere R-011/R-012 con verifiche CI/ADR e controllo dei dati/artifact.
+
+**Regola di avanzamento:** ogni PR deve collegare R-ID/M-ID, commit, test, run live quando necessario, artefatti permessi, rischio residuo, esito fail-closed e criterio esplicito di DONE. Nessun aumento del numero di test, quantità di listing scoperti o connettore implementato modifica da solo lo stato di readiness. Niente nuovo ADR e niente merge senza controllo/revisione.
+
+**Finestra Decision 2026:** mirare a una prima decisione di fattibilità entro la seconda metà di novembre **solo se** prezzi/fiscalità/broker superano i gate; se non passano, reportare un NO-TRADE verificabile e valutare lo Scenario B su posizioni esistenti. La completezza V3 permanente non deve bloccare una decisione tattica correttamente limitata.
+
+---
+
 Legenda: **DONE** completo ed E2E dimostrato, **PARTIAL** implementazione non ancora soddisfacente per tutti i criteri, **MISSING** assente, **BLOCKED_EXTERNAL** solo per validazione personale o dipendenze reali esterne, **OUT_OF_SCOPE_APPROVED** solo via ADR.
 
 | Requisito | Milestone | Stato | Evidenza disponibile | Prossimo gate per DONE |
