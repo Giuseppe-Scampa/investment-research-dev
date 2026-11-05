@@ -50,6 +50,14 @@ def main(argv=None):
     xetra.add_argument('--metadata',type=Path,required=True,help='Verified source URL, SHA-256 and UTC retrieval time')
     xetra.add_argument('--as-of',required=True,help='Research date not earlier than file acquisition')
     xetra.add_argument('--output',type=Path,required=True,help='Local output; inside repo only data/private/')
+    cross=sp.add_parser('xetra-eodhd-crosswalk',
+        help='Offline real Xetra+EODHD ISIN/venue/type source join; private identity coverage only')
+    cross.add_argument('--xetra-raw',type=Path,required=True)
+    cross.add_argument('--xetra-meta',type=Path,required=True)
+    cross.add_argument('--eodhd-raw',type=Path,required=True)
+    cross.add_argument('--eodhd-meta',type=Path,required=True)
+    cross.add_argument('--as-of',required=True)
+    cross.add_argument('--output',type=Path,required=True)
     sec=sp.add_parser('sec-pilot',help='One manual SEC-only current-catalog/annual-evidence pilot, no market ranking')
     sec.add_argument('--symbols',default='AAPL,MSFT,NVDA,AMZN')
     sec.add_argument('--cohort',type=Path,help='JSON file with symbols list (max 24); overrides --symbols')
@@ -199,6 +207,14 @@ def main(argv=None):
             date.fromisoformat(args.as_of),args.output,repo_root=ROOT)
         print(f"Xetra discovery: {result['candidate_count']} source-identified instruments; "
               "unranked, no price or fiscal certification")
+    elif args.command=='xetra-eodhd-crosswalk':
+        from .research_eodhd_xetra_crosswalk import write_crosswalk
+        report=write_crosswalk(args.xetra_raw,args.xetra_meta,
+            args.eodhd_raw,args.eodhd_meta,date.fromisoformat(args.as_of),
+            args.output,repo_root=ROOT)
+        print(f"R-006 independent-source reference identity coverage: "
+              f"{report['matched_count']}/{report['xetra_active_reference_count']} "
+              "no historical price ranking, ISIN broker certification or trading")
     elif args.command=='sec-pilot':
         from .research_sec_pilot import parse_symbols, collect_sec_pilot, write_sec_evidence
         if not args.live_confirm:
