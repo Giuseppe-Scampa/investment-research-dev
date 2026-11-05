@@ -129,7 +129,7 @@ def parse_splits(payload: bytes, *, as_of: date):
     return sorted(output, key=lambda r: r["date"])
 
 
-def parse_dividends(payload: bytes, *, as_of: date):
+def parse_dividends(payload: bytes, *, as_of: date, currency='USD'):
     rows = _parse_array(payload, MAX_BYTES["div"])
     if len(rows) > 1000:
         raise ValueError("Oversized dividend register")
@@ -140,7 +140,7 @@ def parse_dividends(payload: bytes, *, as_of: date):
         }.issubset(row):
             raise ValueError("Unexpected dividend row schema")
         day = _session(row["date"], as_of)
-        if day in seen or row["currency"] != "USD":
+        if day in seen or row["currency"] != currency:
             raise ValueError("Duplicate dividend or wrong payout currency")
         seen.add(day)
         out.append({"date": day,
