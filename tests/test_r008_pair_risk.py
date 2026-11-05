@@ -35,6 +35,12 @@ def test_synthetic_full_bundle_risk_is_audit_only(tmp_path):
     assert out["selected_count"] <= 12
     assert out["pairs_count"] == out["selected_count"]*(out["selected_count"]-1)//2
     assert out["trade_ready"] is False and out["portfolio_approved"] is False
+    coverage = out["price_coverage_by_asset_type"]
+    assert sum(x["submitted"] for x in coverage.values()) == screening["universe_size"]
+    assert sum(x["market_screened"] for x in coverage.values()) == screening["ranked_count"]
+    assert all(x["submitted"] == x["market_screened"] + x["not_screened"]
+               for x in coverage.values())
+    assert isinstance(out["screening_warning_counts"], dict)
     assert out["tactical_sha256"]
     for row in out["pairs"]:
         assert row["trade_ready"] is False
