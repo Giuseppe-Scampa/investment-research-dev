@@ -286,7 +286,7 @@ def write_xetra_candidates(raw_path: Path, metadata_path: Path, as_of: date,
     # never a research score or investment recommendation.
     probe_rows, probe = select_xetra_price_coverage_probe(candidates, manifest)
     sample_stream = io.StringIO(newline="")
-    sample_writer = csv.DictWriter(sample_stream, fieldnames=FIELDS, lineterminator="\\n")
+    sample_writer = csv.DictWriter(sample_stream, fieldnames=FIELDS, lineterminator="\n")
     sample_writer.writeheader()
     for row in probe_rows:
         sample_writer.writerow({k: _safe_cell(row[k]) for k in FIELDS})
@@ -298,7 +298,7 @@ def write_xetra_candidates(raw_path: Path, metadata_path: Path, as_of: date,
     (out / "XETRA_UNRANKED_CANDIDATES.csv").write_bytes(csv_bytes)
     (out / "XETRA_PRICE_SOURCE_PROBE_UNRANKED.csv").write_bytes(probe_bytes)
     (out / "XETRA_PRICE_SOURCE_PROBE_MANIFEST.json").write_text(
-        json.dumps(probe, ensure_ascii=False, indent=2, sort_keys=True) + "\\n",
+        json.dumps(probe, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     (out / "XETRA_DISCOVERY_MANIFEST.json").write_text(
