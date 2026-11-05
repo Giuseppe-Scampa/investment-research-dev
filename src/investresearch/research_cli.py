@@ -50,6 +50,10 @@ def main(argv=None):
     xetra.add_argument('--metadata',type=Path,required=True,help='Verified source URL, SHA-256 and UTC retrieval time')
     xetra.add_argument('--as-of',required=True,help='Research date not earlier than file acquisition')
     xetra.add_argument('--output',type=Path,required=True,help='Local output; inside repo only data/private/')
+    ecat=sp.add_parser('eodhd-xetra-catalog-collect',
+        help='One explicit private EODHD Xetra symbol-list reference request; no prices')
+    ecat.add_argument('--acknowledge-personal-terms',action='store_true')
+    ecat.add_argument('--output',type=Path,required=True)
     cross=sp.add_parser('xetra-eodhd-crosswalk',
         help='Offline real Xetra+EODHD ISIN/venue/type source join; private identity coverage only')
     cross.add_argument('--xetra-raw',type=Path,required=True)
@@ -207,6 +211,16 @@ def main(argv=None):
             date.fromisoformat(args.as_of),args.output,repo_root=ROOT)
         print(f"Xetra discovery: {result['candidate_count']} source-identified instruments; "
               "unranked, no price or fiscal certification")
+    elif args.command=='eodhd-xetra-catalog-collect':
+        from .research_eodhd_catalog_collect import collect_catalog
+        if not args.acknowledge_personal_terms:
+            p.error('Official reference list requires personal data-use terms acknowledgement')
+        report=collect_catalog(output=args.output,repo_root=ROOT,
+            api_token=os.getenv('EODHD_API_TOKEN'),
+            personal_rights_ack=True)
+        print(f"EODHD Xetra private symbol catalog: "
+              f"{report['usable_isin_records']} of {report['provider_records']} vendor rows "
+              "(identifier coverage only, 0 ranking/quotes/orders)")
     elif args.command=='xetra-eodhd-crosswalk':
         from .research_eodhd_xetra_crosswalk import write_crosswalk
         report=write_crosswalk(args.xetra_raw,args.xetra_meta,
