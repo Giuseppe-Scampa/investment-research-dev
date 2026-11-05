@@ -89,6 +89,18 @@ def main(argv=None):
                     help='Confirm ISIN, venue and provider symbol checked against two independent references')
     ed.add_argument('--output',type=Path,required=True,
                     help='NEW ignored data/private directory or secure local external directory')
+    ti=sp.add_parser('tiingo-personal-collect',
+        help='Opt-in Tiingo Starter personal US EOD one-symbol source intake; local/private only')
+    ti.add_argument('--symbol',required=True,help='Independently verified US provider ticker')
+    ti.add_argument('--isin',required=True,help='Independently verified official ISIN')
+    ti.add_argument('--venue',required=True,choices=['XNAS','XNYS'])
+    ti.add_argument('--name',required=True,help='Reviewed issuer instrument name')
+    ti.add_argument('--asset-type',required=True,choices=['EQUITY','ETF_LEGAL_STATUS_UNVERIFIED'])
+    ti.add_argument('--sector',required=True,help='Issuer sector, not guessed from name')
+    ti.add_argument('--oil-exposure',required=True,choices=['none','indirect','material','primary','unknown'])
+    ti.add_argument('--acknowledge-personal-terms',action='store_true')
+    ti.add_argument('--identity-reviewed',action='store_true')
+    ti.add_argument('--output',type=Path,required=True)
     av=sp.add_parser('alpha-pilot',
         help='R-004: one opt-in Alpha Vantage raw DAILY symbol pilot, LOCAL ONLY / NO RANKING')
     av.add_argument('--symbol',required=True,help='Provider symbol; not ISIN or verified venue')
@@ -215,6 +227,20 @@ def main(argv=None):
             acknowledge_yahoo_terms=args.acknowledge_yahoo_terms,as_of=args.as_of)
         # Never print SEC contact or download credentials; prints hash + safe source.
         print(json.dumps({k:meta[k] for k in ('provider','identifier','source_url','sha256','path','bytes')},indent=2))
+    elif args.command=='tiingo-personal-collect':
+        from .research_tiingo_personal_collect import collect_one
+        if not args.acknowledge_personal_terms or not args.identity_reviewed:
+            p.error('Tiingo personal intake requires verified rights scope and source identity')
+        report=collect_one(
+            symbol=args.symbol, isin=args.isin,venue=args.venue,
+            instrument_name=args.name,asset_type=args.asset_type,
+            sector=args.sector,oil_exposure=args.oil_exposure,
+            output=args.output,repo_root=ROOT,
+            api_token=os.getenv('TIINGO_API_TOKEN'),
+            personal_rights_ack=True,identity_review_ack=True)
+        print(f"Tiingo personal local intake: {report['source_sessions']} sessions; "
+              f"split events {report['split_events_reported']}; "
+              "0 market recommendations or orders")
     elif args.command=='eodhd-personal-collect':
         from .research_eodhd_personal_collect import collect_one
         if not args.acknowledge_personal_terms or not args.identity_reviewed:
