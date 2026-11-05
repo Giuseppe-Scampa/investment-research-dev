@@ -56,8 +56,30 @@ def probe(*, transport=None, now=None):
     }
     try:
         _candidates, manifest = parse_xetra(raw, metadata, as_of=now.date())
-    except (ValueError, UnicodeError, KeyError, TypeError, IndexError):
-        return "VALIDATION_FAILED", {"reason": "Vendor CSV incompatible with strict XETR parser"}
+    except (ValueError, UnicodeError, KeyError, TypeError, IndexError) as exc:
+        # These are static parser messages only, not row contents. Publishing a
+        # missing-field/header diagnosis is safe; never print raw instrument
+        # rows, provider CSV bytes, or a traceback containing vendor data.
+        approved = {
+            "Missing or oversized Xetra snapshot",
+            "Invalid Xetra metadata/as_of",
+            "Source URL, provider or SHA-256 not verified",
+            "Malformed retrieval timestamp",
+            "Retrieval timestamp must be UTC",
+            "Undecodable Xetra CSV; do not guess encoding",
+            "Not an XETR instrument reference file",
+            "Missing official Xetra update date",
+            "Invalid official Xetra update date",
+            "Xetra reference file date is in the future",
+            "Unexpected Xetra T7 schema; no guessed column mapping",
+            "Xetra candidate count exceeds limit",
+            "Malformed Xetra source row",
+            "Invalid Xetra identity or venue on active row",
+            "Duplicated Xetra listing; manual review required",
+            "No active Xetra instruments in snapshot",
+        }
+        reason = str(exc) if str(exc) in approved else "Unexpected parser rejection"
+        return "VALIDATION_FAILED", {"reason": reason}
     return "DISCOVERY_REFERENCE_VALIDATED", {
         "as_of": manifest["as_of"],
         "source_update_date": manifest["source_update_date"],
