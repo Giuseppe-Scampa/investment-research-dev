@@ -177,6 +177,86 @@ def parse_xetra(raw: bytes, metadata: dict, *, as_of: date):
     return result, manifest
 
 
+# Stable acquisition-only sample: does NOT select investment opportunities.
+# A new daily snapshot can add/remove source rows, but existing ISIN ordering
+# stays stable so that a 61-session data-provider pilot has fixed identities.
+PROBE_QUOTAS = {"CS": 16, "ETF": 12, "ETC": 6, "ETN": 6}
+PROBE_SEED = "decision-2026-xetra-price-source-coverage-v1"
+VISIBLE_CONFLICT_TERMS = re.compile(
+    r"\\b(?:gold|oil|petroleum|crude|brent|wti|bitcoin|ethereum|crypto|"
+    r"leverage|leveraged|short)\\b", flags=re.IGNORECASE,
+)
+
+
+def select_xetra_price_coverage_probe(candidates: list, manifest: dict):
+    """Unranked deterministic 0..40 source identities to CHECK provider coverage.
+
+    WARNING: selection by SHA-256 is a reproducible stratified sample, not
+    momentum/fundamental/quality analysis or suitability screening. The visible
+    label filter only defers obvious conflicts; unlabelled indirect exposure,
+    fund status, broker availability and tax remain UNKNOWN.
+    """
+    if (manifest.get("provider") != PROVIDER or
+            manifest.get("mode") != "DISCOVERY_ONLY_UNRANKED_NO_PRICE_SCORE" or
+            manifest.get("candidate_count") != len(candidates)):
+        raise ValueError("Xetra probe requires a validated discovery manifest")
+    groups = {key: [] for key in PROBE_QUOTAS}
+    deferred = Counter()
+    seen = set()
+    for row in candidates:
+        if not isinstance(row, dict) or row.get("status") != "DISCOVERY_ONLY_NO_PRICES_NO_TAX_OR_EXPOSURE_CERTIFICATION":
+            raise ValueError("Unvalidated Xetra discovery row")
+        code = row.get("source_instrument_type")
+        isin = row.get("isin", "")
+        if not isinstance(isin, str) or not valid_isin(isin):
+            raise ValueError("Xetra probe requires an ISIN-checksummed identity")
+        if isin in seen:
+            # Same ISIN can have multiple listings; never double-count exposure.
+            deferred["DUPLICATE_ISIN"] += 1
+            continue
+        seen.add(isin)
+        if code not in groups:
+            deferred["OUTSIDE_PROBE_ASSET_TYPES"] += 1
+            continue
+        if row.get("currency") != "EUR" or not row.get("mnemonic"):
+            deferred["NON_EUR_OR_MISSING_SYMBOL"] += 1
+            continue
+        if VISIBLE_CONFLICT_TERMS.search(str(row.get("instrument", ""))):
+            deferred["OBVIOUS_NAME_CONFLICT_REVIEW"] += 1
+            continue
+        groups[code].append(row)
+    selected = []
+    counts = {}
+    for code, quota in PROBE_QUOTAS.items():
+        pool = sorted(groups[code], key=lambda r: (
+            hashlib.sha256(f"{PROBE_SEED}|{code}|{r['isin']}".encode("ascii")).hexdigest(),
+            r["isin"],
+        ))
+        chosen = pool[:quota]
+        selected.extend(chosen)
+        counts[code] = {"quota": quota, "eligible_discovery_rows": len(pool),
+                        "selected": len(chosen)}
+    fingerprint = hashlib.sha256(
+        json.dumps([{"type": r["source_instrument_type"], "isin": r["isin"]}
+                    for r in selected], sort_keys=True,
+                   separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    audit = {
+        "mode": "UNRANKED_COVERAGE_PROBE_NO_SECURITY_SELECTION",
+        "selected_count": len(selected),
+        "max_count": sum(PROBE_QUOTAS.values()),
+        "by_type": counts,
+        "source_raw_sha256": manifest["source_raw_sha256"],
+        "cohort_identity_sha256": fingerprint,
+        "deferred_counts": dict(sorted(deferred.items())),
+        "method": "Deterministic stratified ISIN hash for price-provider coverage only",
+        "next_gate": "61 licensed split-checked price sessions plus KID/prospectus, broker ISIN tax, gold/oil and factor review",
+        "trade_ready": False,
+        "research_screening_performed": False,
+    }
+    return selected, audit
+
+
 def write_xetra_candidates(raw_path: Path, metadata_path: Path, as_of: date,
                            output: Path, *, repo_root: Path):
     """No download and no publication of actual-source reference data in Git."""
