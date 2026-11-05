@@ -71,6 +71,24 @@ def main(argv=None):
     c.add_argument('--acknowledge-yahoo-terms',action='store_true',
                    help='Explicit opt-in for personal research under Yahoo Finance data terms')
     c.add_argument('--as-of',default=None,help='Historical cutoff YYYY-MM-DD; future snapshots prohibited')
+    ed=sp.add_parser('eodhd-personal-collect',
+        help='Opt-in one EODHD Free/Personal EOD+split+dividend private local intake, 3 API calls')
+    ed.add_argument('--symbol',required=True,help='Verified provider SYMBOL.EXCHANGE, not derived from ISIN')
+    ed.add_argument('--isin',required=True,help='Independently reviewed 12-character security identity')
+    ed.add_argument('--venue',required=True,choices=['XETR','XPAR','XNAS','XNYS'])
+    ed.add_argument('--currency',required=True,choices=['EUR','USD'])
+    ed.add_argument('--name',required=True,help='Reviewed instrument label')
+    ed.add_argument('--asset-type',required=True,
+        choices=['EQUITY','ETF_LEGAL_STATUS_UNVERIFIED','ETC','ETN'])
+    ed.add_argument('--sector',required=True,help='Source-reviewed issuer sector/class, not guessed')
+    ed.add_argument('--oil-exposure',required=True,
+        choices=['none','indirect','material','primary','unknown'])
+    ed.add_argument('--acknowledge-personal-terms',action='store_true',
+                    help='Confirm individual noncommercial local data-use rights under EODHD terms')
+    ed.add_argument('--identity-reviewed',action='store_true',
+                    help='Confirm ISIN, venue and provider symbol checked against two independent references')
+    ed.add_argument('--output',type=Path,required=True,
+                    help='NEW ignored data/private directory or secure local external directory')
     av=sp.add_parser('alpha-pilot',
         help='R-004: one opt-in Alpha Vantage raw DAILY symbol pilot, LOCAL ONLY / NO RANKING')
     av.add_argument('--symbol',required=True,help='Provider symbol; not ISIN or verified venue')
@@ -197,6 +215,20 @@ def main(argv=None):
             acknowledge_yahoo_terms=args.acknowledge_yahoo_terms,as_of=args.as_of)
         # Never print SEC contact or download credentials; prints hash + safe source.
         print(json.dumps({k:meta[k] for k in ('provider','identifier','source_url','sha256','path','bytes')},indent=2))
+    elif args.command=='eodhd-personal-collect':
+        from .research_eodhd_personal_collect import collect_one
+        if not args.acknowledge_personal_terms or not args.identity_reviewed:
+            p.error('EODHD personal intake requires explicit licence-scope and ISIN mapping review')
+        report=collect_one(symbol=args.symbol,isin=args.isin,venue=args.venue,
+            currency=args.currency,instrument_name=args.name,
+            asset_type=args.asset_type,sector=args.sector,
+            oil_exposure=args.oil_exposure,output=args.output,repo_root=ROOT,
+            api_token=os.getenv('EODHD_API_TOKEN'),
+            personal_rights_ack=True,identity_review_ack=True)
+        print(f"EODHD local personal source: {report['source_eod_sessions']} raw sessions, "
+              f"{report['source_split_events']} split events, "
+              f"{report['source_dividend_events']} dividend events; "
+              "only private intake, no trading recommendation; 3 API calls")
     elif args.command=='alpha-pilot':
         from .research_alpha_pilot import run_pilot
         if not args.live_confirm or not args.acknowledge_source_terms:
