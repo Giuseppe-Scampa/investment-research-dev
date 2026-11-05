@@ -79,7 +79,24 @@ def probe(*, transport=None, now=None):
             "No active Xetra instruments in snapshot",
         }
         reason = str(exc) if str(exc) in approved else "Unexpected parser rejection"
-        return "VALIDATION_FAILED", {"reason": reason}
+        details = {"reason": reason}
+        if reason == "Not an XETR instrument reference file":
+            # Print only a strict *format* clue, not a market row or response.
+            # An HTML page or a CSV starting with a different metadata key
+            # must never be silently interpreted as instrument reference data.
+            lead = raw.lstrip()[:256].lower()
+            if lead.startswith((b"<!doctype", b"<html", b"<?xml")):
+                details["format_hint"] = "HTML_OR_XML_RESPONSE_NOT_CSV"
+            elif raw.startswith(b"PK"):
+                details["format_hint"] = "ZIP_RESPONSE_NOT_CSV"
+            else:
+                lines = raw.decode("utf-8-sig", errors="replace").splitlines()
+                first = lines[0].strip() if lines else ""
+                if first.startswith(("Market:", "Market;", "Date Last Update:", "Instrument Type;")) and len(first) < 100:
+                    details["format_hint"] = first
+                else:
+                    details["format_hint"] = "UNKNOWN_CSV_PREAMBLE"
+        return "VALIDATION_FAILED", details
     return "DISCOVERY_REFERENCE_VALIDATED", {
         "as_of": manifest["as_of"],
         "source_update_date": manifest["source_update_date"],
