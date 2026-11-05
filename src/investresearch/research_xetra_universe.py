@@ -282,8 +282,25 @@ def write_xetra_candidates(raw_path: Path, metadata_path: Path, as_of: date,
         writer.writerow({k: _safe_cell(row[k]) for k in FIELDS})
     csv_bytes = stream.getvalue().encode("utf-8")
     manifest["candidate_csv_sha256"] = hashlib.sha256(csv_bytes).hexdigest()
+    # A private 40-identity source-coverage sample is an acquisition input,
+    # never a research score or investment recommendation.
+    probe_rows, probe = select_xetra_price_coverage_probe(candidates, manifest)
+    sample_stream = io.StringIO(newline="")
+    sample_writer = csv.DictWriter(sample_stream, fieldnames=FIELDS, lineterminator="\\n")
+    sample_writer.writeheader()
+    for row in probe_rows:
+        sample_writer.writerow({k: _safe_cell(row[k]) for k in FIELDS})
+    probe_bytes = sample_stream.getvalue().encode("utf-8")
+    probe["sample_csv_sha256"] = hashlib.sha256(probe_bytes).hexdigest()
+    manifest["price_source_probe_selected_count"] = probe["selected_count"]
+    manifest["price_source_probe_identity_sha256"] = probe["cohort_identity_sha256"]
     out.mkdir(parents=True, exist_ok=True)
     (out / "XETRA_UNRANKED_CANDIDATES.csv").write_bytes(csv_bytes)
+    (out / "XETRA_PRICE_SOURCE_PROBE_UNRANKED.csv").write_bytes(probe_bytes)
+    (out / "XETRA_PRICE_SOURCE_PROBE_MANIFEST.json").write_text(
+        json.dumps(probe, ensure_ascii=False, indent=2, sort_keys=True) + "\\n",
+        encoding="utf-8",
+    )
     (out / "XETRA_DISCOVERY_MANIFEST.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
