@@ -93,8 +93,7 @@ def test_metadata_provenance_fail_closed(update):
     _snapshot([_row("US0378331005", "ABC", "CS")] * 2),
     _snapshot([_row("US0378331005", "ABC", "CS",
                     **{"Instrument Status": "Published"})]),
-    _snapshot([_row("US0378331005", "ABC", "CS")],
-              fields=[x for x in FIELDS if x != "ISIN"]),
+    _snapshot([], fields=[x for x in FIELDS if x != "ISIN"]),
 ])
 def test_malformed_or_unusable_snapshots_rejected(raw):
     with pytest.raises(ValueError):
