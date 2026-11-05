@@ -31,6 +31,11 @@ def main(argv=None):
     tactical.add_argument('--output',type=Path,required=True,help='External-source output is private-only in repo')
     tactical.add_argument('--fiscal-rules',type=Path,default=ROOT/'config/fiscal/rules_2026.json')
     tactical.add_argument('--max-age-sessions',type=int,default=1)
+    risk=sp.add_parser('risk',help='R-008 pairwise historical EUR EOD correlations from the SAME screened source bundle')
+    risk.add_argument('--bundle',type=Path,required=True)
+    risk.add_argument('--output',type=Path,required=True)
+    risk.add_argument('--fiscal-rules',type=Path,default=ROOT/'config/fiscal/rules_2026.json')
+    risk.add_argument('--max-age-sessions',type=int,default=1)
     b=sp.add_parser('build',help='Normalize local raw provider snapshots to immutable bundle')
     b.add_argument('--spec',type=Path,required=True)
     b.add_argument('--output',type=Path,required=True)
@@ -137,6 +142,20 @@ def main(argv=None):
               f"{result['research_eligible_count']} research-eligible, "
               f"{len(result['research_priorities_by_type'])} priorities, "
               "0 final investments or orders")
+    elif args.command=='risk':
+        from .research_risk import analyze_risk, write_risk
+        from .tactical_research import build_tactical
+        from .tax_engine import FiscalRegistry
+        if args.max_age_sessions not in (0,1,2,3,4,5):
+            p.error('max-age-sessions must be between 0 and 5')
+        settings=json.loads((ROOT/'config/settings.json').read_text(encoding='utf-8'))
+        screening=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
+        tactical=build_tactical(screening,fiscal_registry=FiscalRegistry.load(args.fiscal_rules))
+        report=analyze_risk(args.bundle,screening,tactical)
+        write_risk(report,args.output,repo_root=ROOT)
+        print(f"R-008 historical risk: {report['comparable_pairs']} comparable pairs / "
+              f"{report['pairs_count']} investigated; {report['risk_scope']}; "
+              "NO expected returns, orders or portfolio approval")
     elif args.command=='build':
         spec=json.loads(args.spec.read_text(encoding='utf-8'))
         result=build_bundle(spec,args.output)
