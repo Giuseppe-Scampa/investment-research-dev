@@ -183,3 +183,12 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
   ma non basta per un universe di centinaia di strumenti.
 - Stati invariati: R-003/R-004/R-005/R-006/R-007/R-008/R-010
   **PARTIAL**. Solo R-013 DONE. Nessuna modifica a V3.0.0/ADR-0001.
+
+
+## Incremento cross-repo verificato — 5 novembre 2026, rischio/fiscalità/report
+
+- **R-008 / M4:** nuovo `src/investresearch/research_risk.py`, comando `investresearch-b risk` su **identico bundle** dello screening e tactical. Analizza coppie con almeno 20 rendimenti sovrapposti, campione massimo 12, conversione EUR con avvertenze su fixing BCE/chiusure asincrone, storico 61 sedute per candidato. L'output include anche denominatori di copertura prezzi e warning per asset class. Solo prova sintetica; nessuna previsione o validazione di prezzo live. [CI pubblica 42120176014](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/42120176014): **331 test superati**.
+- **R-001,R-002,R-003,R-010 / M1,M2,M6:** il Blocco A privato utilizza i tre output B con controllo hash e produce dashboard privata unificata, correlazioni storiche e checklist ISIN con documenti, broker, spread e date fiscali ancora da validare. [CI privata 42120575513](https://github.com/Giuseppe-Scampa/investment-research-2026/actions/runs/42120575513): **143 test superati + smoke reale fra i repository superato**, esclusivamente su dati sintetici.
+- **R-009 / M5:** importazione facoltativa e privata di report AI solo su ricerca societaria pubblica, con controllo dei riferimenti e hash; il testo generato non incide su rank, fiscalità, trading e non è sottoposto a fact-check automatico. Nessuna API AI a pagamento.
+- **Stati immutati:** M1–M6 (e R-001–R-012) **PARTIAL** salvo prove future; R-013 **DONE**. B→A su dataset sintetico non equivale a run operativo reale. Fonte storici con diritti/aggiustamenti è ancora il blocco M3. Nessun merge o modifica della V3.0.0.
+
