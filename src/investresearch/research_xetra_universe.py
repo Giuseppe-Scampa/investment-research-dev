@@ -98,10 +98,10 @@ def parse_xetra(raw: bytes, metadata: dict, *, as_of: date):
     except UnicodeError:
         raise ValueError("Undecodable Xetra CSV; do not guess encoding") from None
     lines = content.splitlines(keepends=True)
-    if len(lines) < 4 or lines[0].strip() != "Market: XETR":
+    if len(lines) < 4 or lines[0].strip() not in ("Market: XETR", "Market:;XETR"):
         raise ValueError("Not an XETR instrument reference file")
     header_date = re.fullmatch(
-        r"Date Last Update:\s*(\d{2}\.\d{2}\.\d{4})(?:\s+\d{2}:\d{2}(?::\d{2})?)?\s*",
+        r"Date Last Update:\s*;?\s*(\d{2}\.\d{2}\.\d{4})(?:\s+\d{2}:\d{2}(?::\d{2})?)?\s*",
         lines[1].strip(),
     )
     if not header_date:
