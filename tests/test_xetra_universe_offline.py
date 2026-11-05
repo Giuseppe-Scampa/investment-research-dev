@@ -171,6 +171,14 @@ def test_local_private_only_writes_with_checksums_and_formula_escape(tmp_path):
     assert b"'=FICTITIOUS()" in csv_bytes
     saved = json.loads((out / "XETRA_DISCOVERY_MANIFEST.json").read_text())
     assert saved["candidate_csv_sha256"] == hashlib.sha256(csv_bytes).hexdigest()
+    probe_bytes = (out / "XETRA_PRICE_SOURCE_PROBE_UNRANKED.csv").read_bytes()
+    probe = json.loads((out / "XETRA_PRICE_SOURCE_PROBE_MANIFEST.json").read_text())
+    assert probe["selected_count"] == 1
+    assert probe["sample_csv_sha256"] == hashlib.sha256(probe_bytes).hexdigest()
+    assert saved["price_source_probe_identity_sha256"] == probe["cohort_identity_sha256"]
+    assert b"'=FICTITIOUS()" in probe_bytes
+    assert probe["trade_ready"] is False
+    assert str(tmp_path) not in json.dumps(probe)
     assert str(tmp_path) not in json.dumps(saved)
     assert raw not in csv_bytes
     with pytest.raises(ValueError, match="already populated"):
