@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections import Counter
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -135,6 +136,21 @@ def analyze_risk(bundle: Path, screening: dict, tactical: dict):
                 "absolute_correlation_ge_080": abs(correlation) >= .8 if correlation is not None else None,
                 "notes": notes, "trade_ready": False,
             })
+    # Measure actual provider coverage rather than treating a 40-ISIN
+    # discovery sample as 40 market-screened instruments.
+    counts_by_type = {}
+    types = sorted({r.get("asset_type", "UNKNOWN") for r in rows})
+    for typ in types:
+        group = [r for r in rows if r.get("asset_type", "UNKNOWN") == typ]
+        ranked = sum(r.get("market_score") is not None for r in group)
+        counts_by_type[typ] = {
+            "submitted": len(group),
+            "market_screened": ranked,
+            "not_screened": len(group)-ranked,
+        }
+    warnings_count = Counter(
+        str(w) for row in rows for w in (row.get("warnings") or [])
+    )
     return {
         "schema_version": VERSION,
         "as_of": manifest["as_of"],
@@ -142,6 +158,8 @@ def analyze_risk(bundle: Path, screening: dict, tactical: dict):
         "dataset_manifest_sha256": original_sha,
         "screening_sha256": canonical_sha(screening),
         "tactical_sha256": canonical_sha(tactical),
+        "price_coverage_by_asset_type": counts_by_type,
+        "screening_warning_counts": dict(sorted(warnings_count.items())),
         "selected_ids": [r["id"] for r in eligible],
         "selected_count": len(eligible),
         "pairs_count": len(pairs),
