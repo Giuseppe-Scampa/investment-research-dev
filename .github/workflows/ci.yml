@@ -189,10 +189,11 @@ jobs:
           echo "No issuer ZIP/XHTML or provider prices uploaded." >> "$GITHUB_STEP_SUMMARY"
 
   live_xetra_reference_smoke:
-    # One public production-reference CSV on PR only; no API secrets,
-    # no price data, no source CSV artifacts and no instrument IDs published.
+    # Opt-in public production-reference CSV on explicit workflow_dispatch only;
+    # no API secrets, prices, vendor artifacts or IDs published.
+    # Avoid repeated external downloads on every PR push.
     # A received malformed file fails CI; network unavailability is explicit.
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 4
     permissions:
