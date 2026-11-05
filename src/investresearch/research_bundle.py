@@ -205,7 +205,8 @@ def build_bundle(spec:dict, output:Path):
     mode=spec['mode']
     if mode not in (SYNTHETIC, EXTERNAL): raise ValueError('Unknown dataset mode')
     output=Path(output)
-    if mode==EXTERNAL and any(a.get('prices_source',{}).get('provider')=='EODHD_EOD_PERSONAL_RESEARCH'
+    if mode==EXTERNAL and any(a.get('prices_source',{}).get('provider') in
+                             ('EODHD_EOD_PERSONAL_RESEARCH','TIINGO_EOD_PERSONAL_RESEARCH')
                              for a in spec['assets']):
         base=Path(__file__).resolve().parents[2]
         location=output.resolve()
@@ -226,11 +227,16 @@ def build_bundle(spec:dict, output:Path):
             raise ValueError('Synthetic prices cannot be promoted to external research')
         payload=_get_source_bytes(source)
         eodhd_meta=None
+        tiingo_meta=None
         if source['provider'] in (YFINANCE, MANUAL_OHLCV):
             records=parse_ohlcv(payload,as_of)
         elif source['provider']=='EODHD_EOD_PERSONAL_RESEARCH' and mode==EXTERNAL:
             from .research_eodhd_local import normalize_private_eodhd
             records,eodhd_meta=normalize_private_eodhd(
+                source,payload,as_of,row,repo_root=Path(__file__).resolve().parents[2])
+        elif source['provider']=='TIINGO_EOD_PERSONAL_RESEARCH' and mode==EXTERNAL:
+            from .research_tiingo_local import normalize_private_tiingo
+            records,tiingo_meta=normalize_private_tiingo(
                 source,payload,as_of,row,repo_root=Path(__file__).resolve().parents[2])
         elif source['provider']=='SYNTHETIC_PRICES' and mode==SYNTHETIC:
             records=parse_normalized_prices(payload,as_of)
@@ -255,6 +261,8 @@ def build_bundle(spec:dict, output:Path):
         if eodhd_meta is not None:
             source_note.update(eodhd_meta)
             source_kinds.update(('EODHD_PERSONAL_SPLITS','EODHD_PERSONAL_DIVIDENDS'))
+        if tiingo_meta is not None:
+            source_note.update(tiingo_meta)
         entry['prices']={**_write_checked(output,f'prices/{uid}.csv',_csv_bytes(records,['date','close','volume'])),**source_note}
         fmeta=row.get('fundamentals_source')
         if fmeta:
