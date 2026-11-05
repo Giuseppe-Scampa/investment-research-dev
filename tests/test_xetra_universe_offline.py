@@ -105,7 +105,8 @@ def test_unrecognized_category_is_not_misclassified_as_certificate():
                      _row("JE00B1VS3333", "XYZ", "FUTURE_TYPE")])
     rows, manifest = parse_xetra(raw, _meta(raw), as_of=ASOF)
     assert len(rows) == 1
-    assert rows[0]["asset_type"] == "WARRANT_LEGAL_TAX_STATUS_UNVERIFIED"\n    assert all("CERTIFICATE" not in row["asset_type"] for row in rows)
+    assert rows[0]["asset_type"] == "WARRANT_LEGAL_TAX_STATUS_UNVERIFIED"
+    assert all("CERTIFICATE" not in row["asset_type"] for row in rows)
     assert manifest["skipped_counts"] == {"UNKNOWN_INSTRUMENT_TYPE": 1}
 
 
