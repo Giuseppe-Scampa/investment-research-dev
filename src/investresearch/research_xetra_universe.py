@@ -183,8 +183,8 @@ def parse_xetra(raw: bytes, metadata: dict, *, as_of: date):
 PROBE_QUOTAS = {"CS": 16, "ETF": 12, "ETC": 6, "ETN": 6}
 PROBE_SEED = "decision-2026-xetra-price-source-coverage-v1"
 VISIBLE_CONFLICT_TERMS = re.compile(
-    r"\\b(?:gold|oil|petroleum|crude|brent|wti|bitcoin|ethereum|crypto|"
-    r"leverage|leveraged|short)\\b", flags=re.IGNORECASE,
+    r"\b(?:gold|oil|petroleum|crude|brent|wti|bitcoin|ethereum|crypto|"
+    r"leverage|leveraged|short)\b", flags=re.IGNORECASE,
 )
 
 
