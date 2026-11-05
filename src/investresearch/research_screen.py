@@ -172,11 +172,20 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
         if history['reason']: warnings.append(history['reason'])
         pit_issues=_point_in_time_source_status(manifest,asset,reference,fx)
         warnings.extend(pit_issues)
-        # yfinance provides Yahoo Close prices (auto_adjust=False); a documented split during the
-        # last 61 observations invalidates raw price momentum until adjusted.
+        # RAW Yahoo/manual close cannot be compared across a split.
+        # EODHD local importer explicitly reconstructs split-adjusted close
+        # from independently downloaded (SAME-provider) split events;
+        # provider-event accuracy still needs separate diligence.
         split_dates=asset['prices'].get('split_dates',[])
-        if any(isinstance(d,str) and d>=bars[max(0,len(bars)-61)]['date'] and d<=latest for d in split_dates):
-            warnings.append('UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW')
+        has_split_in_window=any(
+            isinstance(d,str) and d>=bars[max(0,len(bars)-61)]['date'] and d<=latest
+            for d in split_dates)
+        basis=asset['prices'].get('price_basis','')
+        if has_split_in_window:
+            if basis=='EODHD_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN':
+                warnings.append('SPLITS_APPLIED_FROM_SAME_PROVIDER_NOT_INDEPENDENTLY_VERIFIED')
+            else:
+                warnings.append('UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW')
         exposure = str(asset.get('oil_exposure') or '').strip().lower()
         if exposure not in OIL_EXPOSURE_VALUES or exposure in ('indirect', 'material'):
             # Indirect/material is NOT proof of a non-predominant position.
