@@ -52,7 +52,7 @@ def _parse_array(payload: bytes, limit: int):
         obj = json.loads(payload, object_pairs_hook=_unique,
                          parse_float=Decimal, parse_int=Decimal,
                          parse_constant=_illegal_constant)
-    except (ValueError, UnicodeError):
+    except (json.JSONDecodeError, UnicodeError):
         raise ValueError("Invalid provider JSON or entitlement error") from None
     if not isinstance(obj, list):
         raise ValueError("Provider response must be a documented JSON array")
@@ -117,8 +117,10 @@ def parse_splits(payload: bytes, *, as_of: date):
             raise ValueError("Unexpected split row schema")
         d = _session(row["date"], as_of)
         m = SPLIT.fullmatch(str(row["split"]))
-        if not m or d in seen:
-            raise ValueError("Invalid duplicate or split factor")
+        if not m:
+            raise ValueError("Malformed split factor")
+        if d in seen:
+            raise ValueError("Duplicate split event date")
         factor = _decimal(m[1])/_decimal(m[2])
         if not Decimal(".001") <= factor <= Decimal("1000"):
             raise ValueError("Out-of-range split factor")
