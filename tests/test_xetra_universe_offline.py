@@ -100,6 +100,21 @@ def test_malformed_or_unusable_snapshots_rejected(raw):
         parse_xetra(raw, _meta(raw), as_of=ASOF)
 
 
+def test_semicolon_metadata_preamble_observed_on_official_source():
+    # Live 2026-11-05 Xetra file uses Market:;XETR, not Market: XETR.
+    # Fixture contains synthetic records only; never a vendor payload.
+    raw = _snapshot(_normal_rows()).replace(
+        b"Market: XETR\\nDate Last Update: ",
+        b"Market:;XETR\\nDate Last Update:;"
+    )
+    rows, manifest = parse_xetra(raw, _meta(raw), as_of=ASOF)
+    assert manifest["candidate_count"] == 4
+    assert manifest["source_update_date"] == "2026-11-04"
+    with pytest.raises(ValueError, match="Not an XETR"):
+        bad = raw.replace(b"Market:;XETR", b"Market:;XFRA", 1)
+        parse_xetra(bad, _meta(bad), as_of=ASOF)
+
+
 def test_unrecognized_category_is_not_misclassified_as_certificate():
     raw = _snapshot([_row("US0378331005", "ABC", "WAR"),
                      _row("JE00B1VS3333", "XYZ", "FUTURE_TYPE")])
