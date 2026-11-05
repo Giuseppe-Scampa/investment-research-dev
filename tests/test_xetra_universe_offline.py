@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from investresearch.research_xetra_universe import (
-    PROVIDER, parse_xetra, write_xetra_candidates,
+    PROVIDER, parse_xetra, select_xetra_price_coverage_probe, write_xetra_candidates,
 )
 
 ASOF = date(2026, 11, 5)
@@ -113,6 +113,35 @@ def test_semicolon_metadata_preamble_observed_on_official_source():
     with pytest.raises(ValueError, match="Not an XETR"):
         bad = raw.replace(b"Market:;XETR", b"Market:;XFRA", 1)
         parse_xetra(bad, _meta(bad), as_of=ASOF)
+
+
+def test_unranked_price_coverage_probe_is_deterministic_and_never_scores():
+    raw = _snapshot(_normal_rows())
+    rows, manifest = parse_xetra(raw, _meta(raw), as_of=ASOF)
+    selected, report = select_xetra_price_coverage_probe(rows, manifest)
+    reversed_rows, reversed_report = select_xetra_price_coverage_probe(list(reversed(rows)), manifest)
+    assert len(selected) == report["selected_count"] == 4
+    assert [(r["isin"], r["asset_type"]) for r in selected] == [
+        (r["isin"], r["asset_type"]) for r in reversed_rows
+    ]
+    assert report["cohort_identity_sha256"] == reversed_report["cohort_identity_sha256"]
+    assert report["trade_ready"] is False
+    assert report["research_screening_performed"] is False
+    assert report["mode"] == "UNRANKED_COVERAGE_PROBE_NO_SECURITY_SELECTION"
+    assert not any("market_score" in r or "future_return" in r for r in selected)
+
+
+def test_price_source_probe_defers_obvious_gold_oil_names_not_claims_ethical_clearance():
+    rows = [
+        _row("US0378331005", "AAA", "CS", name="Synthetic Oil Exposure"),
+        _row("IE00B4L5Y983", "BBB", "ETF", name="Synthetic Broad Portfolio"),
+    ]
+    raw = _snapshot(rows)
+    candidates, manifest = parse_xetra(raw, _meta(raw), as_of=ASOF)
+    chosen, report = select_xetra_price_coverage_probe(candidates, manifest)
+    assert [r["isin"] for r in chosen] == ["IE00B4L5Y983"]
+    assert report["deferred_counts"]["OBVIOUS_NAME_CONFLICT_REVIEW"] == 1
+    assert report["next_gate"].startswith("61 licensed")
 
 
 def test_unrecognized_category_is_not_misclassified_as_certificate():
