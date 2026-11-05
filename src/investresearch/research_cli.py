@@ -40,6 +40,11 @@ def main(argv=None):
     u.add_argument('--as-of',required=True)
     u.add_argument('--limit',type=int,default=20000)
     u.add_argument('--output',type=Path,required=True)
+    xetra=sp.add_parser('xetra-universe',help='Offline official Xetra T7 unranked multi-asset identity catalog; no prices')
+    xetra.add_argument('--raw',type=Path,required=True,help='Manually downloaded official T7 CSV')
+    xetra.add_argument('--metadata',type=Path,required=True,help='Verified source URL, SHA-256 and UTC retrieval time')
+    xetra.add_argument('--as-of',required=True,help='Research date not earlier than file acquisition')
+    xetra.add_argument('--output',type=Path,required=True,help='Local output; inside repo only data/private/')
     sec=sp.add_parser('sec-pilot',help='One manual SEC-only current-catalog/annual-evidence pilot, no market ranking')
     sec.add_argument('--symbols',default='AAPL,MSFT,NVDA,AMZN')
     sec.add_argument('--cohort',type=Path,help='JSON file with symbols list (max 24); overrides --symbols')
@@ -139,6 +144,12 @@ def main(argv=None):
     elif args.command=='universe':
         result=write_sec_candidates(args.raw,args.metadata,date.fromisoformat(args.as_of),args.output,limit=args.limit)
         print(f"SEC catalog: {result['candidate_count']} unranked candidates / {result['total_sec_records']} associations")
+    elif args.command=='xetra-universe':
+        from .research_xetra_universe import write_xetra_candidates
+        result=write_xetra_candidates(args.raw,args.metadata,
+            date.fromisoformat(args.as_of),args.output,repo_root=ROOT)
+        print(f"Xetra discovery: {result['candidate_count']} source-identified instruments; "
+              "unranked, no price or fiscal certification")
     elif args.command=='sec-pilot':
         from .research_sec_pilot import parse_symbols, collect_sec_pilot, write_sec_evidence
         if not args.live_confirm:
