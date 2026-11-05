@@ -1,6 +1,6 @@
 # Decision 2026 — Xetra reference discovery (R-006, no price ingestion)
 
-**As of:** 2026-11-05. **Status:** offline importer implemented; live Xetra CSV **not yet validated**. R-006/R-007 remain PARTIAL. No merge, trade, paid account or price-ranking promotion.
+**As of:** 2026-11-05. **Latest status:** official production Xetra CSV **validated live in PR CI** (5,548 active reference listings); 40-identity source-coverage probe also validated. See [immutable run evidence and audit](XETRA_LIVE_DISCOVERY_AND_PRICE_COVERAGE_PROBE_2026-11-05.md). **No** price series/real ranking/tax licence certified. R-006/R-007/R-008 remain PARTIAL; no merge or trading.
 
 ## Official primary sources
 
@@ -70,4 +70,4 @@ R-006/R-007/R-008 and fiscal pre-trade readiness remain PARTIAL. No shortlist, t
 - The [Frankfurt download page](https://cashmarket.deutsche-boerse.com/cash-en/trading/Tradable-Instruments-Xetra/Downloads/frankfurt-downloads) separately listed **BFZ All tradable certificates** and **BF + BFZ combined instruments** ZIP files on 2026-11-04. Do not misrepresent Xetra's own categories as certificate coverage; BFZ needs a **separate, bounded ZIP ingestion contract**, issuer/KID/terms review, and ISIN-level tax review.
 - [Deutsche Börse T7 Release 14.0 Cash Instrument Reference Data Guide](https://www.cashmarket.deutsche-boerse.com/resource/blob/4591780/4a5a7f89c8d8b15538a6dc83e3e7c0c5/data/T7_R.14.0_Cash_Markets_Instrument_Reference_Data_Guide_Version_1.pdf), §§5.1–5.2, confirms semicolon-separated fields, XETR/XFRA first-line markets, the update-date line, Active statuses and that type **WAR means Warrant**, **not a verified investment certificate**. The 2025 guide is schema documentation, not proof the 2026 source has not drifted.
 
-**Next evidence checkpoint:** obtain the actual XETR CSV under permitted terms; preserve raw SHA-256 and source retrieval UTC time locally; run `investresearch-b xetra-universe`; record observed schema/date/type counts and reject any drift rather than fabricating matches. Then separately solve lawful adjusted price history and broker/fiscal gates. Nothing in this website cross-check changes R-006/R-007/R-008 from PARTIAL.
+**Next evidence checkpoint (updated after the live run):** CSV schema/hash/class distribution and 40-ISIN deterministic discovery sample were validated on a real runner. The local `xetra-universe` exporter still needs an end-to-end execution on the original official bytes under permitted terms. The critical investment blocker is lawful, corrected 61-session OHLCV histories per identity plus broker/issuer/fiscal documentation; no ranking or trade readiness is inferred.
