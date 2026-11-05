@@ -60,3 +60,14 @@ The importer performs **zero network requests**. It verifies URL, SHA-256, UTC r
 5. Validate actual Mediolanum ISIN-level tax treatment and wallet balance, spread, commission and executable venue before final candidates.
 
 R-006/R-007/R-008 and fiscal pre-trade readiness remain PARTIAL. No shortlist, trade, automatic data refresh, altered funnel threshold or assumption of a vendor license is asserted.
+
+## Independent official-source cross-check (2026-11-05)
+
+**Verification type: public website plus vendor documentation only; NOT an imported vendor CSV, historical quote feed, provider-use licence or successful end-to-end investment run.**
+
+- The official [Xetra instrument-search page](https://www.cashmarket.deutsche-boerse.com/dynamic/action/cash-en/trading/Tradable-Instruments-Xetra/xetra/4085954/search) displayed **5,601 listings**: 1,786 shares, 2,746 ETFs, 466 active ETFs, 206 ETCs, 395 ETNs and 2 subscription rights. These are page category counts, **not** unique securities, rows accepted by the offline importer, or ranked candidates.
+- The official [Xetra download page](https://www.cashmarket.deutsche-boerse.com/cash-de/Handel/Handelbare-Werte-Xetra/Downloads/xetra-downloads) listed the XETR CSV with last-update display **2026-11-04 23:26**, subject to website timezone and real-file header validation. Direct source bytes and their hash were **not** acquired during this check.
+- The [Frankfurt download page](https://cashmarket.deutsche-boerse.com/cash-en/trading/Tradable-Instruments-Xetra/Downloads/frankfurt-downloads) separately listed **BFZ All tradable certificates** and **BF + BFZ combined instruments** ZIP files on 2026-11-04. Do not misrepresent Xetra's own categories as certificate coverage; BFZ needs a **separate, bounded ZIP ingestion contract**, issuer/KID/terms review, and ISIN-level tax review.
+- [Deutsche Börse T7 Release 14.0 Cash Instrument Reference Data Guide](https://www.cashmarket.deutsche-boerse.com/resource/blob/4591780/4a5a7f89c8d8b15538a6dc83e3e7c0c5/data/T7_R.14.0_Cash_Markets_Instrument_Reference_Data_Guide_Version_1.pdf), §§5.1–5.2, confirms semicolon-separated fields, XETR/XFRA first-line markets, the update-date line, Active statuses and that type **WAR means Warrant**, **not a verified investment certificate**. The 2025 guide is schema documentation, not proof the 2026 source has not drifted.
+
+**Next evidence checkpoint:** obtain the actual XETR CSV under permitted terms; preserve raw SHA-256 and source retrieval UTC time locally; run `investresearch-b xetra-universe`; record observed schema/date/type counts and reject any drift rather than fabricating matches. Then separately solve lawful adjusted price history and broker/fiscal gates. Nothing in this website cross-check changes R-006/R-007/R-008 from PARTIAL.
