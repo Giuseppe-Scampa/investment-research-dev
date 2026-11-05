@@ -89,8 +89,8 @@ def test_split_and_dividend_fields_integrate_private_source_manifest(tmp_path):
     ("isin","mapping"),
     ("url","URL"),
     ("currency","mapping"),
-    ("rows","61"),
-    ("hash","SHA-256"),
+    ("rows","Insufficient/late"),
+    ("hash","hash differs"),
 ])
 def test_tiingo_rejects_missing_price_rights_and_identity_evidence(tmp_path,change,match):
     raw,asset=make_source(tmp_path)
