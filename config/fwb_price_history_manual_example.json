@@ -1,0 +1,36 @@
+{
+  "as_of": "2026-11-06",
+  "mode": "EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE",
+  "assets": [
+    {
+      "id": "ILLUSTRATIVE_FWB_DOWNLOAD_UNVERIFIED",
+      "name": "Template for an operator-exported Xetra EUR instrument, NOT investment advice",
+      "isin": "IE00B4L5Y983",
+      "asset_type": "ETF_UCITS",
+      "venue": "XETR",
+      "currency": "EUR",
+      "sector": "",
+      "oil_exposure": "unknown",
+      "index_memberships": [],
+      "prices_source": {
+        "provider": "FWB_PERSONAL_HISTORY_FILE",
+        "path": "REPLACE_WITH_ABSOLUTE_PATH_OF_MANUALLY_DOWNLOADED_CSV",
+        "sha256": "REPLACE_WITH_SHA256_OF_ACTUAL_CSV",
+        "source_url": "https://live.deutsche-boerse.com/en/etf/ishares-core-msci-world-ucits-etf/price-history/historical-prices-and-volumes",
+        "retrieved_at_utc": "REPLACE_WITH_ACTUAL_UTC_COLLECTION_TIMESTAMP",
+        "usage_attestation": "FWB_NONCOMMERCIAL_PERSONAL_USE_ACCEPTED",
+        "downloaded_market_place": "XETR",
+        "download_page_isin": "IE00B4L5Y983",
+        "adjustments_claimed": {
+          "splits": false,
+          "dividends": false,
+          "subscription_rights": false
+        },
+        "columns": {"date": "REPLACE_DATE_HEADER", "close": "REPLACE_CLOSE_HEADER", "volume": "REPLACE_VOLUME_HEADER"},
+        "delimiter": ";",
+        "decimal_separator": "comma",
+        "date_format": "DMY"
+      }
+    }
+  ]
+}
