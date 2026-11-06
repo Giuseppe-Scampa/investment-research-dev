@@ -193,3 +193,21 @@ def test_cli_stays_offline_without_both_consents(tmp_path, monkeypatch, capsys):
     assert ex.value.code == 2
     assert "acknowledge-free-tier" in capsys.readouterr().err
     assert not (tmp_path / "out").exists()
+
+
+def test_github_ai_workflow_is_strictly_manual_public_fixture_only():
+    from investresearch.cli import ROOT
+    workflow = (ROOT / ".github/workflows/r009-manual-free-ai.yml").read_text()
+    assert "workflow_dispatch:" in workflow
+    assert "\n  push:" not in workflow and "\n  pull_request:" not in workflow
+    assert "\n  schedule:" not in workflow
+    assert "acknowledge_free_tier" in workflow
+    assert "config/ai_public_review_example.json" in workflow
+    assert "--invoke-free-remote --acknowledge-free-tier --acknowledge-public-only" in workflow
+    assert "GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}" in workflow
+    assert "GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}" in workflow
+    assert "OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "google/gemma-4-26b-a4b-it:free" in workflow
+    assert "openai/gpt-oss-20b" in workflow
+    assert "EODHD_API_TOKEN" not in workflow
