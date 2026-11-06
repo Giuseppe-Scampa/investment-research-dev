@@ -151,6 +151,10 @@ def analyze_risk(bundle: Path, screening: dict, tactical: dict):
     warnings_count = Counter(
         str(w) for row in rows for w in (row.get("warnings") or [])
     )
+    from .research_portfolio_stress import build_portfolio_stress
+    portfolio_stress=build_portfolio_stress(
+        [r["id"] for r in eligible], by_id, pairs,
+        synthetic=manifest["mode"]==SYNTHETIC)
     return {
         "schema_version": VERSION,
         "as_of": manifest["as_of"],
@@ -166,11 +170,12 @@ def analyze_risk(bundle: Path, screening: dict, tactical: dict):
         "comparable_pairs": sum(p["correlation_eur_eod_historical"] is not None for p in pairs),
         "risk_scope": source,
         "pairs": pairs,
+        "illustrative_portfolio_stress": portfolio_stress,
         "limitations": [
             "Historical EUR EOD correlation is descriptive, not a return/risk forecast.",
             "ECB FX reference fixing and US equity closing prices are asynchronous.",
             "Overlapping date observations are not guaranteed identical trading hours.",
-            "No holdings weights, notional leverage, live bid-ask, counterparty or product payoff stress.",
+            "No actual holdings weights, notional leverage, live bid-ask or product payoff stress; illustration uses fixed equal weights.",
             "Any synthetic result is entirely fictitious, not a product correlation.",
             "Low observed correlation cannot certify diversification or absence of factor concentration.",
         ],
