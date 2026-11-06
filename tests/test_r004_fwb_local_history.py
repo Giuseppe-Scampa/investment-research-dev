@@ -101,3 +101,17 @@ def test_fwb_duplicate_date_malformed_price_and_partial_adjustments(tmp_path):
     meta["adjustments_claimed"]["dividends"]=False
     _bars,proof=normalize_private_fwb(meta,raw,date(2026,11,6),asset,repo_root=tmp_path)
     assert proof["price_basis"]=="FWB_OPERATOR_SELECTED_PARTIAL_ADJUSTMENTS_NOT_VERIFIED"
+
+
+def test_incomplete_fwb_adjustment_flags_keep_market_score_blocked(tmp_path):
+    from investresearch.research_screen import screen
+    raw,meta,asset=inputs(tmp_path)
+    meta["adjustments_claimed"]["dividends"]=False
+    bundle=tmp_path/"private-bundle"
+    build_bundle({"as_of":"2026-11-06","mode":EXTERNAL,"assets":[asset]},bundle)
+    result=screen(bundle)
+    assert len(result["results"])==1
+    row=result["results"][0]
+    assert "FWB_PARTIAL_ADJUSTMENTS_NOT_QUALITY_CLEARED" in row["warnings"]
+    assert row["market_score"] is None
+    assert result["ranked_count"]==0
