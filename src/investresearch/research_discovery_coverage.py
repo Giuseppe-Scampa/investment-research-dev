@@ -66,6 +66,8 @@ def build_discovery(screening, *, xetra=None, sec=None, repo_root=None):
             raise ValueError("Missing/duplicate screened identifier")
         ids.add(r["id"])
 
+    if mode==SYNTHETIC and (xetra is not None or sec is not None):
+        raise ValueError("Real reference catalogs cannot certify synthetic instrument identities")
     catalogs={}
     matched=set()
     ambiguous=0
