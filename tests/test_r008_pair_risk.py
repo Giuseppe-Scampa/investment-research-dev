@@ -89,3 +89,67 @@ def test_cli_produces_real_synthetic_source_risk(tmp_path, capsys):
     out = json.loads((tmp_path/"cli/BLOCK_B_RISK.json").read_text())
     assert out["risk_scope"] == "SYNTHETIC_DIAGNOSTIC_ONLY"
     assert "NO expected returns" in capsys.readouterr().out
+
+
+def test_correlation_matrix_and_illustrative_stress_are_source_bound():
+    screening, tactical=pair()
+    out=analyze_risk(BUNDLE,screening,tactical)
+    stress=out["illustrative_portfolio_stress"]
+    assert stress["schema_version"]=="r008-source-bound-illustrative-portfolio-stress-v1"
+    assert stress["correlation_matrix_ids"]==out["selected_ids"]
+    assert stress["identities"]==out["selected_ids"][:3]
+    n=out["selected_count"]
+    assert len(stress["correlation_matrix"])==n
+    assert all(len(row)==n for row in stress["correlation_matrix"])
+    for p in out["pairs"]:
+        i=out["selected_ids"].index(p["id_a"])
+        j=out["selected_ids"].index(p["id_b"])
+        assert stress["correlation_matrix"][i][j]==p["correlation_eur_eod_historical"]
+        assert stress["correlation_matrix"][j][i]==p["correlation_eur_eod_historical"]
+    assert stress["synthetic_fictional_data"] is True
+    assert stress["actual_holdings_weights_used"] is False
+    assert stress["risk_approved"] is False
+    assert stress["trade_ready"] is False
+    assert stress["diversification_or_downside_forecast_verified"] is False
+    assert stress["status"] in (
+        "SYNTHETIC_EQUAL_WEIGHT_STRESS_ONLY",
+        "INSUFFICIENT_ALIGNED_EUR_EOD_SESSIONS",
+        "INSUFFICIENT_CANDIDATES",
+    )
+    if stress["status"]=="SYNTHETIC_EQUAL_WEIGHT_STRESS_ONLY":
+        assert stress["common_return_observations"]>=20
+        assert 0<=stress["historical_max_drawdown_pct"]<=100
+        assert stress["historical_annualized_volatility_pct"]>=0
+        assert stress["parallel_shock_minus_10_pct"]==-10
+        assert stress["parallel_shock_minus_20_pct"]==-20
+
+
+def test_portfolio_stress_fails_closed_if_common_series_missing():
+    from investresearch.research_portfolio_stress import build_portfolio_stress
+    from decimal import Decimal
+    one={"observations":{"2026-01-02":Decimal("100"),"2026-01-05":Decimal("101")}}
+    other={"observations":{"2026-04-01":Decimal("100"),"2026-04-02":Decimal("99")}}
+    pair={"id_a":"A","id_b":"B","correlation_eur_eod_historical":None}
+    out=build_portfolio_stress(["A","B"],{"A":one,"B":other},[pair],synthetic=False)
+    assert out["status"]=="INSUFFICIENT_ALIGNED_EUR_EOD_SESSIONS"
+    assert out["historical_max_drawdown_pct"] is None
+    assert out["parallel_shock_minus_10_pct"] is None
+    assert out["trade_ready"] is False
+
+
+def test_portfolio_stress_fixed_shock_is_not_expected_loss_or_weight_recommendation():
+    from investresearch.research_portfolio_stress import build_portfolio_stress
+    from decimal import Decimal
+    from datetime import date,timedelta
+    dates=[(date(2026,1,2)+timedelta(days=n)).isoformat() for n in range(24)]
+    first={"observations":{d:Decimal("100")+Decimal(i) for i,d in enumerate(dates)}}
+    second={"observations":{d:Decimal("100")-Decimal(i)/2 for i,d in enumerate(dates)}}
+    result=build_portfolio_stress(["A","B"],{"A":first,"B":second},
+        [{"id_a":"A","id_b":"B","correlation_eur_eod_historical":-1.0}],synthetic=False)
+    assert result["status"]=="SOURCE_BOUND_HISTORICAL_STRESS_UNVERIFIED_NOT_TRADE_READY"
+    assert result["common_return_observations"]==23
+    assert result["historical_worst_day_pct"] is not None
+    assert result["parallel_shock_minus_20_pct"]==-20.0
+    assert result["portfolio_optimality_asserted"] is False
+    assert result["actual_holdings_weights_used"] is False
+    assert result["trade_ready"] is False
