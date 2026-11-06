@@ -77,6 +77,10 @@ def bind_ecb_fx(*, spec_path: Path, fx_meta_path: Path, output: Path, repo_root:
     if retrieved.date()>as_of:
         raise ValueError("ECB FX collected after specified as-of; cannot backdate sources")
     rates=parse_ecb(raw,as_of)
+    # A source collected on a given UTC day cannot contain future ECB fixings.
+    # SHA-256 only confirms byte integrity, not point-in-time availability.
+    if date.fromisoformat(rates[-1]["date"]) > retrieved.date():
+        raise ValueError("ECB source contains fixing later than declared acquisition date")
     if rates[-1]["date"]< (as_of-timedelta(days=10)).isoformat():
         raise ValueError("ECB historic source stale at requested as-of")
     out=dict(spec)
