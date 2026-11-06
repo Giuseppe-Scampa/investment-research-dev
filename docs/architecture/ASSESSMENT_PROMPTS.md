@@ -14,7 +14,7 @@ Agisci come **revisore tecnico indipendente** dell'Investment Research Engine. N
 
 Se il collegamento non è accessibile, scrivi "NON VERIFICATO" e indica esattamente quali file servono. Il privato investment-research-2026 non è necessariamente accessibile: non fare supposizioni su commit/test. Non usare una risposta di un altro modello come evidenza.
 
-Confronta **M1–M6 e R-001–R-013** con funzioni realmente presenti, test, Actions, fonti/licenze, quality gate, time/as-of, gestione corporate action/FX, e privacy. In particolare: ricerca globale (non soltanto 16 titoli), M5 AI gratuita (non il vecchio runner a pagamento), M6 integrazione dashboard, distinzione fra DONE software e dipendenza Mediolanum per simulazione personale. Controlla se i nuovi moduli sono collegati al reale flusso E2E e non sono soltanto test unitari isolati.
+Confronta **M1–M6 e R-001–R-013** con funzioni realmente presenti, test, Actions, fonti/licenze, quality gate, time/as-of, gestione corporate action/FX, e privacy. In particolare: ricerca globale (non soltanto 16 titoli), M5 AI gratuita (non il vecchio runner a pagamento), M6 integrazione dashboard, distinzione fra DONE software e dipendenza intermediario per simulazione personale. Controlla se i nuovi moduli sono collegati al reale flusso E2E e non sono soltanto test unitari isolati.
 
 Output richiesto:
 - Tabella **R-ID | status DONE/PARTIAL/MISSING/BLOCKED_EXTERNAL | prova specifica (file:line o run) | gap | test di accettazione**.
@@ -24,7 +24,7 @@ Output richiesto:
 - Lista delle modifiche eventualmente soggette ad ADR o a nuova versione.
 - Giudizio finale distinto: **MVP Decision 2026** vs **V3 completa**.
 
-Non eseguire merge, non modificare la baseline o la roadmap da solo, non inviare ordini. Non inventare CI o disponibilità di feed. **I dati Mediolanum non sono un prerequisito per completare il software.**
+Non eseguire merge, non modificare la baseline o la roadmap da solo, non inviare ordini. Non inventare CI o disponibilità di feed. **I dati intermediario non sono un prerequisito per completare il software.**
 
 ## Prompt B — Gemini, completezza di prodotto / pianificazione / fonti
 

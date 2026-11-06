@@ -30,7 +30,7 @@ di fonti lecite. Non è stato pianificato alcun acquisto di dati o cloud.
 |---|---|---|---|---|
 | P0 M3 | Altri 2-3 pilot e analisi limiti RAW/FX/corporate actions, verifica uso dati | Alpha Vantage già attiva; SEC e BCE senza account | 2–4 giorni lavorativi | Prezzi fonte, as-of, corporate action/FX e licenza distinti in audit |
 | P0 M6 | Contratto dati hash/provenienza B→A con rifiuto di dati non validati | Nessun account | 3–5 giorni | E2E sintetico pubblico→privato, nessun dato bancario nel pubblico |
-| P0 M2 | Decision 2026 A/B/C con €5.000 di minus 2022 come dato dichiarato, calcoli fiscali/costi e alternativa non operare | Nessun nuovo account; eventuale controllo saldo bancario solo prima della decisione | 5–8 giorni | Report riproducibile e revisione fiscale esplicita |
+| P0 M2 | Decision 2026 A/B/C con saldo fiscale ipotetico/non verificato in ambiente privato, calcoli fiscali/costi e alternativa non operare | Nessun nuovo account; eventuale controllo saldo bancario solo prima della decisione | 5–8 giorni | Report riproducibile e revisione fiscale esplicita |
 | P1 M3/M4 | Mappatura US+Europa ISIN/venue/classi; fonte storici corretti e diritti; catalogo 200+ | SEC/BCE; analisi Euronext o altra fonte, non abbonarsi automaticamente | 8–15 giorni + tempi esterni | Evidenza reale indipendente con provenienza e denominatori di copertura |
 | P1 M4 | Ranking settoriale, valuation, esposizioni, fattori di rischio, controtesi, funnel real-world | Nessuna API AI necessaria; corporate actions e feed autorizzati | 8–12 giorni | 200+→40→6→0–3 su fonti vere senza quote inventate |
 | P2 M5 | Ollama locale + Gemini Free + Groq Free; opzionale OpenRouter, Cloudflare Workers AI | Ollama senza account; Gemini/Groq solo al collaudo; OpenRouter dopo decisione comparativa | 4–8 giorni + 3–6 per fact-check | Modelli non incidono sul rank/tasse, costo zero, citazioni verificate |
@@ -47,7 +47,7 @@ completamento. Gli account cloud NON risolvono la mancanza di dataset.
   lavoro attivo, **12–20 novembre** se non emergono criticità al contratto
   B→A. **Versione utile per una decisione con prezzi e fiscalità verificati:**
   circa 3–5 settimane, **fine novembre–prima metà dicembre**. Prima di
-  negoziare verificare il saldo residuo 2022 presso Mediolanum, categoria dei
+  negoziare verificare il saldo fiscale residuo presso l'intermediario, categoria dei
   redditi e condizioni operative. Data di riferimento prudenziale per la
   decisione: **non aspettare il 31 dicembre**.
 - **V3.0.0 — MVP di ricerca su fonti reali:** circa 4–7 settimane di

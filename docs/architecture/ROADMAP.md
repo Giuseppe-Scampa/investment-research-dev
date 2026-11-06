@@ -28,7 +28,7 @@ La **baseline V3.0.0 è approvata** da ADR-0001, non è una release di software 
 2. **P0 in parallelo — Chiudere contratto e test d'integrazione M1/M2/M6.** Usare schemi e hash **già implementati** `screen → tactical → tactical-c`; predisporre una prova automatica inter-repository su bundle solo sintetico + casi negativi (schema incompatibile, fonte non autorizzata, currency/ISIN discordanti, fiscal status REVIEW_REQUIRED). Dati bancari mai nel repo pubblico. `tactical-c` resta analisi condizionale e non certificazione.
 3. **P0 dopo i dati — Decision 2026 tattica:** sottocoorte multi-asset **derivata da regole di fonte**, non selezionata manualmente ad hoc; screening su storico verificato, comparazioni di rischio/concentrazione e correlazione, indicatori fondamentali/valuation pertinenti, evento/catalizzatore con data/fonte, controtesi. Evidenziare `REVIEW` per overlap Euro Stoxx 50, oro/petrolio indiretti ed ETC/ETN/certificati senza fiscalità per ISIN. Passare in privato ad A/B/C, inclusa opzione non operare e verifica deadline vendita/regolamento tramite intermediario. Nessuna forzatura di due acquisti.
 4. **P1 permanente — M4 completo:** espandere dopo la modalità tattica verso discovery globale realmente misurata (denominatore, classi, venue, gap fonte) e funnel originale 200+/100+/40/6/0–3, senza sostituire la coorte di 40 al requisito globale.
-5. **P1 — M6 definitivo:** report unico con traccia `source → ingest → quality → score → research priorities → decision scenarios`, prove replay, rischio aggregato, costi/spread/FTT/FX, privacy e audit. Separare il dossier Mediolanum personale dal DONE di codice generale.
+5. **P1 — M6 definitivo:** report unico con traccia `source → ingest → quality → score → research priorities → decision scenarios`, prove replay, rischio aggregato, costi/spread/FTT/FX, privacy e audit. Separare il dossier intermediario personale dal DONE di codice generale.
 6. **P2 — M5 AI gratuita e hardening:** solo dopo un percorso quantitativo leggibile; controanalisi non autorevole sui prezzi, controllo citazioni su fonte reale, rate limits, zero paid fallback. Concludere R-011/R-012 con verifiche CI/ADR e controllo dei dati/artifact.
 
 **Regola di avanzamento:** ogni PR deve collegare R-ID/M-ID, commit, test, run live quando necessario, artefatti permessi, rischio residuo, esito fail-closed e criterio esplicito di DONE. Nessun aumento del numero di test, quantità di listing scoperti o connettore implementato modifica da solo lo stato di readiness. Niente nuovo ADR e niente merge senza controllo/revisione.
@@ -136,9 +136,7 @@ La revisione di Claude ha identificato D1 (vocabolario Oil & Gas), D2 (soglia sp
   [ACCOUNT_AND_SOURCE_READINESS_2026.md](ACCOUNT_AND_SOURCE_READINESS_2026.md).
   Per ricerca SEC/BCE non occorrono nuovi account. Gemini/Groq/OpenRouter sono
   **successivi e opzionali**, così come Euronext/Cloudflare AI/Oracle.
-- Il percorso **Decision 2026** può usare il saldo 2022 di circa **5.000 €
-  dichiarato dall'utente**, con status diverso da `BROKER_VERIFIED`, senza
-  richiedere il replay completo dei movimenti bancari per iniziare A/B/C.
+- Il percorso **Decision 2026** può utilizzare in ambiente privato un saldo fiscale dichiarato dall'operatore, marcato come non verificato dall'intermediario; non è necessario ricostruire tutte le operazioni passate per iniziare confronti ipotetici A/B/C.
   La verifica fiscale finale dell'intermediario resta necessaria prima di
   fare affidamento su compensazioni reali.
 - Stati canonici invariati: R-004/R-005/R-006/R-007/R-008/R-009/R-010

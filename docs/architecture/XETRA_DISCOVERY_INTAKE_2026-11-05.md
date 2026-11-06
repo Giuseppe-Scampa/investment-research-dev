@@ -9,7 +9,7 @@
 - T7 Cash Instrument Reference Data Guide, Section 5.2:
   https://www.cashmarket.deutsche-boerse.com/resource/blob/4591780/4a5a7f89c8d8b15538a6dc83e3e7c0c5/data/T7_R.14.0_Cash_Markets_Instrument_Reference_Data_Guide_Version_1.pdf
 
-The official site displayed approximately 5,600 Xetra listings on 2026-11-05, including separate shares, ETF, active ETF, ETC and ETN categories. The CSV specification has semicolon-separated records, line 1 Market: XETR, line 2 Date Last Update: DD.MM.YYYY, line 3 column headers. Required fields: Product Status, Instrument Status, Instrument, ISIN, Mnemonic, MIC Code, Settlement Currency, Instrument Type. The vendor guide documents source type codes CS/ETF/ETC/ETN/OTHER/BOND/WAR/SR/FUN. These codes are instrument reference classifications, not a proof of fund legal status, tax status, price history or execution venue at Mediolanum.
+The official site displayed approximately 5,600 Xetra listings on 2026-11-05, including separate shares, ETF, active ETF, ETC and ETN categories. The CSV specification has semicolon-separated records, line 1 Market: XETR, line 2 Date Last Update: DD.MM.YYYY, line 3 column headers. Required fields: Product Status, Instrument Status, Instrument, ISIN, Mnemonic, MIC Code, Settlement Currency, Instrument Type. The vendor guide documents source type codes CS/ETF/ETC/ETN/OTHER/BOND/WAR/SR/FUN. These codes are instrument reference classifications, not a proof of fund legal status, tax status, price history or execution venue at intermediario.
 
 ## Offline use and provenance
 
@@ -57,7 +57,7 @@ The importer performs **zero network requests**. It verifies URL, SHA-256, UTC r
 2. Match identities against Euronext Milan and issuer KID/prospectuses to determine exact legal product and underlying risk; add the certificate universe separately.
 3. Verify lawful split-adjusted historical OHLCV feeds for a diverse set of instruments and confirm 61 sessions, corporate actions and corporate issuer fundamentals.
 4. Build the Block B bundle and run tactical using source-checked prices; then transfer only paired hashed reports to private Block A tactical-c.
-5. Validate actual Mediolanum ISIN-level tax treatment and wallet balance, spread, commission and executable venue before final candidates.
+5. Validate actual intermediario ISIN-level tax treatment and wallet balance, spread, commission and executable venue before final candidates.
 
 R-006/R-007/R-008 and fiscal pre-trade readiness remain PARTIAL. No shortlist, trade, automatic data refresh, altered funnel threshold or assumption of a vendor license is asserted.
 

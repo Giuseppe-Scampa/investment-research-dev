@@ -105,8 +105,8 @@ sintetici non ne hanno bisogno.
    sintetici dei test.
 4. **M6 R-010:** costruire il contratto di trasferimento dell'evidenza
    `B→A`, senza saldo bancario in repository pubblico.
-5. **M2 Decision 2026:** per la sola ricerca usare **€5.000 dichiarati**
-   scadenza 2026-12-31, marcati `USER_CONFIRMED_NOT_BROKER_VERIFIED`;
+5. **M2 Decision 2026:** per la sola ricerca usare **solo in ambiente privato un saldo fiscale fornito dall'operatore**,
+   marcato `USER_CONFIRMED_NOT_BROKER_VERIFIED` quando non certificato dall'intermediario;
    non serve ricostruire ogni operazione passata per confrontare A/B/C.
    La capienza e il regime dell'intermediario vanno verificati
    prima di tradare.

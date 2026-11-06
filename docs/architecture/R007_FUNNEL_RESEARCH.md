@@ -74,10 +74,8 @@ inviato ad alcun ordine. Output contenenti due diligence manuale o fonti
 esterne vanno esclusivamente in una directory esterna al repository o in
 `data/private/` ignorata da Git.
 
-Il codice non legge portafogli, IBAN, saldo fiscale, costi Mediolanum o
-minusvalenze nel repository pubblico. La stima iniziale dei 5.000 € da
-compensare resta **una dichiarazione dell'utente** nel percorso decisionale
-privato, distinta da un estratto certificato.
+Il codice non legge portafogli, IBAN, saldo fiscale, costi intermediario o
+minusvalenze nel repository pubblico. Qualsiasi saldo fiscale non autenticato resta un dato dichiarato nel percorso decisionale privato, distinto da un estratto certificato.
 
 ## Prove e limiti
 

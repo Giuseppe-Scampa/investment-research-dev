@@ -40,10 +40,10 @@ e `investresearch tactical-c` nel repository privato.
    0%, +5%, +10%, +20% e +30% sono **sensibilità matematica**
    a budget intero, non target/previsioni. I costi di spread/FX/FTT
    non verificati restano fuori dal calcolo e sono segnalati.
-   È richiesto il saldo effettivamente residuo delle minus 2022
+   È richiesto il saldo effettivamente residuo delle minusvalenze delle annualità pertinenti
    prima di fare affidamento sull'offset. Nessun ordine.
 7. **Diligence finale:** esaminare valuation, catalizzatori, rischi
-   e spread reali di Mediolanum; selezionare manualmente massimo 2–3
+   e spread reali di intermediario; selezionare manualmente massimo 2–3
    strumenti solo dopo aver comparato casi downside/upside e scenario
    liquidità/no trade. Un report di ricerca non è un'autorizzazione a
    eseguire ordini.
@@ -78,7 +78,7 @@ investresearch tactical-c \
 ```
 
 Output: `TACTICAL_SCENARIO_C.json` e `TACTICAL_SCENARIO_C.md`.
-Questo comando non richiede un import totale dello storico Mediolanum:
+Questo comando non richiede un import totale dello storico intermediario:
 usa i parametri già presenti nel file di impostazioni privato come
 **assunzioni dichiarate**, mai saldo verificato.
 
@@ -94,7 +94,7 @@ usa i parametri già presenti nel file di impostazioni privato come
 - **Mancano:** un bundle reale multi-asset con storico rettificato verificato,
   classificazione strumenti/diritti, eventuale identificazione materiale
   dell'indiretto petrolio, qualità fondamentale settoriale, spread e condizioni
-  fiscalmente riconosciute da Mediolanum.
+  fiscalmente riconosciute da intermediario.
 - **Non dichiarare investimento consigliato né R-007 DONE** fino alla
   presenza di queste prove.
 

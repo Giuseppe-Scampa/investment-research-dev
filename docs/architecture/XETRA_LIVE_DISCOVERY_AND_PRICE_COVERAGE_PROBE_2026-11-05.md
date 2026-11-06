@@ -23,7 +23,7 @@
 ## Blockers that remain — do not claim Decision 2026 investment readiness
 
 - **Zero 61-session licensed, split-checked and currency-aligned quote series validated for these 40 identities.** The Alpha Vantage FSLR pilot supplied 100 **raw** bars for a separately scoped US ticker; that is not this 40-ISIN European dataset.
-- **Zero investment recommendations**, no verified issuer fundamentals/valuation, catalyst model, cross-asset correlations, bid/ask/spread or effective Mediolanum venue mapping from this T7 input.
+- **Zero investment recommendations**, no verified issuer fundamentals/valuation, catalyst model, cross-asset correlations, bid/ask/spread or effective intermediario venue mapping from this T7 input.
 - **Zero final ISIN-level Italian tax certifications** for ETC/ETN/certificates; ETFs require separate legal UCITS classification. No funds, wallet or account data leave private Block A.
 - An Xetra snapshot does not cover the Frankfurt **BFZ certificates** feed. Never infer certificates from `WAR` labels. BFZ requires its own bounded ZIP/parser/issuer KID and source licence check.
 - Next critical task: a *permitted* 61-session historical price source with corporate actions and FX for a **nontrivial subset** of the 40 IDs, then real `screen → tactical → tactical-c`. Missing or unverifiable series remain `INCOMPLETE_NO_RANK`, never synthesized.
