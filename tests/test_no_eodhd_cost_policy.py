@@ -12,7 +12,7 @@ import pytest
 from investresearch.research_cli import main
 
 
-@pytest.mark.parametrize("request", [
+@pytest.mark.parametrize("argv", [
     ["eodhd-personal-collect", "--symbol","TEST.XETRA",
      "--isin","US0378331005","--venue","XETR","--currency","EUR",
      "--name","Synthetic","--asset-type","EQUITY","--sector","Synthetic",
@@ -25,10 +25,10 @@ from investresearch.research_cli import main
      "--eodhd-meta","missing","--as-of","2026-11-05",
      "--output","/tmp/SHOULD_NOT_EXIST_EODHD"],
 ])
-def test_eodhd_actions_disabled_before_network_or_credentials(monkeypatch, request, capsys):
+def test_eodhd_actions_disabled_before_network_or_credentials(monkeypatch, argv, capsys):
     monkeypatch.delenv("EODHD_API_TOKEN", raising=False)
     with pytest.raises(SystemExit) as ex:
-        main(request)
+        main(argv)
     assert ex.value.code == 2
     assert "EODHD_DISABLED_NO_SUBSCRIPTION" in capsys.readouterr().err
 
