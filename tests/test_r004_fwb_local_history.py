@@ -89,10 +89,14 @@ def test_fwb_fails_closed_on_source_or_licence_claim(tmp_path,field,value,patter
 def test_fwb_duplicate_date_malformed_price_and_partial_adjustments(tmp_path):
     raw,meta,asset=inputs(tmp_path,days=30)
     first=raw.splitlines()[1]
+    duplicate=raw+first+b"\n"
+    meta_duplicate={**meta,"sha256":hashlib.sha256(duplicate).hexdigest()}
     with pytest.raises(ValueError,match="duplicate"):
-        normalize_private_fwb(meta,raw+first+b"\n",date(2026,11,6),asset,repo_root=tmp_path)
+        normalize_private_fwb(meta_duplicate,duplicate,date(2026,11,6),asset,repo_root=tmp_path)
+    malformed=raw.replace(b"100,0",b"1.000,0",1)
+    meta_malformed={**meta,"sha256":hashlib.sha256(malformed).hexdigest()}
     with pytest.raises(ValueError,match="malformed"):
-        normalize_private_fwb(meta,raw.replace(b"100,0",b"1.000,0",1),
+        normalize_private_fwb(meta_malformed,malformed,
                               date(2026,11,6),asset,repo_root=tmp_path)
     meta["adjustments_claimed"]["dividends"]=False
     _bars,proof=normalize_private_fwb(meta,raw,date(2026,11,6),asset,repo_root=tmp_path)
