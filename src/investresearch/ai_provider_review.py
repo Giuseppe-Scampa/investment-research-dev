@@ -1,7 +1,7 @@
 """M5/R-009: deterministic multi-provider PUBLIC-only AI critique comparison.
 
-Imported responses only: no paid API, remote account, model invocation,
-semantic consensus invention or citation "fact-check" by string matching.
+Imported and opt-in free-tier remote responses: reconciliation itself never
+invokes APIs. No semantic consensus or citation fact-check by string matching.
 Results are review *queues*, not automatically validated financial research.
 """
 from __future__ import annotations
@@ -30,14 +30,22 @@ def _verify(record):
         raise ValueError("Expected original R-009 public counteranalysis record")
     if record.get("provider") not in PROVIDERS or not MODEL_ID.fullmatch(str(record.get("model",""))):
         raise ValueError("Unknown AI provider or model")
-    if (record.get("execution") not in ("OPT_IN_LOCAL_OLLAMA","IMPORTED_RESPONSE_NO_NETWORK")
-            or record.get("api_billing_status")!="NO_PAID_REMOTE_API_CALLED_BY_THIS_MODULE"
+    billing_by_execution={
+        "OPT_IN_LOCAL_OLLAMA":"NO_PAID_REMOTE_API_CALLED_BY_THIS_MODULE",
+        "IMPORTED_RESPONSE_NO_NETWORK":"NO_PAID_REMOTE_API_CALLED_BY_THIS_MODULE",
+        "OPT_IN_FREE_TIER_REMOTE":"FREE_TIER_OPERATOR_ACKNOWLEDGED_BILLING_NOT_ATTESTED",
+    }
+    if (record.get("execution") not in billing_by_execution
+            or record.get("api_billing_status")!=billing_by_execution.get(record.get("execution"))
             or record.get("result_status")!="AI_UNVERIFIED_COUNTERANALYSIS_HUMAN_REVIEW_REQUIRED"
             or record.get("citation_status")!="KNOWN_SOURCE_IDS_ONLY_NOT_FACT_CHECKED"
             or record.get("rank_or_tax_authorization") is not False):
         raise ValueError("Imported AI evidence claims unverified paid/provider/trade authority")
     if record["execution"]=="OPT_IN_LOCAL_OLLAMA" and record["provider"]!="ollama-local":
         raise ValueError("Only local Ollama may have actually been invoked in these records")
+    if record["execution"]=="OPT_IN_FREE_TIER_REMOTE":
+        from .ai_remote_free import validate_free_model
+        validate_free_model(record["provider"], record["model"])
     try:
         cutoff=date.fromisoformat(record["research_as_of"])
     except (KeyError,ValueError,TypeError):
