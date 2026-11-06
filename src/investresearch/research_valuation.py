@@ -121,7 +121,15 @@ def build_valuation(screening, financial_values=None):
             values=item["values"]
             if not isinstance(values,dict) or set(values)!=set(KEYS):
                 raise ValueError("Financial valuation requires exactly documented values/units")
-            decimals={k:_number(v,positive=(k=="market_cap")) for k,v in values.items()}
+            # A missing original fact is explicitly NULL, never imputed as zero
+            # or silently removed. P/E can be computed without unavailable
+            # EBITDA/FCF/debt, while EV/EBITDA remains unknown.
+            decimals={k:(_number(v,positive=(k=="market_cap"))
+                         if k=="market_cap" or v is not None else None)
+                      for k,v in values.items()}
+            if all(decimals[k] is None for k in
+                   ("net_income","ebitda","free_cash_flow")):
+                raise ValueError("Valuation needs at least one documented issuer financial metric")
             refs=item["sources"]
             if not isinstance(refs,list) or not 2<=len(refs)<=5:
                 raise ValueError("Valuation uses independently cited issuer and market cap sources")
@@ -139,16 +147,22 @@ def build_valuation(screening, financial_values=None):
         item=inputs.get(row["id"])
         if item:
             m=item["values"]
-            enterprise=m["market_cap"]+m["net_debt"]
+            enterprise=(m["market_cap"]+m["net_debt"]
+                        if m["net_debt"] is not None else None)
+            def known_ratio(n,d):
+                return _ratio(n,d) if n is not None and d is not None else None
             ratios={
-                "historical_earnings_yield":_ratio(m["net_income"],m["market_cap"]),
-                "historical_free_cash_flow_yield":_ratio(m["free_cash_flow"],m["market_cap"]),
-                "historical_ev_to_ebitda":_ratio(enterprise,m["ebitda"]) if enterprise>0 else None,
-                "historical_market_cap_to_net_income":_ratio(m["market_cap"],m["net_income"]),
-                "net_debt_to_ebitda":_ratio(m["net_debt"],m["ebitda"]),
+                "historical_earnings_yield":known_ratio(m["net_income"],m["market_cap"]),
+                "historical_free_cash_flow_yield":known_ratio(m["free_cash_flow"],m["market_cap"]),
+                "historical_ev_to_ebitda":known_ratio(enterprise,m["ebitda"])
+                    if enterprise is not None and enterprise>0 else None,
+                "historical_market_cap_to_net_income":known_ratio(m["market_cap"],m["net_income"]),
+                "net_debt_to_ebitda":known_ratio(m["net_debt"],m["ebitda"]),
             }
-            serialized={k:str(v) for k,v in m.items()}
-            status="SOURCE_ASSERTED_FINANCIAL_RATIOS_NOT_INDEPENDENTLY_VERIFIED"
+            serialized={k:str(v) if v is not None else None for k,v in m.items()}
+            status=("SOURCE_ASSERTED_FINANCIAL_RATIOS_NOT_INDEPENDENTLY_VERIFIED"
+                    if all(v is not None for v in m.values()) else
+                    "PARTIAL_SOURCE_ASSERTED_RATIOS_MISSING_FACTS_NOT_IMPUTED")
             refs=item["sources"]
         else:
             ratios={k:None for k in ("historical_earnings_yield",
@@ -163,6 +177,8 @@ def build_valuation(screening, financial_values=None):
             "id":row["id"],"isin":row.get("isin",""),
             "asset_type":row.get("asset_type"),"currency":row.get("currency"),
             "status":status,"source_values":serialized,
+            "missing_financial_fields":sorted(
+                k for k in KEYS if item is None or item["values"][k] is None),
             "ratios":ratios,"original_source_references":refs,
             "issuer_fiscal_period_end":item["period"] if item else None,
             "market_cap_reference_date":item["reference_date"] if item else None,
@@ -175,11 +191,14 @@ def build_valuation(screening, financial_values=None):
         "dataset_mode":mode,"dataset_manifest_sha256":ref_sha,
         "screening_sha256":original_sha,
         "universe_count":len(rows),"source_asserted_valuations_count":len(inputs),
+        "source_asserted_ratio_count":sum(
+            sum(v is not None for v in item["ratios"].values()) for item in output),
         "items":output,"rank_or_tax_effect":False,"trade_ready":False,
         "limitations":[
             "Financial amounts are source-supplied same-currency annual/interim values; units and consolidation scope require human review.",
             "Market cap date and statement period may differ; historical multiples are not forward valuation or price targets.",
-            "Missing or negative earnings/EBITDA give N/A ratios, not artificially low/high scores.",
+            "Missing financial fields stay NULL and individual ratios become N/A; there is NO zero imputation.",
+            "Negative earnings/EBITDA give N/A denominators, not artificially low/high scores.",
             "Non-equity ETC/ETN/ETF/structured products need separate contractual payoff and NAV rules.",
             "Issuer reference URLs and SHA assertions do not independently authenticate issuer, licence or financial values.",
         ],
