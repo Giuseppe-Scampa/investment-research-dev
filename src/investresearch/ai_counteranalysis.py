@@ -1,8 +1,8 @@
 """R-009 / M5: opt-in AI counteranalysis of PUBLIC issuer research.
 
 No provider is called automatically. Ollama uses fixed loopback only;
-Gemini/Groq/OpenRouter are OFFLINE imported responses until their zero-billing
-terms, quota and connection are explicitly validated. AI never sets investment
+Gemini/Groq/OpenRouter also have strictly opt-in free-tier remote adapters.
+Account billing cannot be verified by code and must be checked by the operator. AI never sets investment
 rankings, fiscal facts or trade readiness.
 """
 from __future__ import annotations
@@ -192,7 +192,12 @@ def _canonical_bytes(value):
                       separators=(",", ":")).encode("utf-8")
 
 
-def counteranalysis_record(spec, provider, model, answer, *, local_call=False):
+def counteranalysis_record(spec, provider, model, answer, *, local_call=False, remote_call=False):
+    if local_call and remote_call:
+        raise ValueError('AI execution cannot be both local and remote')
+    if remote_call:
+        from .ai_remote_free import validate_free_model
+        validate_free_model(provider, model)
     spec = validate_public_spec(spec)
     parsed = parse_response(spec, provider, model, answer)
     return {
@@ -201,8 +206,12 @@ def counteranalysis_record(spec, provider, model, answer, *, local_call=False):
         "input_sha256": hashlib.sha256(_canonical_bytes(spec)).hexdigest(),
         "response_sha256": hashlib.sha256(_canonical_bytes(parsed)).hexdigest(),
         "provider": provider, "model": model,
-        "execution": "OPT_IN_LOCAL_OLLAMA" if local_call else "IMPORTED_RESPONSE_NO_NETWORK",
-        "api_billing_status": "NO_PAID_REMOTE_API_CALLED_BY_THIS_MODULE",
+        "execution": ("OPT_IN_LOCAL_OLLAMA" if local_call else
+                      "OPT_IN_FREE_TIER_REMOTE" if remote_call else
+                      "IMPORTED_RESPONSE_NO_NETWORK"),
+        "api_billing_status": ("FREE_TIER_OPERATOR_ACKNOWLEDGED_BILLING_NOT_ATTESTED"
+                               if remote_call else
+                               "NO_PAID_REMOTE_API_CALLED_BY_THIS_MODULE"),
         "result_status": "AI_UNVERIFIED_COUNTERANALYSIS_HUMAN_REVIEW_REQUIRED",
         "citation_status": "KNOWN_SOURCE_IDS_ONLY_NOT_FACT_CHECKED",
         "rank_or_tax_authorization": False,
@@ -254,7 +263,7 @@ def write_counteranalysis(record, output, *, repo_root):
               "Citation IDs are present but not fact-checked against original documents.",
               "Citation identifiers exist in the supplied register. Their meaning,",
               "source authenticity, original content and factual support are NOT verified.",
-              "No API-paid service is invoked by this module. AI never updates ranking or trades.", ""]
+              "Remote free-tier billing cannot be attested by this module. No ranking or trades.", ""]
     jsonfile.write_text(json.dumps(record, ensure_ascii=False, sort_keys=True,
                                    indent=2) + "\n", encoding="utf-8")
     mdfile.write_text("\n".join(lines), encoding="utf-8")
