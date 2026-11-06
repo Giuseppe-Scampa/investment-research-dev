@@ -19,6 +19,14 @@ def main(argv=None):
     s.add_argument('--bundle',type=Path,default=ROOT/'data/research/demo')
     s.add_argument('--output',type=Path,default=ROOT/'reports/generated/block_b')
     s.add_argument('--max-age-sessions',type=int,default=1)
+    discovery=sp.add_parser('discovery',help='R-006 offline SEC/Xetra reference-versus-screening coverage, never quote ranking')
+    discovery.add_argument('--bundle',type=Path,required=True)
+    discovery.add_argument('--output',type=Path,required=True)
+    discovery.add_argument('--xetra-raw',type=Path,default=None)
+    discovery.add_argument('--xetra-meta',type=Path,default=None)
+    discovery.add_argument('--sec-raw',type=Path,default=None)
+    discovery.add_argument('--sec-meta',type=Path,default=None)
+    discovery.add_argument('--max-age-sessions',type=int,default=1)
     funnel=sp.add_parser('funnel',help='R-007 offline funnel: broad screened universe to evidence review queue')
     funnel.add_argument('--bundle',type=Path,required=True,help='Source checked Block B bundle, not an arbitrary rank CSV')
     funnel.add_argument('--output',type=Path,required=True,help='External data inside repo only in data/private/')
@@ -192,6 +200,20 @@ def main(argv=None):
         result=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
         write_screening(result,args.output)
         print(f"Block B: {result['ranked_count']} / {result['universe_size']} ranked; mode {result['dataset_mode']}; output {args.output}")
+    elif args.command=='discovery':
+        from .research_discovery_coverage import build_discovery,write_discovery
+        if args.max_age_sessions not in (0,1,2,3,4,5):
+            p.error('max-age-sessions must be between 0 and 5')
+        if bool(args.xetra_raw)!=bool(args.xetra_meta) or bool(args.sec_raw)!=bool(args.sec_meta):
+            p.error('Both original raw+metadata are required per official reference')
+        settings=json.loads((ROOT/'config/settings.json').read_text(encoding='utf-8'))
+        original=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
+        report=build_discovery(original,xetra=(args.xetra_raw,args.xetra_meta) if args.xetra_raw else None,
+            sec=(args.sec_raw,args.sec_meta) if args.sec_raw else None,repo_root=ROOT)
+        write_discovery(report,args.output,repo_root=ROOT)
+        print(f"R-006 coverage: {report['source_screened_universe_count']} source-bundle candidates, "
+              f"{report['source_ranked_count']} ranked, {report['reference_catalog_count']} original independent catalogs, "
+              "NO market data inferred from listings")
     elif args.command=='funnel':
         from .research_funnel import build_funnel, write_funnel
         if args.max_age_sessions not in (0,1,2,3,4,5):
