@@ -176,13 +176,17 @@ def main(argv=None):
                           help='Repeat for each original AI_COUNTERANALYSIS.json')
     aireview.add_argument('--output',type=Path,required=True)
     ai=sp.add_parser('ai-countercheck',
-        help='R-009: optional public-only AI counteranalysis; local Ollama or offline imported provider response')
+        help='R-009: public-only counteranalysis; import, local Ollama, or opt-in free-tier remote')
     ai.add_argument('--spec',type=Path,required=True,help='Public issuer research only; no bank/personal data')
     ai.add_argument('--provider',choices=['ollama-local','gemini','groq','openrouter'],required=True)
     ai.add_argument('--model',required=True,help='Explicit model identifier; no default or paid API')
     ai.add_argument('--response-json',type=Path,help='Offline JSON response produced elsewhere, no API calls')
     ai.add_argument('--invoke-local-ollama',action='store_true',
                     help='Explicit opt-in: localhost:11434 only; no remote fallback')
+    ai.add_argument('--invoke-free-remote',action='store_true',
+                    help='Explicit opt-in: one approved Gemini/Groq/OpenRouter free-tier model, no retry')
+    ai.add_argument('--acknowledge-free-tier',action='store_true',
+                    help='Confirm account Free tier/no billing and accept quota/privacy limits')
     ai.add_argument('--acknowledge-public-only',action='store_true',
                     help='Confirm all quoted content is public issuer research, never broker data')
     ai.add_argument('--output',type=Path,required=True,help='Private/ignored local folder for generated artifacts')
@@ -434,24 +438,39 @@ def main(argv=None):
               "0 source claims independently fact-checked, NO trading effect")
     elif args.command=='ai-countercheck':
         from .ai_counteranalysis import (
-            MAX_RESPONSE_BYTES, validate_public_spec, parse_response,
-            invoke_local_ollama, counteranalysis_record, write_counteranalysis)
+            MAX_RESPONSE_BYTES, MAX_PROMPT_CHARS, validate_public_spec, parse_response,
+            invoke_local_ollama, counteranalysis_record, write_counteranalysis, _safe_output)
         if not args.acknowledge_public_only:
             p.error('ai-countercheck requires --acknowledge-public-only')
-        if bool(args.response_json)==bool(args.invoke_local_ollama):
-            p.error('Choose exactly one: --response-json OR --invoke-local-ollama')
+        if sum(bool(x) for x in (args.response_json,args.invoke_local_ollama,
+                                  args.invoke_free_remote))!=1:
+            p.error('Choose exactly one: --response-json, --invoke-local-ollama or --invoke-free-remote')
         if args.invoke_local_ollama and args.provider!='ollama-local':
-            p.error('Only local Ollama may be invoked; other providers are offline import only')
+            p.error('Only local Ollama may be invoked with --invoke-local-ollama')
+        if args.invoke_free_remote and args.provider=='ollama-local':
+            p.error('Ollama cannot use remote free-tier transport')
+        if args.invoke_free_remote and not args.acknowledge_free_tier:
+            p.error('Remote provider requires --acknowledge-free-tier and verified Free account')
+        # Fail on bad destinations/overwrite before any live provider can be called.
+        dest=_safe_output(args.output,ROOT)
+        if (dest/'AI_COUNTERANALYSIS.json').exists() or (dest/'AI_COUNTERANALYSIS.md').exists():
+            p.error('Refusing overwrite of previous R-009 review')
+        if args.spec.stat().st_size>MAX_PROMPT_CHARS:
+            p.error('Public AI spec exceeds size cap')
         spec=validate_public_spec(json.loads(args.spec.read_text(encoding='utf-8')))
         if args.invoke_local_ollama:
             answer=invoke_local_ollama(spec,args.model,explicitly_authorized=True)
+        elif args.invoke_free_remote:
+            from .ai_remote_free import invoke_free_remote
+            answer=invoke_free_remote(spec,args.provider,args.model,
+                explicitly_authorized=True,free_tier_acknowledged=True)
         else:
             if args.response_json.stat().st_size>MAX_RESPONSE_BYTES:
                 p.error('Offline model response exceeds size limit')
             answer=parse_response(spec,args.provider,args.model,
                  args.response_json.read_text(encoding='utf-8'))
         record=counteranalysis_record(spec,args.provider,args.model,answer,
-                local_call=args.invoke_local_ollama)
+                local_call=args.invoke_local_ollama,remote_call=args.invoke_free_remote)
         write_counteranalysis(record,args.output,repo_root=ROOT)
         print('R-009: unverified public-source counteranalysis saved locally; '
               'citation IDs are not fact-checked; no trade authorization')
