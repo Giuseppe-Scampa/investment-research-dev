@@ -180,3 +180,24 @@ makes one local-only 100-bar daily request (`adjust=splits`) using
 
 Details: [Twelve Data Basic runbook](docs/architecture/TWELVE_DATA_BASIC_PILOT.md)
 and [market source rights triage](docs/architecture/REAL_DATA_PROVIDER_TRIAGE_2026-11-05.md).
+
+### R-009 — Gemini, Groq e OpenRouter (AI facoltativa, opt-in)
+
+Il Research Engine ora dispone di adapter remoti `Gemini`, `Groq` e
+`OpenRouter`, oltre all'importazione offline e a Ollama locale.
+Nessun provider remoto viene contattato durante `pytest`, il report
+quantitativo o la CI standard. La risposta AI resta una controanalisi pubblica
+**non verificata**, senza effetto sul ranking, sui dati fiscali o sugli ordini.
+
+I GitHub Actions Secrets hanno nomi `GEMINI_API_KEY`,
+`GROQ_API_KEY` e `OPENROUTER_API_KEY`. La sola presenza del secret
+non dimostra né piano Free né correttezza della chiave. Per effettuare un test
+con una richiesta su dati **totalmente sintetici**, è stato preparato il
+workflow manuale `R-009 Manual free-tier public AI check`: sarà
+selezionabile dall'interfaccia GitHub **dopo il merge sul branch predefinito**.
+Richiede provider e conferma esplicita del piano gratuito. Nessun fallback
+a modelli a pagamento, nessun retry, nessuna chiamata pianificata.
+
+Per le istruzioni CLI locali, i modelli consentiti, le condizioni privacy
+e i limiti della verifica costi: [R-009 AI counteranalysis](docs/architecture/R009_AI_COUNTERANALYSIS.md).
+
