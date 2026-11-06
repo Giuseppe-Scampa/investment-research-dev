@@ -241,7 +241,7 @@ jobs:
     # Fetch 3 allowlisted JSON endpoints; keep ALL returned vendor data
     # ephemeral, never upload provider data, identifiers, quotes or artifacts.
     # After the first validated run, switch this to opt-in dispatch only.
-    if: github.event_name == 'workflow_dispatch'
+    if: false # EODHD excluded by operator, no paid/free EODHD dependency
     runs-on: ubuntu-latest
     timeout-minutes: 4
     permissions:
