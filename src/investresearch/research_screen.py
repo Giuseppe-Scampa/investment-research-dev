@@ -181,10 +181,14 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
             isinstance(d,str) and d>=bars[max(0,len(bars)-61)]['date'] and d<=latest
             for d in split_dates)
         basis=asset['prices'].get('price_basis','')
+        if basis.startswith('FWB_OPERATOR_'):
+            warnings.append('FWB_DOWNLOAD_ADJUSTMENTS_NOT_INDEPENDENTLY_VERIFIED')
         if has_split_in_window:
             if basis in ('EODHD_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN',
                          'TIINGO_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN'):
                 warnings.append('SPLITS_APPLIED_FROM_SAME_PROVIDER_NOT_INDEPENDENTLY_VERIFIED')
+            elif basis=='FWB_OPERATOR_ASSERTED_ADJUSTED_NOT_INDEPENDENTLY_VERIFIED':
+                warnings.append('FWB_SPLITS_ASSERTED_ADJUSTED_NOT_INDEPENDENTLY_VERIFIED')
             else:
                 warnings.append('UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW')
         exposure = str(asset.get('oil_exposure') or '').strip().lower()
