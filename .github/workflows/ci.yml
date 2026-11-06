@@ -18,6 +18,8 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install -e '.[test]'
       - run: pytest -q
+      - name: R-011/R-012 public privacy and immutable-baseline gate
+        run: python tools/verify_v3_release_boundary.py
       - name: Require architecture and requirement references in PR
         if: github.event_name == 'pull_request'
         run: python tools/check_architecture_pr.py

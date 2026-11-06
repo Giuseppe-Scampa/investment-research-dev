@@ -42,7 +42,7 @@ def _tax(asset_type, isin, as_of, fiscal_registry):
             "rule_id": None, "specific_isin_verification": False,
             "taxable_factor": None, "source_url": None,
         }
-    # DOCUMENTED_GENERIC is NOT specific-ISIN or Mediolanum verification.
+    # DOCUMENTED_GENERIC is NOT specific-ISIN or broker verification.
     verified_isin = bool(rule.isin and rule.isin == isin
                          and rule.verification not in ("ISIN_REVIEW_REQUIRED", "DOCUMENTED_GENERIC"))
     return {

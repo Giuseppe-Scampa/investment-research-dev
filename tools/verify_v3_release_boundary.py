@@ -7,11 +7,12 @@ no tracked private/source files and the operator's no-EODHD execution policy.
 from __future__ import annotations
 
 import hashlib
+import re
 import subprocess
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-V3_BLOB_SHA="b2fd872a9d7cdb8869fcdf16008e6a0c44b5cc32"
+V3_BLOB_SHA="27d0593f95f2b921f559482617c4f966cfee552c"
 
 
 def git_blob_sha(raw:bytes):
@@ -40,6 +41,17 @@ def verify(root=ROOT):
     spec=base/"docs/architecture/V3.0.0.md"
     if not spec.is_file() or git_blob_sha(spec.read_bytes())!=V3_BLOB_SHA:
         issues.append("Approved V3.0.0 baseline content differs from pinned immutable blob")
+
+    # Do not publish operator-specific case data, even in narrative docs.
+    # Note: this checks the CURRENT tree, not the already published Git history.
+    sensitive=(re.compile(r"\\bMediolanum\\b",re.IGNORECASE),
+               re.compile(r"(?:€\\s*5[., ]000|5[., ]000\\s*€)"),
+               re.compile(r"\\bGiuseppe\\s+Scampa\\b",re.IGNORECASE))
+    for doc in [base/"README.md",*sorted((base/"docs").rglob("*.md"))]:
+        if doc.is_file():
+            content=doc.read_text(encoding="utf-8")
+            if any(pattern.search(content) for pattern in sensitive):
+                issues.append("Operator-specific financial reference found in public documentation: "+str(doc.relative_to(base)))
     ignored=base/".gitignore"
     if not ignored.is_file():
         issues.append("Missing repository ignore policy")
