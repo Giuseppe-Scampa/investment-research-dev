@@ -74,6 +74,12 @@ def _request_data(provider: str, model: str, prompt: str):
             "temperature": 0,
             "stream": False,
         }
+        if provider == "groq":
+            # Supported on GPT-OSS Free-plan models: strongly prefer bounded
+            # JSON-only output and minimal hidden reasoning-token use.
+            payload["response_format"] = {"type": "json_object"}
+            payload["reasoning_effort"] = "low"
+            payload["include_reasoning"] = False
         # Do not supply provider routing rules, fallback model arrays,
         # extra tools, web search or non-free model candidates.
     return endpoint, json.dumps(payload, ensure_ascii=False).encode("utf-8")
