@@ -36,6 +36,12 @@ def main(argv=None):
     risk.add_argument('--output',type=Path,required=True)
     risk.add_argument('--fiscal-rules',type=Path,default=ROOT/'config/fiscal/rules_2026.json')
     risk.add_argument('--max-age-sessions',type=int,default=1)
+    merge=sp.add_parser('merge-free-tiingo',
+        help='Offline combine 2–500 individually authorized private Tiingo one-symbol intake specs')
+    merge.add_argument('--source-spec',type=Path,action='append',required=True,
+                       help='Repeat for each existing BUNDLE_INPUT_SPEC.json')
+    merge.add_argument('--output',type=Path,required=True,
+                       help='NEW private combined JSON; bind ECB FX separately afterward')
     fxbind=sp.add_parser('bind-ecb-fx',
         help='Attach existing official ECB EUR/USD raw source to a local USD price spec; NO NETWORK')
     fxbind.add_argument('--spec',type=Path,required=True)
@@ -209,6 +215,11 @@ def main(argv=None):
         print(f"R-008 historical risk: {report['comparable_pairs']} comparable pairs / "
               f"{report['pairs_count']} investigated; {report['risk_scope']}; "
               "NO expected returns, orders or portfolio approval")
+    elif args.command=='merge-free-tiingo':
+        from .research_intake_merge import combine
+        audit=combine(source_specs=args.source_spec,output=args.output,repo_root=ROOT)
+        print(f"FREE TIINGO MULTI-ASSET MERGE: {audit['source_assets']} original price sources, "
+              "ECB FX NOT YET BOUND; need explicit official ECB snapshot before ranking")
     elif args.command=='bind-ecb-fx':
         from .research_fx_bundle import bind_ecb_fx
         result=bind_ecb_fx(spec_path=args.spec,fx_meta_path=args.ecb_meta,
