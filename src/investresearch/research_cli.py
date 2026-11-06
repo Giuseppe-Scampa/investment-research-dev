@@ -36,6 +36,13 @@ def main(argv=None):
     risk.add_argument('--output',type=Path,required=True)
     risk.add_argument('--fiscal-rules',type=Path,default=ROOT/'config/fiscal/rules_2026.json')
     risk.add_argument('--max-age-sessions',type=int,default=1)
+    batch=sp.add_parser('tiingo-personal-batch',
+        help='Explicit 2–20 independently reviewed Tiingo US symbols per personal free-tier run; private only')
+    batch.add_argument('--reviewed-manifest',type=Path,required=True,
+                       help='Private r004-tiingo-free-bounded-batch-v1 manifest with 2 independently verified identity URLs per row')
+    batch.add_argument('--acknowledge-personal-terms',action='store_true')
+    batch.add_argument('--identity-reviewed',action='store_true')
+    batch.add_argument('--output',type=Path,required=True,help='NEW ignored private source folder')
     merge=sp.add_parser('merge-free-tiingo',
         help='Offline combine 2–500 individually authorized private Tiingo one-symbol intake specs')
     merge.add_argument('--source-spec',type=Path,action='append',required=True,
@@ -215,6 +222,15 @@ def main(argv=None):
         print(f"R-008 historical risk: {report['comparable_pairs']} comparable pairs / "
               f"{report['pairs_count']} investigated; {report['risk_scope']}; "
               "NO expected returns, orders or portfolio approval")
+    elif args.command=='tiingo-personal-batch':
+        from .research_tiingo_batch import collect_batch
+        if not args.acknowledge_personal_terms or not args.identity_reviewed:
+            p.error('Tiingo free batch requires personal noncommercial rights and two distinct identity references')
+        audit=collect_batch(manifest_path=args.reviewed_manifest,
+            output=args.output,repo_root=ROOT,api_token=os.getenv('TIINGO_API_TOKEN'),
+            personal_rights_ack=True,identity_review_ack=True)
+        print(f"Free Tiingo private batch: {audit['individual_source_count']} single-symbol source calls, "
+              "no retry, ECB FX and price quality pending, no trade")
     elif args.command=='merge-free-tiingo':
         from .research_intake_merge import combine
         audit=combine(source_specs=args.source_spec,output=args.output,repo_root=ROOT)
