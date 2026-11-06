@@ -199,3 +199,23 @@ Public B commit a32231bf0e5e8587b2a8e842ec8b7dc79f80332d; [CI 42236286556](https
 **Software path acceptance: CODE_INTEGRATED_AND_REGRESSION_TESTED for R-001–R-013.** This statement does NOT set all M1–M6 to DONE. The V3.0.0 gate to complete an actual permanent research engine still requires lawful real adjusted equities/ETF/ETC/ETN histories (including Europe), original point-in-time issuer fundamentals and public macro/factor claims authenticated, source-screened global >=200 market sample and independent 0–3 finalists, human citation/AI fact checks, privacy/licence audit and personalized broker statements for Decision 2026. Missing bank documents are an external PERSONAL validation gate, not an unfinished software code module. These are PARTIAL/NOT_VERIFIED as applicable.
 
 Private independent R-ID acceptance matrix: [V3_SOFTWARE_INTEGRATIONS_ACCEPTANCE_2026-11-06.md](https://github.com/Giuseppe-Scampa/investment-research-2026/blob/feat/blocco-a-integrity-tax/docs/V3_SOFTWARE_INTEGRATIONS_ACCEPTANCE_2026-11-06.md). Source path remains no EODHD subscription, no paid API and no automated trading. PR #2 branches remain unmerged awaiting review.
+
+
+## 2026-11-06 — R-009 manual-only free remote adapter increment
+
+**Software change:** Gemini, Groq and OpenRouter now have optional fixed-HTTPS
+single-request adapters in `src/investresearch/ai_remote_free.py` and CLI
+`--invoke-free-remote`. Tests mock network and reject unknown/paid models,
+unverified source citations, redirection and missing operator consent.
+Groq Free tier's deprecated Llama 3.3 model is disallowed; the default
+manual Groq smoke uses `openai/gpt-oss-20b`. OpenRouter permits
+only a specific `:free` model, not dynamic fallback. Public synthetic-only
+manual workflow binds three named GitHub Secrets; it is not scheduled and
+cannot be launched via Actions UI before the workflow reaches `main`.
+
+**Status:** CODE_INTEGRATED_AND_OFFLINE_TESTED; **M5/R-009 remains PARTIAL**.
+No live API requests made in normal CI and no personal data sent to models.
+The operator must inspect current account billing/free-tier status and run
+a manual smoke only after review/release. Citation/content fact-check and
+actual API success/quotas/cost are NOT verified by mock tests. No effect on
+M3 market-data licensing, M4 global funnel, M2 tax, or orders (R-013).
