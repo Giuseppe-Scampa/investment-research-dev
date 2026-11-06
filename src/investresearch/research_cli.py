@@ -36,6 +36,11 @@ def main(argv=None):
     risk.add_argument('--output',type=Path,required=True)
     risk.add_argument('--fiscal-rules',type=Path,default=ROOT/'config/fiscal/rules_2026.json')
     risk.add_argument('--max-age-sessions',type=int,default=1)
+    fxbind=sp.add_parser('bind-ecb-fx',
+        help='Attach existing official ECB EUR/USD raw source to a local USD price spec; NO NETWORK')
+    fxbind.add_argument('--spec',type=Path,required=True)
+    fxbind.add_argument('--ecb-meta',type=Path,required=True)
+    fxbind.add_argument('--output',type=Path,required=True)
     b=sp.add_parser('build',help='Normalize local raw provider snapshots to immutable bundle')
     b.add_argument('--spec',type=Path,required=True)
     b.add_argument('--output',type=Path,required=True)
@@ -198,6 +203,13 @@ def main(argv=None):
         print(f"R-008 historical risk: {report['comparable_pairs']} comparable pairs / "
               f"{report['pairs_count']} investigated; {report['risk_scope']}; "
               "NO expected returns, orders or portfolio approval")
+    elif args.command=='bind-ecb-fx':
+        from .research_fx_bundle import bind_ecb_fx
+        result=bind_ecb_fx(spec_path=args.spec,fx_meta_path=args.ecb_meta,
+            output=args.output,repo_root=ROOT)
+        print(f"ECB FX bound: {result['ecb_dates_available']} dated official rates; "
+              f"USD instruments {result['usd_assets']}; "
+              "source-only, needs session/price validation, no orders")
     elif args.command=='build':
         spec=json.loads(args.spec.read_text(encoding='utf-8'))
         result=build_bundle(spec,args.output)
