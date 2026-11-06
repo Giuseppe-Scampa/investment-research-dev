@@ -95,7 +95,7 @@ def test_free_us_price_plus_official_ecb_real_pipeline_code_synthetic_input(tmp_
     researched=screen(built)
     row=researched["results"][0]
     assert row["market_score"] is not None
-    assert row["metrics"]["aligned_observations"]==61
+    assert row["market_metrics"]["aligned_observations"]==61
     assert row["trade_ready"] is False
     fiscal=FiscalRegistry.load(ROOT/"config/fiscal/rules_2026.json")
     tactical=build_tactical(researched,fiscal_registry=fiscal)
@@ -132,7 +132,7 @@ def test_ecb_binding_rejects_false_fx_evidence(tmp_path,change,expected):
         spec["assets"][0]["currency"]="EUR"
     elif change=="no_fx_rates":
         fxpath=tmp_path/"ecb.xml"
-        fxpath.write_text("Date,USD\n2026-08-02,1.08\n")
+        fxpath.write_text("Date,USD\n2026-08-03,1.08\n")
         meta["sha256"]=hashlib.sha256(fxpath.read_bytes()).hexdigest()
     m.write_text(json.dumps(meta))
     p.write_text(json.dumps(spec))
