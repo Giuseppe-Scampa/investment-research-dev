@@ -345,4 +345,4 @@ Detailed input schemas and operating commands: [EU_EVIDENCE_AND_MARKET_RIGHTS.md
 
 ## Errata e fonte temporale FX — 3 novembre 2026
 
-Il conversione nel motore usa il **fixing BCE dello stesso calendario** del close USA, per confronti di ricerca in EUR. La pubblicazione BCE avviene prima della chiusura azionaria USA: i due prezzi NON sono simultanei, la conversione NON è un cambio negoziabile al close e non certifica il P/L fiscale Mediolanum. La variabile e i report documentano questa limitazione; per comparazioni sensibili all'orario occorrono feed sincronizzati e fonte autorizzata.
+Il conversione nel motore usa il **fixing BCE dello stesso calendario** del close USA, per confronti di ricerca in EUR. La pubblicazione BCE avviene prima della chiusura azionaria USA: i due prezzi NON sono simultanei, la conversione NON è un cambio negoziabile al close e non certifica il P/L fiscale dell'intermediario. La variabile e i report documentano questa limitazione; per comparazioni sensibili all'orario occorrono feed sincronizzati e fonte autorizzata.
