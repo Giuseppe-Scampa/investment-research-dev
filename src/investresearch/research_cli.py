@@ -157,6 +157,10 @@ def main(argv=None):
     td.add_argument('--acknowledge-personal-terms',action='store_true',
                     help='Confirm personal internal-only noncommercial use; no raw redistribution')
     td.add_argument('--output',type=Path,required=True)
+    aireview=sp.add_parser('ai-review',help='Offline public-only two-to-four free model critique reconciliation; NEVER calls AI')
+    aireview.add_argument('--record',type=Path,action='append',required=True,
+                          help='Repeat for each original AI_COUNTERANALYSIS.json')
+    aireview.add_argument('--output',type=Path,required=True)
     ai=sp.add_parser('ai-countercheck',
         help='R-009: optional public-only AI counteranalysis; local Ollama or offline imported provider response')
     ai.add_argument('--spec',type=Path,required=True,help='Public issuer research only; no bank/personal data')
@@ -375,6 +379,20 @@ def main(argv=None):
         print(f"Twelve Data Basic diagnostic: {meta['symbol']} "
               f"{meta['session_count']} bars, split adjustment requested "
               "not independently verified; NO RANKING/ORDERS")
+    elif args.command=='ai-review':
+        from .ai_provider_review import reconcile,write_reconciliation
+        if not 2<=len(args.record)<=4:
+            p.error('Provide two to four independent free/local provider response records')
+        originals=[]
+        for path in args.record:
+            if not path.is_file() or path.stat().st_size>32768:
+                p.error('Public AI response file missing or oversized')
+            originals.append(json.loads(path.read_text(encoding='utf-8')))
+        result=reconcile(originals)
+        write_reconciliation(result,args.output,repo_root=ROOT)
+        print(f"Offline no-cost AI reconciliation: {result['provider_count']} providers, "
+              f"{result['unique_literal_claims']} human verification tasks, "
+              "0 source claims independently fact-checked, NO trading effect")
     elif args.command=='ai-countercheck':
         from .ai_counteranalysis import (
             MAX_RESPONSE_BYTES, validate_public_spec, parse_response,
