@@ -44,9 +44,9 @@ def verify(root=ROOT):
 
     # Do not publish operator-specific case data, even in narrative docs.
     # Note: this checks the CURRENT tree, not the already published Git history.
-    sensitive=(re.compile(r"\\bMediolanum\\b",re.IGNORECASE),
-               re.compile(r"(?:€\\s*5[., ]000|5[., ]000\\s*€)"),
-               re.compile(r"\\bGiuseppe\\s+Scampa\\b",re.IGNORECASE))
+    sensitive=(re.compile(r"\bMediolanum\b",re.IGNORECASE),
+               re.compile(r"(?:€\s*5[., ]000|5[., ]000\s*€)"),
+               re.compile(r"\bGiuseppe\s+Scampa\b",re.IGNORECASE))
     for doc in [base/"README.md",*sorted((base/"docs").rglob("*.md"))]:
         if doc.is_file():
             content=doc.read_text(encoding="utf-8")
