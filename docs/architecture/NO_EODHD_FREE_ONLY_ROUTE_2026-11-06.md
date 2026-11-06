@@ -24,6 +24,10 @@ Permitted paths:
 
 The actual B source→B risk path has been tested end-to-end with **synthetic test prices and FX via the EXTERNAL code path** (not live quotes). The B CI source tests additionally check malformed FX, missing evidence, conflicting metadata and EODHD disabled-before-network. Verified test run: https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/42192677312 (410 tests passed, EODHD job skipped).
 
+## Zero-cost European exchange transparency (not 61-session backfill)
+
+Official EU venue data can help the **permanent** engine without a paid provider: Euronext delayed MiFID II data (https://www.euronext.com/en/data/pricing-specs-agreements/mifid-ii-compliant-data) is free and held for at least 24h, while Deutsche Börse delayed pre/posttrade Xetra files (https://www.mds.deutsche-boerse.com/mds-en/real-time-data/Delayed-data) are freely available with a 15-minute delay and retained until the next business day. Euronext use/distribution terms (https://marketdata.euronext.com/data-reporting-service/trades-file) still apply, and neither venue's delayed snapshots is an independent split-adjusted 61-session OHLCV historical feed. Future intake must reconcile venue/MIC, original trade flags, instrument mapping, corporate actions, missing sessions and usage rights in private storage. No automatic scraping or paid feed fallback has been activated.
+
 ## Pending V3 acceptance gates
 
 M3: permitted genuine 61-session adjusted historical data and independent split/event checks across representative assets, including EU. M4: real global 200+ scored funnel, valuation, factor/catalyst research; no substitution with unranked listings. M5: independent factual verification of AI citations and free-tier account proof. M2/M6: fiscal and broker evidence for personal 2026 decisions, real-source dashboard validation. R-013 remains no automated orders. Leave PRs unmerged until review.
