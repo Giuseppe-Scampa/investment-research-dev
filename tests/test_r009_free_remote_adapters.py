@@ -33,7 +33,7 @@ ANSWER = {
 }
 MODEL = {
     "gemini": "gemini-2.5-flash-lite",
-    "groq": "llama-3.3-70b-versatile",
+    "groq": "openai/gpt-oss-20b",
     "openrouter": "google/gemma-3-27b-it:free",
 }
 
@@ -120,6 +120,7 @@ def test_manual_authorization_and_secret_are_required_before_network(monkeypatch
     ("gemini", "gemini-2.5-pro"),
     ("gemini", "gemini-2.0-flash"),
     ("groq", "llama-3.1-8b-instant"),
+    ("groq", "llama-3.3-70b-versatile"),
     ("openrouter", "openai/gpt-4o"),
     ("openrouter", "openrouter/free"),
     ("openrouter", "google/gemma-3-27b-it:floor"),
