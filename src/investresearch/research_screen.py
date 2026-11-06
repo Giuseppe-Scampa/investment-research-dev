@@ -183,6 +183,8 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
         basis=asset['prices'].get('price_basis','')
         if basis.startswith('FWB_OPERATOR_'):
             warnings.append('FWB_DOWNLOAD_ADJUSTMENTS_NOT_INDEPENDENTLY_VERIFIED')
+            if basis!='FWB_OPERATOR_ASSERTED_ADJUSTED_NOT_INDEPENDENTLY_VERIFIED':
+                warnings.append('FWB_PARTIAL_ADJUSTMENTS_NOT_QUALITY_CLEARED')
         if has_split_in_window:
             if basis in ('EODHD_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN',
                          'TIINGO_PROVIDER_SPLIT_ADJUSTED_CLOSE_NOT_TOTAL_RETURN'):
@@ -201,7 +203,8 @@ def screen(bundle:Path, *, settings=None, max_age_sessions=1):
                       and not fx_issue and history['verified'] and not pit_issues
                       and 'UNVERIFIED_SECTOR_OR_OIL_EXPOSURE' not in warnings
                       and 'UNVERIFIED_OIL_MATERIALITY' not in warnings
-                      and 'UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW' not in warnings)
+                      and 'UNADJUSTED_SPLIT_REQUIRES_CORPORATE_ACTION_REVIEW' not in warnings
+                      and 'FWB_PARTIAL_ADJUSTMENTS_NOT_QUALITY_CLEARED' not in warnings)
         if market_ready:
             m=_score_indicators(data)
             price_score,components=_market_score(m)
