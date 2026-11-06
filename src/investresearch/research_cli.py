@@ -31,6 +31,12 @@ def main(argv=None):
     tactical.add_argument('--output',type=Path,required=True,help='External-source output is private-only in repo')
     tactical.add_argument('--fiscal-rules',type=Path,default=ROOT/'config/fiscal/rules_2026.json')
     tactical.add_argument('--max-age-sessions',type=int,default=1)
+    valuation=sp.add_parser('valuation',help='R-008 point-in-time issuer/market source financial ratios (no scoring uplift)')
+    valuation.add_argument('--bundle',type=Path,required=True)
+    valuation.add_argument('--public-metrics',type=Path,default=None,
+                           help='Optional public equity financial/market-cap original source assertions; never a broker dossier')
+    valuation.add_argument('--output',type=Path,required=True)
+    valuation.add_argument('--max-age-sessions',type=int,default=1)
     ev=sp.add_parser('evidence',help='R-008 source-linked valuation/macro/factor/fundamental/gap ledger')
     ev.add_argument('--bundle',type=Path,required=True)
     ev.add_argument('--output',type=Path,required=True)
@@ -217,6 +223,17 @@ def main(argv=None):
               f"{result['research_eligible_count']} research-eligible, "
               f"{len(result['research_priorities_by_type'])} priorities, "
               "0 final investments or orders")
+    elif args.command=='valuation':
+        from .research_valuation import build_valuation,write_valuation
+        if args.max_age_sessions not in (0,1,2,3,4,5):
+            p.error('max-age-sessions must be between 0 and 5')
+        settings=json.loads((ROOT/'config/settings.json').read_text(encoding='utf-8'))
+        original=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
+        manual=json.loads(args.public_metrics.read_text(encoding='utf-8')) if args.public_metrics else None
+        result=build_valuation(original,manual)
+        write_valuation(result,args.output,repo_root=ROOT)
+        print(f"R-008 point-in-time descriptive valuation: {result['source_asserted_valuations_count']} "
+              "source-supplied ratio rows, unverified inputs, no return forecasts, trades or score uplift")
     elif args.command=='evidence':
         from .research_evidence import build_evidence, write_evidence
         if args.max_age_sessions not in (0,1,2,3,4,5):
