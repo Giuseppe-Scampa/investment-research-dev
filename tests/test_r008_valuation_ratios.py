@@ -95,3 +95,33 @@ def test_valuation_source_integrity_gates_reject_unsupported_numbers(mutation):
     elif mutation=="other_provider":r["sources"][1]["document_kind"]="PAID_PROVIDER_FEED"
     with pytest.raises(ValueError):
         build_valuation(s,m)
+
+
+def test_partial_filing_values_preserve_missingness_and_valid_pe_without_imputation():
+    s,m,entry=fixture()
+    vals=m["records"][0]["values"]
+    vals["ebitda"]=None
+    vals["free_cash_flow"]=None
+    vals["net_debt"]=None
+    report=build_valuation(s,m)
+    r=next(x for x in report["items"] if x["id"]==entry["id"])
+    assert r["status"]=="PARTIAL_SOURCE_ASSERTED_RATIOS_MISSING_FACTS_NOT_IMPUTED"
+    assert r["missing_financial_fields"]==["ebitda","free_cash_flow","net_debt"]
+    assert r["source_values"]["ebitda"] is None
+    assert r["ratios"]["historical_earnings_yield"]=="0.100000"
+    assert r["ratios"]["historical_market_cap_to_net_income"]=="10.000000"
+    assert r["ratios"]["historical_free_cash_flow_yield"] is None
+    assert r["ratios"]["historical_ev_to_ebitda"] is None
+    assert r["ratios"]["net_debt_to_ebitda"] is None
+    assert report["source_asserted_valuations_count"]==1
+    assert report["source_asserted_ratio_count"]==2
+    assert report["rank_or_tax_effect"] is False
+    assert report["trade_ready"] is False
+
+
+def test_missing_entire_filing_financial_profile_is_rejected_even_with_market_cap():
+    s,m,_=fixture()
+    for name in ("net_income","ebitda","free_cash_flow","net_debt"):
+        m["records"][0]["values"][name]=None
+    with pytest.raises(ValueError,match="at least one"):
+        build_valuation(s,m)
