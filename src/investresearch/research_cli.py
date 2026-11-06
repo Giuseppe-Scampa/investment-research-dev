@@ -151,6 +151,12 @@ def main(argv=None):
                     help='Confirm all quoted content is public issuer research, never broker data')
     ai.add_argument('--output',type=Path,required=True,help='Private/ignored local folder for generated artifacts')
     args=p.parse_args(argv)
+    # Operator cost policy: EODHD is NOT an operational dependency.
+    # Historical EODHD adapters are kept only for regression tests.
+    # Do not prompt for EODHD signup, use its API, or default to it.
+    if args.command in ('eodhd-personal-collect','eodhd-xetra-catalog-collect',
+                        'xetra-eodhd-crosswalk'):
+        p.error('EODHD_DISABLED_NO_SUBSCRIPTION: use free Tiingo, official ECB/SEC or approved local files')
     if args.command=='screen':
         if args.max_age_sessions not in (0,1,2,3,4,5):
             p.error('max-age-sessions must be between 0 and 5')
@@ -212,6 +218,11 @@ def main(argv=None):
               "source-only, needs session/price validation, no orders")
     elif args.command=='build':
         spec=json.loads(args.spec.read_text(encoding='utf-8'))
+        if any(
+            str(asset.get('prices_source',{}).get('provider','')).startswith('EODHD_')
+            for asset in spec.get('assets',[]) if isinstance(asset,dict)
+        ):
+            p.error('EODHD_DISABLED_NO_SUBSCRIPTION: existing EODHD input not enabled in this workflow')
         result=build_bundle(spec,args.output)
         print(f"Bundle built: {len(result['assets'])} assets, source kinds {result['source_kinds']}")
     elif args.command=='universe':
