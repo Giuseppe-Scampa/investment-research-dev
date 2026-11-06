@@ -54,7 +54,7 @@ def verify(root=ROOT):
     else:
         text=ci.read_text(encoding="utf-8")
         section=text.split("  live_eodhd_evaluation_smoke:",1)
-        if len(section)!=2 or "    if: false " not in section[1].split("\n  ",1)[0]:
+        if len(section)!=2 or "    if: false " not in section[1][:1200]:
             issues.append("EODHD network job is not explicitly disabled")
     try:
         proc=subprocess.run(["git","ls-files","-z"],cwd=base,check=True,
