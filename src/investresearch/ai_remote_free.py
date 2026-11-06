@@ -26,7 +26,7 @@ SECRET_NAMES = {
 }
 # Intentionally narrow; expansion must be separately reviewed against free tier.
 GEMINI_FREE_MODELS = frozenset(("gemini-2.5-flash-lite", "gemini-2.5-flash"))
-GROQ_FREE_MODELS = frozenset(("llama-3.3-70b-versatile", "openai/gpt-oss-20b"))
+GROQ_FREE_MODELS = frozenset(("openai/gpt-oss-20b", "openai/gpt-oss-120b"))
 MAX_COMPLETION_TOKENS = 800
 
 
