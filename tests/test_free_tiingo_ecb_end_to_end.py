@@ -110,6 +110,7 @@ def test_free_us_price_plus_official_ecb_real_pipeline_code_synthetic_input(tmp_
     ("meta_url","official"),
     ("meta_future","after specified as-of"),
     ("meta_timezone","UTC timezone"),
+    ("premature_snapshot","fixing later than"),
     ("spec_exists","already set"),
     ("no_usd","USD"),
     ("no_fx_rates","stale"),
@@ -126,6 +127,8 @@ def test_ecb_binding_rejects_false_fx_evidence(tmp_path,change,expected):
         meta["retrieved_at_utc"]="2026-11-06T00:00:00Z"
     elif change=="meta_timezone":
         meta["retrieved_at_utc"]="2026-11-05T20:00:00+01:00"
+    elif change=="premature_snapshot":
+        meta["retrieved_at_utc"]="2026-11-04T20:00:00Z"
     elif change=="spec_exists":
         spec["fx_source"]={"provider":"FAKE"}
     elif change=="no_usd":
