@@ -16,6 +16,7 @@ from urllib.parse import urlsplit
 from .research_sources import (MAX_BYTES, SEC_HOST, ECB_URL, ECB_CSV_URL, YAHOO_HISTORY_URL, YFINANCE, sha256_bytes, parse_ohlcv, parse_ecb,
                                parse_sec_fundamentals)
 from .quality import valid_isin
+from .research_fwb_local import PROVIDER as FWB_PERSONAL_HISTORY
 
 SYNTHETIC = 'SYNTHETIC_DEMONSTRATION_NOT_MARKET_DATA'
 EXTERNAL = 'EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE'
@@ -206,12 +207,13 @@ def build_bundle(spec:dict, output:Path):
     if mode not in (SYNTHETIC, EXTERNAL): raise ValueError('Unknown dataset mode')
     output=Path(output)
     if mode==EXTERNAL and any(a.get('prices_source',{}).get('provider') in
-                             ('EODHD_EOD_PERSONAL_RESEARCH','TIINGO_EOD_PERSONAL_RESEARCH')
+                             ('EODHD_EOD_PERSONAL_RESEARCH','TIINGO_EOD_PERSONAL_RESEARCH',
+                              FWB_PERSONAL_HISTORY)
                              for a in spec['assets']):
         base=Path(__file__).resolve().parents[2]
         location=output.resolve()
         if location.is_relative_to(base) and not location.is_relative_to(base/'data/private'):
-            raise ValueError('Personal EODHD bundle inside repo must be in data/private')
+            raise ValueError('External licensed research bundle inside repo must be in data/private')
     output.mkdir(parents=True,exist_ok=True)
     assets=[]; seen=set(); source_kinds=set()
     for row in spec['assets']:
@@ -228,6 +230,7 @@ def build_bundle(spec:dict, output:Path):
         payload=_get_source_bytes(source)
         eodhd_meta=None
         tiingo_meta=None
+        fwb_meta=None
         if source['provider'] in (YFINANCE, MANUAL_OHLCV):
             records=parse_ohlcv(payload,as_of)
         elif source['provider']=='EODHD_EOD_PERSONAL_RESEARCH' and mode==EXTERNAL:
@@ -237,6 +240,10 @@ def build_bundle(spec:dict, output:Path):
         elif source['provider']=='TIINGO_EOD_PERSONAL_RESEARCH' and mode==EXTERNAL:
             from .research_tiingo_local import normalize_private_tiingo
             records,tiingo_meta=normalize_private_tiingo(
+                source,payload,as_of,row,repo_root=Path(__file__).resolve().parents[2])
+        elif source['provider']==FWB_PERSONAL_HISTORY and mode==EXTERNAL:
+            from .research_fwb_local import normalize_private_fwb
+            records,fwb_meta=normalize_private_fwb(
                 source,payload,as_of,row,repo_root=Path(__file__).resolve().parents[2])
         elif source['provider']=='SYNTHETIC_PRICES' and mode==SYNTHETIC:
             records=parse_normalized_prices(payload,as_of)
@@ -263,6 +270,8 @@ def build_bundle(spec:dict, output:Path):
             source_kinds.update(('EODHD_PERSONAL_SPLITS','EODHD_PERSONAL_DIVIDENDS'))
         if tiingo_meta is not None:
             source_note.update(tiingo_meta)
+        if fwb_meta is not None:
+            source_note.update(fwb_meta)
         entry['prices']={**_write_checked(output,f'prices/{uid}.csv',_csv_bytes(records,['date','close','volume'])),**source_note}
         fmeta=row.get('fundamentals_source')
         if fmeta:
