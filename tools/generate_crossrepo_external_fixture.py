@@ -7,7 +7,9 @@ include 'synthetic_fixture'. It is not a provider connector or trade signal.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
+import io
 import json
 from datetime import date, timedelta
 from pathlib import Path
@@ -94,6 +96,40 @@ def generate(root: Path):
     manifest = build_bundle(spec, bundle)
     assert manifest["mode"] == EXTERNAL
     assert len(manifest["assets"]) == 2
+    # Fake official-SCHEMA reference catalogs for R-006 interoperability.
+    # These bytes are invented. Official-looking source_url fields are only
+    # parser-contract fixtures and must NEVER be treated as source attestations.
+    from investresearch.research_sources import SEC_TICKERS_URL
+    from investresearch.research_xetra_universe import PROVIDER as XETRA_PROVIDER
+    xetra_url=("https://www.cashmarket.deutsche-boerse.com/resource/blob/"
+       "1528/0447d5f72a1ca9cd3f00a6bd5f8805cc/data/"
+       "t7-xetr-allTradableInstruments.csv")
+    xbuf=io.StringIO(newline="")
+    writer=csv.writer(xbuf,delimiter=";",lineterminator="\n")
+    writer.writerow(["Product Status","Instrument Status","Instrument","ISIN",
+                     "Mnemonic","MIC Code","Settlement Currency","Instrument Type"])
+    writer.writerow(["Active","Active","FICTITIOUS-XETRA-REFERENCE",
+                     "US0378331005","FCT","XETR","EUR","CS"])
+    writer.writerow(["Active","Active","FICTITIOUS-ETF-REFERENCE",
+                     "IE00B4L5Y983","FCTETF","XETR","EUR","ETF"])
+    xraw=("Market:;XETR\nDate Last Update:;04.11.2026\n"+xbuf.getvalue()).encode()
+    (root/"FICTIONAL_XETRA_T7.csv").write_bytes(xraw)
+    (root/"FICTIONAL_XETRA_META.json").write_text(json.dumps({
+       "provider":XETRA_PROVIDER,"source_url":xetra_url,
+       "sha256":hashlib.sha256(xraw).hexdigest(),
+       "retrieved_at_utc":"2026-11-05T16:00:00Z",
+       "fixture_only":True,
+    }))
+    sec=json.dumps({"fields":["cik","name","ticker","exchange"],"data":[
+        [1,"FICTIONAL_SEC_COMPANY_A","MOCK_A","Nasdaq"],
+        [2,"FICTIONAL_SEC_COMPANY_B","MOCK_B","NYSE"]]}).encode()
+    (root/"FICTIONAL_SEC_CATALOG.json").write_bytes(sec)
+    (root/"FICTIONAL_SEC_META.json").write_text(json.dumps({
+        "provider":"SEC_TICKERS","source_url":SEC_TICKERS_URL,
+        "sha256":hashlib.sha256(sec).hexdigest(),
+        "retrieved_at_utc":"2026-11-05T16:00:00Z",
+        "fixture_only":True,
+    }))
     (root/"THIS_IS_NOT_MARKET_DATA.txt").write_text(
         "FICTITIOUS TEST PRICES AND FX. Not issuer evidence, "
         "source rights, market results, investment rankings or trading.\n",
