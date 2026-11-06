@@ -219,3 +219,43 @@ The operator must inspect current account billing/free-tier status and run
 a manual smoke only after review/release. Citation/content fact-check and
 actual API success/quotas/cost are NOT verified by mock tests. No effect on
 M3 market-data licensing, M4 global funnel, M2 tax, or orders (R-013).
+
+
+## 2026-11-06 — R-004/R-005 & R-008: source-bound EU local import, portfolio risk, partial valuation
+
+**Code increment (NO milestone promoted to DONE):**
+
+1. `research_fwb_local.py`: non-network/manual local importer for original
+   Deutsche Börse FWB `Price History` CSV. Exact Xetra/EUR/ISIN, date,
+   locale, file SHA-256, source URL, user-attested **non-commercial** use and
+   three adjustment choices are required. The exchange and adjustment flags
+   remain **unverified by software**; partially adjusted inputs cannot receive
+   a market rank. No data licensed for public redistribution, auto-download or
+   paid API is introduced. Runbook:
+   `docs/architecture/FWB_FREE_HISTORY_LOCAL_INTAKE_2026.md`.
+2. `research_portfolio_stress.py`: full source-bound pairwise correlation
+   matrix and fixed **equal-weight daily-rebalanced historical illustration**
+   for at most three *already B-selected* risk candidates. It calculates
+   aligned EUR EOD historical volatility, worst daily return, max drawdown and
+   explicitly **assumed** -10/-20% parallel shocks. It does not calculate
+   actual personal portfolio weights, options/certificates non-linear payoffs,
+   forecasts, advice or broker suitability. A independently validates the
+   new optional structured stress contract and displays it in the private
+   dashboard.
+3. `research_valuation.py`: permits `null` for missing optional issuer
+   financial values. Calculates only ratios with actual cited operands,
+   maintains explicit missing-fact inventory and numeric ratio count. The A
+   side independently re-computes available ratios and rejects fabricated
+   missing data. Never estimates price targets, future earnings or tax effects.
+4. Private A fiscal regressions preserve the generic ETF UCITS distinction:
+   positive gains as `REDDITI_CAPITALE` and realized losses as
+   `REDDITI_DIVERSI`, without silently netting capital income with a wallet.
+   Still requires **instrument/ISIN and tax-regime verification**.
+
+**Acceptance:** SOURCE_PARSER_AND_RISK_CODE_TESTED_OFFLINE, not real-data
+completion. Exact run SHA and test counts recorded by CI. No actual official
+FWB CSV has been supplied or validated; no live securities screening based
+on that provider, no independent corporate-action/legal authentication,
+no real-world B→A run, no live AI. M1–M6 and R-001–R-013 statuses and their
+DONE criteria are unchanged; European source licensing remains a source-
+specific operator decision, not a software guarantee.
