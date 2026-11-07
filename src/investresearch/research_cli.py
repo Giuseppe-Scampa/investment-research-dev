@@ -45,6 +45,14 @@ def main(argv=None):
                            help='Optional public equity financial/market-cap original source assertions; never a broker dossier')
     valuation.add_argument('--output',type=Path,required=True)
     valuation.add_argument('--max-age-sessions',type=int,default=1)
+    ann=sp.add_parser('annual-fundamentals',
+        help='R-008 explicit original SEC/ESEF annual-facts linkage, no ISIN inference or score uplift')
+    ann.add_argument('--bundle',type=Path,required=True)
+    ann.add_argument('--identity-links',type=Path,required=True)
+    ann.add_argument('--sec-report',type=Path)
+    ann.add_argument('--eu-report',type=Path)
+    ann.add_argument('--output',type=Path,required=True)
+    ann.add_argument('--max-age-sessions',type=int,default=1)
     ev=sp.add_parser('evidence',help='R-008 source-linked valuation/macro/factor/fundamental/gap ledger')
     ev.add_argument('--bundle',type=Path,required=True)
     ev.add_argument('--output',type=Path,required=True)
@@ -260,6 +268,27 @@ def main(argv=None):
         write_valuation(result,args.output,repo_root=ROOT)
         print(f"R-008 point-in-time descriptive valuation: {result['source_asserted_valuations_count']} "
               "source-supplied ratio rows, unverified inputs, no return forecasts, trades or score uplift")
+    elif args.command=='annual-fundamentals':
+        from .research_fundamentals_link import build_fundamental_links, write_fundamental_links
+        if args.max_age_sessions not in (0,1,2,3,4,5):
+            p.error('max-age-sessions must be between 0 and 5')
+        if not args.sec_report and not args.eu_report:
+            p.error('annual-fundamentals requires original SEC or EU report')
+        settings=json.loads((ROOT/'config/settings.json').read_text(encoding='utf-8'))
+        original=screen(args.bundle,settings=settings,max_age_sessions=args.max_age_sessions)
+        def local_json(path):
+            if not path:
+                return None
+            value=Path(path).resolve()
+            if not value.is_file() or value.stat().st_size>2_000_000:
+                p.error('Annual evidence must be an existing bounded local JSON')
+            return json.loads(value.read_text(encoding='utf-8'))
+        report=build_fundamental_links(original,local_json(args.identity_links),
+            sec_report=local_json(args.sec_report),eu_report=local_json(args.eu_report))
+        write_fundamental_links(report,args.output,repo_root=ROOT)
+        print('R-008 source-linked annual evidence: '
+              f"{report['source_linked_count']} operator-attested issuer links; "
+              '0 independently certified financial facts, no ranking/forecast/trades')
     elif args.command=='evidence':
         from .research_evidence import build_evidence, write_evidence
         if args.max_age_sessions not in (0,1,2,3,4,5):
