@@ -17,6 +17,7 @@ from .research_sources import (MAX_BYTES, SEC_HOST, ECB_URL, ECB_CSV_URL, YAHOO_
                                parse_sec_fundamentals)
 from .quality import valid_isin
 from .research_fwb_local import PROVIDER as FWB_PERSONAL_HISTORY
+from .research_euronext_local import PROVIDER as EURONEXT_PERSONAL_HISTORY
 
 SYNTHETIC = 'SYNTHETIC_DEMONSTRATION_NOT_MARKET_DATA'
 EXTERNAL = 'EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE'
@@ -208,7 +209,7 @@ def build_bundle(spec:dict, output:Path):
     output=Path(output)
     if mode==EXTERNAL and any(a.get('prices_source',{}).get('provider') in
                              ('EODHD_EOD_PERSONAL_RESEARCH','TIINGO_EOD_PERSONAL_RESEARCH',
-                              FWB_PERSONAL_HISTORY)
+                              FWB_PERSONAL_HISTORY, EURONEXT_PERSONAL_HISTORY)
                              for a in spec['assets']):
         base=Path(__file__).resolve().parents[2]
         location=output.resolve()
@@ -231,6 +232,7 @@ def build_bundle(spec:dict, output:Path):
         eodhd_meta=None
         tiingo_meta=None
         fwb_meta=None
+        euronext_meta=None
         if source['provider'] in (YFINANCE, MANUAL_OHLCV):
             records=parse_ohlcv(payload,as_of)
         elif source['provider']=='EODHD_EOD_PERSONAL_RESEARCH' and mode==EXTERNAL:
@@ -244,6 +246,10 @@ def build_bundle(spec:dict, output:Path):
         elif source['provider']==FWB_PERSONAL_HISTORY and mode==EXTERNAL:
             from .research_fwb_local import normalize_private_fwb
             records,fwb_meta=normalize_private_fwb(
+                source,payload,as_of,row,repo_root=Path(__file__).resolve().parents[2])
+        elif source['provider']==EURONEXT_PERSONAL_HISTORY and mode==EXTERNAL:
+            from .research_euronext_local import normalize_private_euronext
+            records,euronext_meta=normalize_private_euronext(
                 source,payload,as_of,row,repo_root=Path(__file__).resolve().parents[2])
         elif source['provider']=='SYNTHETIC_PRICES' and mode==SYNTHETIC:
             records=parse_normalized_prices(payload,as_of)
@@ -272,6 +278,8 @@ def build_bundle(spec:dict, output:Path):
             source_note.update(tiingo_meta)
         if fwb_meta is not None:
             source_note.update(fwb_meta)
+        if euronext_meta is not None:
+            source_note.update(euronext_meta)
         entry['prices']={**_write_checked(output,f'prices/{uid}.csv',_csv_bytes(records,['date','close','volume'])),**source_note}
         fmeta=row.get('fundamentals_source')
         if fmeta:
