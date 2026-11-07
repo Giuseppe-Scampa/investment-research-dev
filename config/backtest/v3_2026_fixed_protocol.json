@@ -1,0 +1,82 @@
+{
+  "schema_version": "v3-2026-frozen-evaluation-protocol-v1",
+  "registered_on": "2026-11-07",
+  "experiment": "RETROSPECTIVE_POINT_IN_TIME_SCREENING_NOT_PREDICTIVE_CERTIFICATION",
+  "data_policy": {
+    "real_market_data_requires_original_authorized_source": true,
+    "tiingo_starter_persistent_backtest_allowed": false,
+    "source_license_or_realtime_rights_independently_certified_by_code": false,
+    "future_adjusted_historical_snapshot_is_not_genuine_contemporaneous_snapshot": true,
+    "backtest_and_broker_documents_private_only": true
+  },
+  "cohort": {
+    "asset_types": [
+      "EQUITY",
+      "ETF_UCITS",
+      "ETC",
+      "ETN"
+    ],
+    "exclude_complex_payoffs": true,
+    "score_formula": "USE_EXISTING_B_research_screen._score_indicators_AND__market_score_WITH_FIXED_WEIGHTS",
+    "freeze_ranking_weights": {
+      "momentum_20": 0.3,
+      "momentum_60": 0.2,
+      "volatility_20": 0.2,
+      "drawdown_60": 0.15,
+      "turnover_20": 0.15
+    },
+    "minimum_61_verified_training_sessions": 61,
+    "future_outcome_missing_policy": "INVALID_FOLD_NEVER_DROP_LOSERS",
+    "minimum_instruments_for_descriptive_fold": 3,
+    "minimum_instruments_for_predictive_evidence": 20,
+    "minimum_independent_folds_for_predictive_evidence": 10
+  },
+  "schedule": {
+    "first_decision_date": "2026-04-01",
+    "last_decision_date": "2026-09-30",
+    "decision_step_calendar_days": 45,
+    "decision_date_rule": "CALENDAR_ANCHOR_PREVIOUS_COMMON_VALID_EXCHANGE_SESSION",
+    "no_overlap_between_holding_intervals": true,
+    "entry_lag_exchange_sessions": 1,
+    "holding_return_intervals": 30,
+    "entry_reference": "NEXT_VERIFIED_EOD_CLOSE_PROXY_NOT_EXECUTABLE",
+    "exit_reference": "EOD_CLOSE_AFTER_30_SUBSEQUENT_EXCHANGE_RETURNS",
+    "no_optimizing_on_holdouts": true
+  },
+  "portfolio": {
+    "selected_instruments": 2,
+    "equal_weights": true,
+    "cash_benchmark_pct": 0,
+    "additional_benchmark": "EQUAL_WEIGHT_ENTIRE_ELIGIBLE_UNIVERSE",
+    "random_portfolios": 10000,
+    "random_seed": 20261107,
+    "random_same_asset_count_and_constraints": true
+  },
+  "costs": {
+    "scenario_only_not_bank_verified": true,
+    "generic_notional_eur": 10000,
+    "buy_sell_commission_fraction": 0.0019,
+    "minimum_commission_eur_each_side": 7,
+    "usd_fx_fraction_each_side": 0.0025,
+    "withholding_tax": "NOT_MODELED_IN_PUBLIC_B_NEEDS_PRIVATE_ISIN_AND_REALIZED_TAX_LOSS_VERIFICATION"
+  },
+  "statistics": {
+    "spearman_IC_by_non_overlapping_fold": true,
+    "selected_excess_net_vs_equal_universe": true,
+    "selected_excess_net_vs_cash": true,
+    "top_k_above_universe_median_rate": true,
+    "max_drawdown_per_fold": true,
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 20261108,
+    "confidence_level": 0.95,
+    "selection_random_percentile_threshold": 0.9,
+    "evidence_rule": "IC_LOWER_CI_ABOVE_ZERO_AND_EXCESS_LOWER_CI_ABOVE_ZERO_AND_RANDOM_PERCENTILE_AT_LEAST_90_WITH_MINIMUM_SAMPLE"
+  },
+  "report_status_policy": [
+    "SYNTHETIC_NOT_MARKET_EVIDENCE",
+    "RETROSPECTIVE_SOURCE_UNVERIFIED_NOT_PREDICTIVE_EVIDENCE",
+    "INSUFFICIENT_STATISTICAL_POWER",
+    "NO_VERIFIED_PREDICTIVE_EDGE",
+    "REQUIRES_PROSPECTIVE_PAPER_VALIDATION"
+  ]
+}
