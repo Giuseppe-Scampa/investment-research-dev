@@ -71,7 +71,7 @@ def generate(root):
     usa_path=dest/"SYNTHETIC_TIINGO_NOT_PROVIDER_DATA.json"
     usa_path.write_bytes(usa)
     us={
-        "id":TIINGO_ISIN,"isin":TIINGO_ISIN,
+        "id":"TEST_ONLY_US","isin":TIINGO_ISIN,
         "name":"NOT_MARKET_DATA_US_FICTITIOUS_EQUITY",
         "venue":"XNAS","currency":"USD","asset_type":"EQUITY",
         "sector":"FICTIONAL_US_TECH","oil_exposure":"none",
