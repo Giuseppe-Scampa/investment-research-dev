@@ -17,6 +17,7 @@ from investresearch.research_tiingo_local import PROVIDER as TIINGO,ATTESTATION,
 from investresearch.research_sources import ECB_CSV_URL
 from investresearch.research_screen import screen
 from investresearch.research_cli import main
+from investresearch.cli import ROOT
 
 AS_OF=date(2026,11,5)
 FWB_ISIN="IE00B4L5Y983"
@@ -99,7 +100,7 @@ def fixtures(tmp_path):
 def test_combine_original_multimarket_sources_then_bind_ecb_and_build_bundle(tmp_path):
     eu_spec,us_spec,eu,us=fixtures(tmp_path)
     merged=tmp_path/"MIXED_NO_FX.json"
-    result=combine_mixed(source_specs=[us_spec,eu_spec],output=merged,repo_root=tmp_path)
+    result=combine_mixed(source_specs=[us_spec,eu_spec],output=merged,repo_root=ROOT)
     assert result["schema_version"]==VERSION
     assert result["source_count"]==2
     assert result["by_provider"]=={FWB:1,TIINGO:1}
@@ -135,7 +136,7 @@ def test_combine_original_multimarket_sources_then_bind_ecb_and_build_bundle(tmp
     ecb_meta.write_text(json.dumps(meta))
     ready=tmp_path/"MIXED_WITH_ECB_FIXTURE.json"
     binding=bind_ecb_fx(spec_path=merged,fx_meta_path=ecb_meta,
-                       output=ready,repo_root=tmp_path)
+                       output=ready,repo_root=ROOT)
     assert binding["assets_total"]==2 and binding["usd_assets"]==1
     book=tmp_path/"MIXED_HASH_BOUND_BUNDLE"
     build_bundle(json.loads(ready.read_text()),book)
@@ -219,5 +220,5 @@ def test_mixed_merge_refuses_untrusted_or_inconsistent_sources_without_writing(t
         eu_spec.write_text(json.dumps(spec))
     dest=tmp_path/"SHOULD_NOT_EXIST.json"
     with pytest.raises(ValueError,match=why):
-        combine_mixed(source_specs=inputs,output=dest,repo_root=tmp_path)
+        combine_mixed(source_specs=inputs,output=dest,repo_root=ROOT)
     assert not dest.exists()
