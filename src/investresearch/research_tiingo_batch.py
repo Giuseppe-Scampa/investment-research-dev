@@ -66,6 +66,8 @@ def _validate_sources(rows):
 def collect_batch(*, manifest_path, output, repo_root, api_token,
                   personal_rights_ack=False, identity_review_ack=False,
                   opener=None):
+    if opener is None:
+        raise ValueError("TIINGO_STARTER_PERSISTENT_STORAGE_NOT_PERMITTED: no live free-tier batch collection; mock-only code path.")
     if personal_rights_ack is not True or identity_review_ack is not True:
         raise ValueError("Personal-use terms and two-source mapping review mandatory")
     if not isinstance(api_token,str) or not api_token.strip() or api_token.strip().lower()=="demo":
