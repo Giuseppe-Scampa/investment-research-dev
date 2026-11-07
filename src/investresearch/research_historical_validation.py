@@ -161,7 +161,7 @@ def _candidate(asset,dated,t,settings):
             or any(flag.level=="BLOCKED" for flag in
                    instrument_constraints(asset,settings,new_purchase=True))
             or not asset.get("sector")
-            or asset.get("oil_exposure") not in ("none", "unknown")):
+            or asset.get("oil_exposure")!="none"):
         return None
     prior=[r for r in dated if r[0]<=t]
     if not prior or prior[-1][0]!=t or len(prior)<61:
@@ -191,6 +191,13 @@ def _outcome(candidate,aligned,t,horizon,params,total_candidates):
         if session(day,candidate["venue"]):
             expected.append(day.isoformat())
     if [d for d,_,_ in path]!=expected or len(expected)!=horizon+1:
+        return None
+    # A later stock split is NOT a successful/failed investment.
+    # The source declares adjustments, but a large post-selection
+    # discontinuity must still invalidate the entire fold for manual
+    # corporate-action/price-basis reconciliation.
+    if any(abs(path[i][1]/path[i-1][1]-1)>=Decimal(".15")
+           for i in range(1,len(path))):
         return None
     fee=params["buy_sell_commission_fraction"]
     minimum=params["minimum_commission_eur_each_side"]
