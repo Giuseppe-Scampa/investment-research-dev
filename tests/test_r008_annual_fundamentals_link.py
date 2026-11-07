@@ -83,7 +83,7 @@ def test_source_link_reconciles_two_original_evidence_origins_without_rank_chang
     "wrong_screen_hash","wrong_isin","duplicate_link","future_sec_filing",
     "false_sec_margin","unmatched_sec_cik","future_eu","wrong_eu_isin",
     "wrong_source_sha","unusable_sec","missing_original_provider",
-    "fake_verified_link",
+    "fake_verified_link","mismatched_sec_url","insecure_eu_url",
 ])
 def test_operator_crosswalk_never_certifies_issuer_or_silently_joins(mutate):
     s,links,sec,eu=fixture()
@@ -111,6 +111,10 @@ def test_operator_crosswalk_never_certifies_issuer_or_silently_joins(mutate):
         sec=None
     elif mutate=="fake_verified_link":
         links["links"][0]["verification"]="INDEPENDENTLY_VERIFIED"
+    elif mutate=="mismatched_sec_url":
+        sec["results"][0]["source_url"]="https://data.sec.gov/api/xbrl/companyfacts/CIK0000000002.json"
+    elif mutate=="insecure_eu_url":
+        eu["results"][0]["source_url_declared"]="http://example.test/report"
     with pytest.raises(ValueError):
         build_fundamental_links(s,links,sec_report=sec,eu_report=eu)
 
