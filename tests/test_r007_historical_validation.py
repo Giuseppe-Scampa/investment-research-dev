@@ -133,7 +133,7 @@ def test_lookahead_canary_and_missing_future_outcome_never_drop_losers(tmp_path)
     short=original[:105]
     source=bundle/"prices"/(items[0][0]["id"]+".csv")
     lines=["date,close,volume"]+[f"{r['date']},{r['close']},{r['volume']}" for r in short]
-    source.write_text("\\n".join(lines)+"\\n")
+    source.write_text("\n".join(lines)+"\n")
     amended=json.loads((bundle/"manifest.json").read_text())
     for entry in amended["assets"]:
         if entry["id"]==items[0][0]["id"]:
