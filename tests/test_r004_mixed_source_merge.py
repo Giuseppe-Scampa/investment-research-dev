@@ -171,7 +171,7 @@ def test_mixed_cli_emits_same_manifest_and_never_calls_remote(tmp_path):
     ("repeated_isin","Duplicate"),
     ("unknown_provider","only Tiingo"),
     ("future_cutoff","future"),
-    ("unsupported_asset_class","asset"),
+    ("unsupported_asset_class","identity|type"),
     ("already_has_fx","exactly one"),
     ("few_sessions","fewer than 61"),
 ])
