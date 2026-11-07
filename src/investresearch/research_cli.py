@@ -27,6 +27,12 @@ def main(argv=None):
     discovery.add_argument('--sec-raw',type=Path,default=None)
     discovery.add_argument('--sec-meta',type=Path,default=None)
     discovery.add_argument('--max-age-sessions',type=int,default=1)
+    backtest=sp.add_parser('historical-validation',
+        help='PRE-REGISTERED historical falsification: B score vs cash/universe/10000 random; not a forecast')
+    backtest.add_argument('--bundle',type=Path,required=True,
+                          help='Original B bundle of authorized dated prices; never free Tiingo Starter')
+    backtest.add_argument('--output',type=Path,required=True,
+                          help='New result file ONLY under B/data/private')
     funnel=sp.add_parser('funnel',help='R-007 offline funnel: broad screened universe to evidence review queue')
     funnel.add_argument('--bundle',type=Path,required=True,help='Source checked Block B bundle, not an arbitrary rank CSV')
     funnel.add_argument('--output',type=Path,required=True,help='External data inside repo only in data/private/')
@@ -232,6 +238,14 @@ def main(argv=None):
         print(f"R-006 coverage: {report['source_screened_universe_count']} source-bundle candidates, "
               f"{report['source_ranked_count']} ranked, {report['reference_catalog_count']} original independent catalogs, "
               "NO market data inferred from listings")
+    elif args.command=='historical-validation':
+        from .research_historical_validation import validate_historical,write_backtest
+        report=validate_historical(args.bundle)
+        write_backtest(report,args.output,repo_root=ROOT)
+        print(f"Historical protocol {report['protocol_sha256'][:12]}: "
+              f"{report['folds_evaluable']} non-overlapping folds, "
+              f"{report['random_portfolio_trials']} random trials; "
+              f"{report['status']}; predictive edge NEVER certified, no trades")
     elif args.command=='funnel':
         from .research_funnel import build_funnel, write_funnel
         if args.max_age_sessions not in (0,1,2,3,4,5):
