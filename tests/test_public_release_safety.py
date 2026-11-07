@@ -23,3 +23,16 @@ def test_no_billable_ai_runtime_or_workflow():
     assert 'gpt-5.5' not in workflow
     project=(ROOT/'pyproject.toml').read_text()
     assert 'openai>=' not in project.lower()
+
+
+def test_public_docs_do_not_include_operator_financial_references():
+    import re
+    prohibited = [
+        re.compile(r"\bMediolanum\b", re.I),
+        re.compile(r"(?:€\s*5[., ]000|5[., ]000\s*€)"),
+        re.compile(r"\bGiuseppe\s+Scampa\b", re.I),
+    ]
+    for doc in [ROOT / "README.md", *(ROOT / "docs").rglob("*.md")]:
+        if doc.is_file():
+            contents = doc.read_text(encoding="utf-8")
+            assert not any(pattern.search(contents) for pattern in prohibited), doc

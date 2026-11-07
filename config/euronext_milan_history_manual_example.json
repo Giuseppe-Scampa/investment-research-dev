@@ -1,0 +1,42 @@
+{
+  "as_of": "2026-11-06",
+  "mode": "EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE",
+  "assets": [{
+    "id": "EXAMPLE_REPLACE_WITH_VERIFIED_ISIN_ID",
+    "name": "PLACEHOLDER NOT A VERIFIED PRICE HISTORY",
+    "isin": "IT0003128367",
+    "asset_type": "EQUITY",
+    "venue": "XMIL",
+    "currency": "EUR",
+    "sector": "",
+    "oil_exposure": "unknown",
+    "prices_source": {
+      "provider": "EURONEXT_PERSONAL_HISTORY_FILE",
+      "path": "REPLACE_WITH_ABSOLUTE_PATH_TO_ORIGINAL_CSV",
+      "sha256": "REPLACE_WITH_SHA256_OF_ORIGINAL_FILE",
+      "source_url": "https://live.euronext.com/en/popout-page/getHistoricalPrice/IT0003128367-MTAA",
+      "retrieved_at_utc": "REPLACE_WITH_ACTUAL_UTC_TIMESTAMP",
+      "source_market_code": "MTAA",
+      "download_page_isin": "IT0003128367",
+      "usage_attestation": "EURONEXT_PERSONAL_NONCOMMERCIAL_LOCAL_USE_ACKNOWLEDGED",
+      "data_rights_independently_verified": false,
+      "export_adjustment": "ADJUSTED",
+      "base_100_export": false,
+      "adjustments_claimed": {
+        "splits": false,
+        "dividends": false,
+        "subscription_rights": false
+      },
+      "columns": {
+        "date": "REPLACE_EXACT_CSV_DATE_HEADER",
+        "close": "REPLACE_EXACT_CSV_CLOSE_HEADER",
+        "volume": "REPLACE_EXACT_CSV_SHARE_VOLUME_HEADER"
+      },
+      "delimiter": ";",
+      "decimal_separator": ",",
+      "thousands_separator": ".",
+      "date_format": "DMY_4_SLASH",
+      "encoding": "utf-8-sig"
+    }
+  }]
+}

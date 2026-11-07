@@ -1,0 +1,25 @@
+{
+  "mode": "EXPLICIT_NON_RANKED_SEC_COVERAGE_COHORT",
+  "selection_note": "Illustrative diversified issuer coverage for SEC parser exercise; NOT sector classification or investment screening",
+  "symbols": [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "ORCL",
+    "CRM",
+    "AMD",
+    "JNJ",
+    "PFE",
+    "PG",
+    "KO",
+    "COST",
+    "CAT",
+    "V",
+    "MA",
+    "JPM"
+  ],
+  "usage": "Only current SEC catalog tickers. Some companies may have non-comparable accounting statements; keep status REVIEW, never invent ISIN/sector, no automatic trades."
+}

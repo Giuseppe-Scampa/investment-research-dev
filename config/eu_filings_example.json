@@ -1,0 +1,19 @@
+{
+  "mode": "EU_ANNUAL_REPORT_EVIDENCE_NOT_FINANCIAL_FACTS_OR_RANKING",
+  "as_of": "2026-11-02",
+  "documents": [
+    {
+      "id": "EXAMPLE_EU_ISSUER_FY2025",
+      "issuer_name": "Example European issuer (replace with actual source)",
+      "isin": "",
+      "format": "ESEF_ZIP",
+      "source_type": "ISSUER_INVESTOR_RELATIONS",
+      "relative_path": "eu-documents/REPLACE-WITH-ANNUAL-REPORT.zip",
+      "sha256": "REPLACE_WITH_ACTUAL_64_CHARACTER_SHA256",
+      "source_url": "https://issuer.example.org/investors/annual-report-2025.zip",
+      "published_date": "2026-03-31",
+      "fiscal_year_end": "2025-12-31",
+      "retrieved_at_utc": "2026-11-02T09:00:00+00:00"
+    }
+  ]
+}

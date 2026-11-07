@@ -1,0 +1,235 @@
+{
+  "as_of": "2026-11-01",
+  "assets": [
+    {
+      "asset_type": "EQUITY",
+      "currency": "EUR",
+      "id": "DEMO_GRID",
+      "index_membership_status": "",
+      "index_memberships": [],
+      "isin": "",
+      "name": "Synthetic grid equipment",
+      "oil_exposure": "none",
+      "prices": {
+        "bytes": 3268,
+        "data_warning": "Not an executable bid/ask quote or total-return price",
+        "path": "prices/DEMO_GRID.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
+        "provider": "SYNTHETIC_PRICES",
+        "raw_sha256": "6815614e95895ae630a80dc010bd1ac3ba69120a48cc5482e6f3f6e9330a311f",
+        "retrieved_at_utc": null,
+        "sha256": "6815614e95895ae630a80dc010bd1ac3ba69120a48cc5482e6f3f6e9330a311f",
+        "source_url": "",
+        "split_dates": []
+      },
+      "sector": "Electrification",
+      "venue": "XMIL"
+    },
+    {
+      "asset_type": "EQUITY",
+      "currency": "EUR",
+      "fundamentals": {
+        "bytes": 210,
+        "path": "fundamentals/DEMO_HEALTH.json",
+        "provider": "SYNTHETIC_FUNDAMENTALS",
+        "raw_sha256": "2376f08b2573df3162f8d8303cc1f41b7a568314d4a806bac9d105d23be6b8db",
+        "retrieved_at_utc": null,
+        "sha256": "2ce36715ca870b135c3672e17696ef034679a38018add6444a40973409377968",
+        "source_url": ""
+      },
+      "id": "DEMO_HEALTH",
+      "index_membership_status": "",
+      "index_memberships": [],
+      "isin": "",
+      "name": "Synthetic healthcare company",
+      "oil_exposure": "none",
+      "prices": {
+        "bytes": 3268,
+        "data_warning": "Not an executable bid/ask quote or total-return price",
+        "path": "prices/DEMO_HEALTH.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
+        "provider": "SYNTHETIC_PRICES",
+        "raw_sha256": "31cf2db1ec53c74fb497918e28553fa8334aa516f1e3ad826fa7898557670ee9",
+        "retrieved_at_utc": null,
+        "sha256": "31cf2db1ec53c74fb497918e28553fa8334aa516f1e3ad826fa7898557670ee9",
+        "source_url": "",
+        "split_dates": []
+      },
+      "sector": "Healthcare",
+      "venue": "XMIL"
+    },
+    {
+      "asset_type": "EQUITY",
+      "currency": "USD",
+      "fundamentals": {
+        "bytes": 210,
+        "path": "fundamentals/DEMO_TECH.json",
+        "provider": "SYNTHETIC_FUNDAMENTALS",
+        "raw_sha256": "c3ec0b5b3b0793e79055f2278d5a2b88193018f0d6417d52259ad4c64cb0ddb7",
+        "retrieved_at_utc": null,
+        "sha256": "87929f2abcf15cab999fa6fc5b7dba58c56751d9e5e3ac6d18578cd7f98118c1",
+        "source_url": ""
+      },
+      "id": "DEMO_TECH",
+      "index_membership_status": "",
+      "index_memberships": [],
+      "isin": "",
+      "name": "Synthetic US semiconductor",
+      "oil_exposure": "none",
+      "prices": {
+        "bytes": 3193,
+        "data_warning": "Not an executable bid/ask quote or total-return price",
+        "path": "prices/DEMO_TECH.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
+        "provider": "SYNTHETIC_PRICES",
+        "raw_sha256": "d5c221283e90b964ec3ab8a8b75ae72fabe337f03debf5b14311c1fa403c8f71",
+        "retrieved_at_utc": null,
+        "sha256": "d5c221283e90b964ec3ab8a8b75ae72fabe337f03debf5b14311c1fa403c8f71",
+        "source_url": "",
+        "split_dates": []
+      },
+      "sector": "Semiconductors",
+      "venue": "XNAS"
+    },
+    {
+      "asset_type": "EQUITY",
+      "currency": "EUR",
+      "fundamentals": {
+        "bytes": 210,
+        "path": "fundamentals/DEMO_OIL.json",
+        "provider": "SYNTHETIC_FUNDAMENTALS",
+        "raw_sha256": "42b1347fe2e3371e76d834babc80632eb684e658b11eae105c337fd32decdf24",
+        "retrieved_at_utc": null,
+        "sha256": "9d453bac24964d7c09474e0881911c5ccea480438fcdd0b846afb8787b716779",
+        "source_url": ""
+      },
+      "id": "DEMO_OIL",
+      "index_membership_status": "",
+      "index_memberships": [],
+      "isin": "",
+      "name": "Synthetic petroleum producer",
+      "oil_exposure": "direct",
+      "prices": {
+        "bytes": 3268,
+        "data_warning": "Not an executable bid/ask quote or total-return price",
+        "path": "prices/DEMO_OIL.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
+        "provider": "SYNTHETIC_PRICES",
+        "raw_sha256": "1ff384239372625a975992f4d2b01cdbd9479862badf925907ad38eeb5b846c6",
+        "retrieved_at_utc": null,
+        "sha256": "1ff384239372625a975992f4d2b01cdbd9479862badf925907ad38eeb5b846c6",
+        "source_url": "",
+        "split_dates": []
+      },
+      "sector": "Oil",
+      "venue": "XMIL"
+    },
+    {
+      "asset_type": "EQUITY",
+      "currency": "EUR",
+      "id": "DEMO_SHORT",
+      "index_membership_status": "",
+      "index_memberships": [],
+      "isin": "",
+      "name": "Synthetic newly listed issuer",
+      "oil_exposure": "none",
+      "prices": {
+        "bytes": 568,
+        "data_warning": "Not an executable bid/ask quote or total-return price",
+        "path": "prices/DEMO_SHORT.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
+        "provider": "SYNTHETIC_PRICES",
+        "raw_sha256": "df0455df0de1905519638e225175be3e4e46bb6d20920df39115f3fdf037d823",
+        "retrieved_at_utc": null,
+        "sha256": "df0455df0de1905519638e225175be3e4e46bb6d20920df39115f3fdf037d823",
+        "source_url": "",
+        "split_dates": []
+      },
+      "sector": "Industrials",
+      "venue": "XMIL"
+    },
+    {
+      "asset_type": "ETF_UCITS",
+      "currency": "EUR",
+      "id": "DEMO_ETF",
+      "index_membership_status": "",
+      "index_memberships": [],
+      "isin": "",
+      "name": "Synthetic diversified ETF",
+      "oil_exposure": "none",
+      "prices": {
+        "bytes": 3268,
+        "data_warning": "Not an executable bid/ask quote or total-return price",
+        "path": "prices/DEMO_ETF.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
+        "provider": "SYNTHETIC_PRICES",
+        "raw_sha256": "415286b430a21cc86d3cf9688c0ec1d0df020e88a1a77084a36977f0f69c1ffb",
+        "retrieved_at_utc": null,
+        "sha256": "415286b430a21cc86d3cf9688c0ec1d0df020e88a1a77084a36977f0f69c1ffb",
+        "source_url": "",
+        "split_dates": []
+      },
+      "sector": "Index fund",
+      "venue": "XMIL"
+    },
+    {
+      "asset_type": "EQUITY",
+      "currency": "EUR",
+      "fundamentals": {
+        "bytes": 211,
+        "path": "fundamentals/DEMO_WEAK.json",
+        "provider": "SYNTHETIC_FUNDAMENTALS",
+        "raw_sha256": "cf2efab620174e32cdd4086f7e4da4dc9adaea6e9046468bea3b91f412c63f72",
+        "retrieved_at_utc": null,
+        "sha256": "44bbbab74a0d0ab1dba874480989d11415a59d1b422f069d3b91cc5bf4989720",
+        "source_url": ""
+      },
+      "id": "DEMO_WEAK",
+      "index_membership_status": "",
+      "index_memberships": [],
+      "isin": "",
+      "name": "Synthetic negative earnings company",
+      "oil_exposure": "none",
+      "prices": {
+        "bytes": 3268,
+        "data_warning": "Not an executable bid/ask quote or total-return price",
+        "path": "prices/DEMO_WEAK.csv",
+        "price_basis": "UNVERIFIED_UNADJUSTED_CLOSE",
+        "provider": "SYNTHETIC_PRICES",
+        "raw_sha256": "953a2944c941b2de9c28e33988d2c0f2476782602c698022cfac56a2efb6ffdd",
+        "retrieved_at_utc": null,
+        "sha256": "953a2944c941b2de9c28e33988d2c0f2476782602c698022cfac56a2efb6ffdd",
+        "source_url": "",
+        "split_dates": []
+      },
+      "sector": "Industry",
+      "venue": "XMIL"
+    }
+  ],
+  "disclaimer": "Only as-of dated, hash-matched research inputs. No live quotes, orders or performance forecasts.",
+  "events": {
+    "bytes": 309,
+    "path": "events/register.csv",
+    "provider": "SYNTHETIC_EVENTS",
+    "raw_sha256": "4a1d0c1253b70e799d1c5aecaa0161d37362c000da7c618048f4a2557bacd7cf",
+    "sha256": "4a1d0c1253b70e799d1c5aecaa0161d37362c000da7c618048f4a2557bacd7cf"
+  },
+  "fx": {
+    "bytes": 2637,
+    "path": "fx/eur_usd.csv",
+    "provider": "SYNTHETIC_FX",
+    "raw_sha256": "5d9b7146798adf8ebd8c95f047643832722de411ed0ca63fc7185db81c6f0036",
+    "retrieved_at_utc": null,
+    "sha256": "5d9b7146798adf8ebd8c95f047643832722de411ed0ca63fc7185db81c6f0036",
+    "source_url": "",
+    "unit": "USD per EUR"
+  },
+  "mode": "SYNTHETIC_DEMONSTRATION_NOT_MARKET_DATA",
+  "schema_version": 1,
+  "source_kinds": [
+    "SYNTHETIC_EVENTS",
+    "SYNTHETIC_FUNDAMENTALS",
+    "SYNTHETIC_FX",
+    "SYNTHETIC_PRICES"
+  ]
+}
