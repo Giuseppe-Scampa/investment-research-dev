@@ -272,21 +272,19 @@ def validate_historical(bundle,*,protocol_path=PROTOCOL,
                 break
             per_id[item["id"]]=outcome
         else:
-            # Selected and random portfolios have exactly K same-size legs.
-            # Universe benchmark has N legs, with its own minimum commission.
-            def portfolio(ids):
-                returns=[]
-                paths=[]
-                for uid in ids:
-                    info=next(c for c in candidates if c["id"]==uid)
-                    outcome=_outcome(info,universe[uid][1],t,horizon,
-                                     params,len(ids))
-                    returns.append(outcome["net"])
-                    paths.append(outcome["curve"])
-                return mean(returns),_drawdown(paths)
+            # All K-way candidate trade costs are computed exactly once,
+            # BEFORE the random generator tests any competing portfolios.
+            by_k={}
+            for candidate in candidates:
+                by_k[candidate["id"]]=_outcome(
+                    candidate,universe[candidate["id"]][1],t,horizon,
+                    params,k)
             selected_ids=[c["id"] for c in candidates[:k]]
-            selected,drawdown=portfolio(selected_ids)
-            equal_universe,_=portfolio([c["id"] for c in candidates])
+            selected=mean(by_k[uid]["net"] for uid in selected_ids)
+            drawdown=_drawdown([by_k[uid]["curve"] for uid in selected_ids])
+            # Different minimum-fee burden for an N-leg equal-universe buy:
+            # this is shown transparently, not treated as a cost-matched control.
+            equal_universe=mean(per_id[c["id"]]["net"] for c in candidates)
             ic=_spearman([c["score"] for c in candidates],
                          [per_id[c["id"]]["gross"] for c in candidates])
             med=median(per_id[c["id"]]["gross"] for c in candidates)
@@ -307,20 +305,15 @@ def validate_historical(bundle,*,protocol_path=PROTOCOL,
                 "rank_information_coefficient":round(ic,8) if ic is not None else None,
                 # Retain only rounded *aggregate* candidate outcomes, not
                 # original prices. Raw instrument price data never exported.
-                "_candidates":candidates,"_outcomes":per_id,
+                "_candidates":candidates,"_net_by_k":{uid:z["net"] for uid,z in by_k.items()},
             })
     random_count=policy["portfolio"]["random_portfolios"]
     rng=random.Random(policy["portfolio"]["random_seed"])
     random_means=[]
     def recompute_random(fold,ids):
-        t=fold["decision_date"]
-        out=[]
-        for uid in ids:
-            asset,bars=universe[uid]
-            entry=next(c for c in fold["_candidates"] if c["id"]==uid)
-            r=_outcome(entry,bars,t,horizon,params,len(ids))
-            out.append(r["net"])
-        return mean(out)
+        # Compare identical trade counts, per-leg capital, fees and FX,
+        # without re-reading prices for each of 10,000 random experiments.
+        return mean(fold["_net_by_k"][uid] for uid in ids)
     if folds:
         for _ in range(random_count):
             random_means.append(mean(
