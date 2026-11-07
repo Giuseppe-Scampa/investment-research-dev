@@ -222,3 +222,45 @@ def test_even_real_b_source_with_tiingo_starter_cannot_be_backtested(tmp_path):
     m.write_text(json.dumps(original))
     with pytest.raises(ValueError,match="TIINGO_STARTER_NO_BACKTEST"):
         validate_historical(bundle)
+
+
+@pytest.mark.parametrize("factor",[
+    Decimal("0.6666666667"),  # 3:2 stock split (unadjusted)
+    Decimal("0.75"),          # 4:3 stock split
+    Decimal("0.80"),          # 5:4 stock split
+])
+def test_future_unadjusted_split_cannot_masquerade_as_selected_performance(factor):
+    from investresearch.research_historical_validation import _outcome
+    policy,_=protocol_file()
+    cut=date(2026,6,1)
+    trading=[]
+    d=cut+timedelta(days=1)
+    while len(trading)<35:
+        if session(d,"XMIL"):
+            trading.append(d)
+        d+=timedelta(days=1)
+    rows=[]
+    for n,day in enumerate(trading):
+        close=Decimal("100")*(factor if n>=10 else Decimal("1"))
+        rows.append((day.isoformat(),close,Decimal("10000")))
+    sample={"id":"TEST_ONLY_SPLIT","venue":"XMIL","currency":"EUR","score":40}
+    got=_outcome(sample,rows,cut.isoformat(),30,policy["costs"],3)
+    assert got is None  # no 30-session alpha claim from a fake split jump
+
+
+def test_unknown_oil_exposure_is_not_converted_to_approved_historical_universe():
+    asset={"id":"TEST_UNKNOWN_OIL","name":"NOT_MARKET_DATA",
+           "isin":"","asset_type":"EQUITY","venue":"XMIL","currency":"EUR",
+           "oil_exposure":"unknown","sector":"energy"}
+    rows=[]
+    d=date(2026,5,4)
+    while len(rows)<65:
+        if session(d,"XMIL"):
+            rows.append((d.isoformat(),Decimal("100")+Decimal(len(rows))/100,
+                         Decimal("100000")))
+        d+=timedelta(days=1)
+    cutoff=rows[-1][0]
+    assert _candidate(asset,rows,cutoff,{
+        "exclude_primary_oil":True,"exclude_additional_gold":True,
+        "avoid_duplicate_eurostoxx50":True,
+    }) is None
