@@ -109,7 +109,7 @@ def test_same_asof_selection_is_invariant_to_appended_future_data():
     d=date(2026,3,1)
     while d<=date(2026,8,28):
         if session(d,"XMIL"):
-            bars.append((d.isoformat(),Decimal("110")+Decimal(len(bars))*.10,
+            bars.append((d.isoformat(),Decimal("110")+Decimal(len(bars))*Decimal("0.10"),
                          Decimal("10000")))
         d+=timedelta(days=1)
     t="2026-07-01"
