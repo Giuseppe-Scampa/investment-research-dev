@@ -397,7 +397,14 @@ def validate_historical(bundle,*,protocol_path=PROTOCOL,
 def write_backtest(report,output,*,repo_root):
     out=Path(output).resolve()
     root=Path(repo_root).resolve()
-    if (not out.is_relative_to(root/"data/private")
+    # Private A runs public B as a subprocess from a DIFFERENT repository:
+    # allow either repo's ignored data/private tree, but never B/public output.
+    parts=out.parts
+    has_private_pair=any(parts[i]=="data" and parts[i+1]=="private"
+                         for i in range(len(parts)-1))
+    if (not has_private_pair
+            or (out.is_relative_to(root)
+                and not out.is_relative_to(root/"data/private"))
             or out.exists() or not out.parent.is_dir()):
         raise ValueError("Historical validation output must be a NEW private file under data/private")
     payload=json.dumps(report,indent=2,sort_keys=True,ensure_ascii=False)+"\n"
