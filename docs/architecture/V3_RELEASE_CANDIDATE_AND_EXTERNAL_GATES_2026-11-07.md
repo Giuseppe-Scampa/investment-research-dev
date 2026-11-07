@@ -7,8 +7,8 @@ licence, paid API, real brokerage documents, personal data or trade is implied.
 
 - Public B PR #2, latest code/docs branch: `d8f5710046db26b0350fd115bddea6b6209fb1b2`.
   [CI 42366784202](https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/42366784202):
-  541 tests passed; architecture/privacy release boundary PASS; live SEC/ESEF/ECB
-  compatibility smoke successful; EODHD/Xetra full source smoke skipped.
+  541 tests passed; architecture/privacy release boundary PASS; ESEF/ECB
+  live compatibility smoke successful; EODHD/Xetra full source smoke skipped.
 - Private A PR #2 references that exact public SHA in cross-repo CI. Public
   [architecture and original source-link documentation](R008_SEC_ESEF_ORIGINAL_EVIDENCE_LINK_2026.md)
   is separate from A's private output. [Private A CI 42366859021](https://github.com/Giuseppe-Scampa/investment-research-2026/actions/runs/42366859021):
