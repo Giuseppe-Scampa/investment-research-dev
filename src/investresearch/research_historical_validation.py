@@ -29,6 +29,9 @@ from .research_screen import (
 )
 
 VERSION = "v3-2026-frozen-historical-falsification-v1"
+# SHA-256 of the protocol actually committed BEFORE synthetic outcome review,
+# GitHub commit 8755eb8821b9b0a9f6fe26140c39e67cf5c211c6.
+FROZEN_PROTOCOL_SHA256 = "e2ce1ba5928218c2ff78b7962058e7f862713226ff51ef574be5aac8617a26d2"
 PROTOCOL = Path(__file__).resolve().parents[2]/"config/backtest/v3_2026_fixed_protocol.json"
 PRICE_BASIS_ALLOWLIST = {
     "FWB_OPERATOR_ASSERTED_ADJUSTED_NOT_INDEPENDENTLY_VERIFIED",
@@ -45,6 +48,8 @@ def protocol_file(path=PROTOCOL):
         raise ValueError("Use only the previously committed V3 protocol, never optimize after outcomes")
     raw=loc.read_bytes()
     p=json.loads(raw)
+    if hashlib.sha256(raw).hexdigest()!=FROZEN_PROTOCOL_SHA256:
+        raise ValueError("FROZEN V3 protocol hash changed after pre-registration; new protocol/version required")
     if (p.get("schema_version")!="v3-2026-frozen-evaluation-protocol-v1"
             or p.get("registered_on")!="2026-11-07"
             or p.get("cohort",{}).get("freeze_ranking_weights")!=WEIGHTS
