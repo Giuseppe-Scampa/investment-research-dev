@@ -110,3 +110,13 @@ def test_provider_account_error_never_written_or_returned(tmp_path):
         collect_one(**kw)
     assert len(opener.calls)==1
     assert not kw["output"].exists()
+
+
+def test_live_starter_collection_is_disabled_before_api_or_file_io(tmp_path):
+    fake=Opener(data())
+    args=options(tmp_path,fake)
+    args["opener"]=None
+    with pytest.raises(ValueError,match="TIINGO_STARTER_PERSISTENT_STORAGE_NOT_PERMITTED"):
+        collect_one(**args)
+    assert not fake.calls
+    assert not args["output"].exists()
