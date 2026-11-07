@@ -259,3 +259,40 @@ on that provider, no independent corporate-action/legal authentication,
 no real-world B→A run, no live AI. M1–M6 and R-001–R-013 statuses and their
 DONE criteria are unchanged; European source licensing remains a source-
 specific operator decision, not a software guarantee.
+
+
+## 2026-11-07 — M3/M4 completed mixed US/EU original-source composition layer
+
+**NEW code integrated:** `src/investresearch/research_mixed_source_merge.py`
+and `investresearch-b merge-reviewed-sources` accept 2–500 previously
+acquired, single-security original Tiingo Personal US or Deutsche Börse
+FWB Xetra local research source specs, including **both** providers in
+one deterministic asset list. The merge verifies as-of, ISIN, identity,
+original bytes/sha256, vendor-specific point-in-time parsing, documented
+rights attestations, >=61 original price sessions, rejects duplicate
+sources and source types/venues it cannot interpret. This does **not**
+download or validate independent vendor licenses; US/USD requires explicit
+original official ECB FX via existing `bind-ecb-fx`.
+
+**Private A one-command runner:** `tools/run_mixed_source_decision2026.py`
+from the private repository performs *offline-only*
+mixed-source merge → ECB FX → original bundle B build → existing B
+screen/discovery/funnel/tactical/risk/evidence/valuation and optional annual
+source bridge → private A case/dashboard/decision ledger. No key, provider
+network call, score invention, broker order, paid subscription or public data
+export. See [R004 multi-market runbook](R004_MIXED_US_EU_PRIVATE_RESEARCH.md).
+
+**CI:** tests directly rebuild a mixed original-schema EU Xetra + US Tiingo
+bundle and date-bound ECB rates using entirely invented source observations.
+A cross-repository GitHub smoke executes **real** B and A programs on
+fictional sources and explicitly enforces `fixture_only=true` and
+`trade_ready=false`. These tests do **not** establish lawful use of any
+actual price feed or true market representativeness. No 200+ real
+market candidate universe has been produced; R-004/R-005/R-006/R-007 and
+M3/M4 operational acceptance remain PARTIAL.
+
+Still external: individually authorised original source bytes, coherent
+rights, verified security identity/corporate actions, at least a real 200+
+multi-market screen, actual original valuation facts and optional
+authenticated broker/fiscal/LLM use, plus architecture/PR privacy review.
+V3.0.0 baseline and ADR-0001 remain unchanged.
