@@ -143,3 +143,13 @@ def test_rerun_cannot_silently_consume_more_personal_quota(tmp_path):
     with pytest.raises(ValueError,match="NEW"):
         collect_batch(**kw)
     assert len(fake.urls)==2
+
+
+def test_live_starter_batch_collection_is_disabled_before_network(tmp_path):
+    fake=Fake()
+    args=options(tmp_path,fake)
+    args["opener"]=None
+    with pytest.raises(ValueError,match="TIINGO_STARTER_PERSISTENT_STORAGE_NOT_PERMITTED"):
+        collect_batch(**args)
+    assert not fake.urls
+    assert not args["output"].exists()
