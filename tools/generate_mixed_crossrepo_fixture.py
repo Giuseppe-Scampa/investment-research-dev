@@ -1,4 +1,4 @@
-"""CI ONLY: create fictional FWB+Tiingo+ECB source bytes in PRIVATE A scratch.
+"""CI ONLY: create fictional FWB+Tiingo+Euronext Milan+ECB source bytes.
 
 Sources contain purely invented prices, not market data. No network, API
 tokens, real issuer data, licensing permission or investment decisions.
@@ -15,6 +15,7 @@ from investresearch.market_calendar import session
 from investresearch.research_bundle import EXTERNAL
 from investresearch.research_sources import ECB_CSV_URL
 from investresearch.research_fwb_local import PROVIDER as FWB
+from investresearch.research_euronext_local import PROVIDER as EURONEXT,ATTESTATION as EURONEXT_TERMS
 from investresearch.research_tiingo_local import (
     PROVIDER as TIINGO,ATTESTATION,MAPPING,
 )
@@ -22,6 +23,7 @@ from investresearch.research_tiingo_local import (
 AS_OF=date(2026,11,5)
 TIINGO_ISIN="US0378331005"
 FWB_ISIN="IE00B4L5Y983"
+MIL_ISIN="IT0003128367"
 
 
 def generate(root):
@@ -32,7 +34,8 @@ def generate(root):
     days=sorted(AS_OF-timedelta(days=i) for i in range(180))
     fwb_days=[d for d in days if session(d,"XETR")][-75:]
     us_days=[d for d in days if session(d,"XNAS")][-75:]
-    assert len(fwb_days)==len(us_days)==75
+    mil_days=[d for d in days if session(d,"XMIL")][-75:]
+    assert len(fwb_days)==len(us_days)==len(mil_days)==75
     euro=("Session;Close;Volume\n"+"\n".join(
         f"{d:%d.%m.%Y};{100+i//7},{i%10};200000,0"
         for i,d in enumerate(fwb_days))+"\n").encode()
@@ -85,7 +88,33 @@ def generate(root):
             "venue":"XNAS","currency":"USD",
         },
     }
-    for label,asset in (("EU",eu),("US",us)):
+    milano=("Trading date;Last;Quantity\\n"+"\\n".join(
+        f"{d:%d/%m/%Y};{90+i//8},{i%10};1.000,0"
+        for i,d in enumerate(mil_days))+"\\n").encode("utf-8-sig")
+    milano_file=dest/"SYNTHETIC_EURONEXT_MILAN_NOT_MARKET_DATA.csv"
+    milano_file.write_bytes(milano)
+    mil={
+        "id":"TEST_ONLY_MIL","isin":MIL_ISIN,
+        "name":"NOT_MARKET_DATA_MILAN_FICTIONAL_EQUITY",
+        "venue":"XMIL","currency":"EUR","asset_type":"EQUITY",
+        "sector":"FICTIONAL_EU_TECH","oil_exposure":"none",
+        "prices_source":{
+            "provider":EURONEXT,"path":str(milano_file),
+            "sha256":hashlib.sha256(milano).hexdigest(),
+            "source_url":"https://live.euronext.com/en/popout-page/getHistoricalPrice/IT0003128367-MTAA",
+            "retrieved_at_utc":"2026-11-05T20:00:00Z",
+            "source_market_code":"MTAA","download_page_isin":MIL_ISIN,
+            "usage_attestation":EURONEXT_TERMS,
+            "data_rights_independently_verified":False,
+            "export_adjustment":"ADJUSTED",
+            "base_100_export":False,
+            "adjustments_claimed":{"splits":True,"dividends":True,"subscription_rights":True},
+            "columns":{"date":"Trading date","close":"Last","volume":"Quantity"},
+            "delimiter":";","decimal_separator":",","thousands_separator":".",
+            "date_format":"DMY_4_SLASH","encoding":"utf-8-sig",
+        },
+    }
+    for label,asset in (("EU",eu),("US",us),("MIL",mil)):
         (dest/f"FICTIONAL_{label}_SOURCE_SPEC.json").write_text(
             json.dumps({"mode":EXTERNAL,"as_of":AS_OF.isoformat(),
                         "assets":[asset]},indent=2)+"\n",encoding="utf-8")
