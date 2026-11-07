@@ -130,7 +130,8 @@ def test_lookahead_canary_and_missing_future_outcome_never_drop_losers(tmp_path)
     assert original
     # A missing outcome impacts at least one preselected fold. The baseline
     # selection cannot be reoptimized on a later-complete survivor cohort.
-    short=original[:105]
+    cutoff_index=next(i for i,row in enumerate(original) if row["date"]=="2026-04-01")
+    short=original[:cutoff_index+12]
     source=bundle/"prices"/(items[0][0]["id"]+".csv")
     lines=["date,close,volume"]+[f"{r['date']},{r['close']},{r['volume']}" for r in short]
     source.write_text("\n".join(lines)+"\n")
