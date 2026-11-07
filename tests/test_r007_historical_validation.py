@@ -24,7 +24,7 @@ from investresearch.cli import ROOT
 from investresearch.research_cli import main
 
 
-def fake_bundle(tmp_path):
+def fake_bundle(tmp_path,*,regime='mixed_trends'):
     start=date(2026,1,2)
     end=date(2026,11,6)
     market_days=[]
@@ -37,10 +37,19 @@ def fake_bundle(tmp_path):
     assets=[]
     for i in range(6):
         records=["date,close,volume"]
+        pivot=sum(d<=date(2026,4,1) for d in market_days)-1
         for j,d in enumerate(market_days):
-            # Different predictable trends plus cycles, no 15% jumps
-            growth=(i-2)*.00065
-            price=(92+i*5)*(1+growth*j)+.8*math.sin(j/14+i/3)
+            # Two predefined fictional regimes: a ranking "success" is
+            # never forced. Reversal demonstrates genuine underperformance.
+            if regime=='adversarial_reversal':
+                if i in (4,5):
+                    gross=1+0.002*j if j<=pivot else 1+0.002*pivot-0.003*(j-pivot)
+                else:
+                    gross=1+0.0001*j if j<=pivot else 1+0.0001*pivot+0.001*(j-pivot)
+                price=(92+i*5)*gross
+            else:
+                growth=(i-2)*.00065
+                price=(92+i*5)*(1+growth*j)+.8*math.sin(j/14+i/3)
             records.append(f"{d.isoformat()},{price:.7f},{200000+i*10000}")
         original=tmp_path/f"FICTIONAL_PRICE_SERIES_{i}.csv"
         original.write_text("\n".join(records)+"\n")
@@ -97,6 +106,47 @@ def test_retrospective_backtest_can_return_negative_alpha_and_never_certifies_pr
     # Compare the same B model with 10,000 K-count random alternatives:
     assert 0<=result["random_portfolio_percentile"]<=1
     assert -1<=result["mean_IC_spearman"]<=1
+
+
+def test_adversarial_synthetic_momentum_trap_produces_negative_excess(tmp_path):
+    bundle=fake_bundle(tmp_path,regime='adversarial_reversal')
+    result=validate_historical(bundle)
+    assert result["status"]=="SYNTHETIC_NOT_MARKET_EVIDENCE"
+    # Existence of a deliberately losing regime is a mandatory falsification
+    # check; the test must not insist that picks always have positive returns.
+    assert any(f["excess_vs_universe"]<0 for f in result["folds"])
+    assert any(f["selected_net_return"]<0 for f in result["folds"])
+    assert result["predictive_edge_certified"] is False
+
+
+def test_lookahead_canary_and_missing_future_outcome_never_drop_losers(tmp_path):
+    bundle=fake_bundle(tmp_path)
+    # Invalidate a single original future bar and rehash it as a *synthetic*
+    # bundle file. The study must reject an incomplete fold, never silently
+    # remove the poorly performing instrument from its benchmark.
+    from investresearch.research_bundle import load_bundle
+    manifest,items,fx,events=load_bundle(bundle)
+    original=list(items[0][1])
+    assert original
+    # A missing outcome impacts at least one preselected fold. The baseline
+    # selection cannot be reoptimized on a later-complete survivor cohort.
+    short=original[:105]
+    source=bundle/"prices"/(items[0][0]["id"]+".csv")
+    lines=["date,close,volume"]+[f"{r['date']},{r['close']},{r['volume']}" for r in short]
+    source.write_text("\\n".join(lines)+"\\n")
+    amended=json.loads((bundle/"manifest.json").read_text())
+    for entry in amended["assets"]:
+        if entry["id"]==items[0][0]["id"]:
+            entry["prices"]["sha256"]=hashlib.sha256(source.read_bytes()).hexdigest()
+            entry["prices"]["bytes"]=source.stat().st_size
+    (bundle/"manifest.json").write_text(json.dumps(amended))
+    try:
+        report=validate_historical(bundle)
+    except ValueError:
+        # Either gate (bundle integrity or truncated history) is fail-closed.
+        return
+    assert any(f["reason"]=="MISSING_OR_NONCONSECUTIVE_POST_SELECTION_OUTCOME"
+               for f in report["folds_rejected"])
 
 
 def test_same_asof_selection_is_invariant_to_appended_future_data():
