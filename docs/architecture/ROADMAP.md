@@ -296,3 +296,36 @@ rights, verified security identity/corporate actions, at least a real 200+
 multi-market screen, actual original valuation facts and optional
 authenticated broker/fiscal/LLM use, plus architecture/PR privacy review.
 V3.0.0 baseline and ADR-0001 remain unchanged.
+
+
+## 2026-11-07 — R-004/R-005: Euronext Milan and Paris official CSV integration
+
+**Software implemented:** `research_euronext_local.py` and the existing
+mixed-source assembler now accept original Euronext historical CSV exports
+from Milan (MTAA, ETFP, EXGM, ETLX) and Paris (XPAR). Inputs are strictly
+bound to the instrument ISIN, official Euronext original-history URL,
+market segment, EUR currency, original SHA-256, UTC acquisition, locale,
+CSV column names, and separately declared adjusted/raw export settings.
+Adjusted/corporate-action assertions are **not independently verified**;
+non-adjusted or partially adjusted sources never receive market score;
+complex certificate payout cannot be ranked by simple cash-EOD history.
+Every output remains non-executable and not trade ready.
+
+**Crossrepo integration:** unchanged private A one-command runner accepts
+additional Euronext specs alongside Xetra and Tiingo US, binds original ECB
+FX only for USD sources, and generates B→A audit/dashboard from one
+original-source bundle. Private CI executes a third, entirely **invented**
+Euronext Milan 75-session original-schema file through the actual B and A
+processes. This is a code acceptance test, not a live Euronext file.
+
+Official Euronext historical-data page offers CSV download and
+Adjusted/Non-Adjusted options; provider terms distinguish free delayed
+display/internal use and regulated non-display / broader historical products.
+The code **does not download market history**, confer a licence or pretend
+Euronext NextHistory is free. Original legally permitted history covering
+61 correctly adjusted venue sessions and independently reconciled
+corporate actions must be acquired to pass M3 and M4 external gates.
+
+Runbook: [original Euronext Milan/Paris file integration](R004_EURONEXT_MILAN_PARIS_LOCAL_HISTORY_2026.md).
+Original V3.0.0 scope, release governance and remaining PARTIAL status
+are unchanged.
