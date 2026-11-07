@@ -76,6 +76,12 @@ def main(argv=None):
                        help='Repeat for each existing BUNDLE_INPUT_SPEC.json')
     merge.add_argument('--output',type=Path,required=True,
                        help='NEW private combined JSON; bind ECB FX separately afterward')
+    mixed=sp.add_parser('merge-reviewed-sources',
+        help='Offline 2–500 authentic source-checked Tiingo US + FWB Xetra CSV specs into one private mixed-market input')
+    mixed.add_argument('--source-spec',type=Path,action='append',required=True,
+                       help='Repeat for each previously obtained one-instrument B source spec')
+    mixed.add_argument('--output',type=Path,required=True,
+                       help='NEW original-source-referencing JSON under private data; ECB FX bound separately')
     fxbind=sp.add_parser('bind-ecb-fx',
         help='Attach existing official ECB EUR/USD raw source to a local USD price spec; NO NETWORK')
     fxbind.add_argument('--spec',type=Path,required=True)
@@ -329,6 +335,12 @@ def main(argv=None):
         audit=combine(source_specs=args.source_spec,output=args.output,repo_root=ROOT)
         print(f"FREE TIINGO MULTI-ASSET MERGE: {audit['source_assets']} original price sources, "
               "ECB FX NOT YET BOUND; need explicit official ECB snapshot before ranking")
+    elif args.command=='merge-reviewed-sources':
+        from .research_mixed_source_merge import combine_mixed
+        audit=combine_mixed(source_specs=args.source_spec,output=args.output,repo_root=ROOT)
+        print(f"R-004 mixed US/EU source input: {audit['source_count']} original instruments; "
+              f"{audit['by_provider']} provider coverage; ECB FX required={audit['fx_needed']}. "
+              "No network, no source rights certification, no investment signals.")
     elif args.command=='bind-ecb-fx':
         from .research_fx_bundle import bind_ecb_fx
         result=bind_ecb_fx(spec_path=args.spec,fx_meta_path=args.ecb_meta,
