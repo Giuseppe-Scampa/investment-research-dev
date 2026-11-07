@@ -34,7 +34,13 @@ def collect_one(*, symbol, isin, venue, instrument_name, asset_type,
                 sector, oil_exposure, output, repo_root, api_token,
                 personal_rights_ack=False, identity_review_ack=False,
                 opener=None):
-    """Build one reviewed local Tiingo source manifest, not a market ranking."""
+    """Only a *mocked* original-schema adapter regression remains available.
+
+    Live Starter collection is blocked because currently published ToS 1.6(a)
+    forbids persistent raw-data/derived-data storage on Starter/trials.
+    """
+    if opener is None:
+        raise ValueError("TIINGO_STARTER_PERSISTENT_STORAGE_NOT_PERMITTED: no live free-tier collector. Use explicitly licensed non-Tiingo original sources.")
     if personal_rights_ack is not True:
         raise ValueError("Explicit personal-use Tiingo terms acceptance is required")
     if identity_review_ack is not True:
