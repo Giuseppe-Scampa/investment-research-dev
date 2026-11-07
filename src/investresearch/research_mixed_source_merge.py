@@ -1,6 +1,6 @@
 """R-004/R-005/M3: local mixed US/Europe source manifest composer.
 
-Combines separately acquired original Tiingo US and FWB Xetra private files.
+Combines separately acquired original Tiingo US, FWB Xetra, and Euronext Milan/Paris private files.
 No market feed, scraping, remote fetch, licence certification, implied foreign
 exchange, paid subscription, issuer discovery, or fake ranking. All source
 bytes, identities and documented use rights are checked BEFORE output write.
@@ -17,6 +17,9 @@ from .quality import valid_isin
 from .research_bundle import EXTERNAL
 from .research_fwb_local import (
     PROVIDER as FWB, normalize_private_fwb,
+)
+from .research_euronext_local import (
+    PROVIDER as EURONEXT, normalize_private_euronext,
 )
 from .research_tiingo_local import (
     PROVIDER as TIINGO, normalize_private_tiingo, MAX_BYTES as TIINGO_MAX,
@@ -64,8 +67,8 @@ def _original(asset, as_of, *, root):
             or asset.get("oil_exposure") not in ALLOWED_OIL):
         raise ValueError("Original security identity/type/exposure is missing or invalid")
     src = asset.get("prices_source")
-    if not isinstance(src,dict) or src.get("provider") not in (TIINGO, FWB):
-        raise ValueError("Mixed intake accepts only Tiingo Personal or manual FWB original history")
+    if not isinstance(src,dict) or src.get("provider") not in (TIINGO, FWB, EURONEXT):
+        raise ValueError("Mixed intake accepts only Tiingo Personal, FWB or original Euronext history")
     original_path = _private(src.get("path"),root)
     provider=src["provider"]
     raw=_file(original_path, TIINGO_MAX if provider==TIINGO else MAX_FWB_BYTES)
@@ -79,11 +82,13 @@ def _original(asset, as_of, *, root):
             src,raw,as_of,asset,repo_root=root)
     else:
         if asset.get("asset_type")=="ETF_LEGAL_STATUS_UNVERIFIED":
-            # A European ETF must have its legal/tax status reviewed
-            # separately rather than inheriting a US source placeholder.
-            raise ValueError("FWB asset legal type must be explicit")
-        normalized,info=normalize_private_fwb(
-            src,raw,as_of,asset,repo_root=root)
+            raise ValueError("European ETF legal class must be explicit")
+        if provider==FWB:
+            normalized,info=normalize_private_fwb(
+                src,raw,as_of,asset,repo_root=root)
+        else:
+            normalized,info=normalize_private_euronext(
+                src,raw,as_of,asset,repo_root=root)
     if len(normalized)<61:
         raise ValueError("Mixed source has fewer than 61 original dated sessions")
     return {
