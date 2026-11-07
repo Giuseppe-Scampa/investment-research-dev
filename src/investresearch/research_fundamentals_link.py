@@ -134,7 +134,8 @@ def build_fundamental_links(screening, links, *, sec_report=None, eu_report=None
                     or not isinstance(original.get("source_sha256"),str)
                     or not SHA.fullmatch(original["source_sha256"])
                     or not isinstance(original.get("source_url"),str)
-                    or not original["source_url"].startswith("https://data.sec.gov/api/xbrl/companyfacts/")):
+                    or original["source_url"]!=
+                       "https://data.sec.gov/api/xbrl/companyfacts/CIK"+key[1]+".json"):
                 raise ValueError("SEC identity, venue, source or freshness not reviewable")
             published=_date(original.get("filing_date"),cutoff)
             period=_date(original.get("period_end"),published)
@@ -161,7 +162,9 @@ def build_fundamental_links(screening, links, *, sec_report=None, eu_report=None
             if (original.get("isin")!=row["isin"]
                     or not isinstance(original.get("document_sha256"),str)
                     or not SHA.fullmatch(original["document_sha256"])
-                    or original.get("format") not in ("ESEF_XHTML","ESEF_ZIP","ANNUAL_PDF")):
+                    or original.get("format") not in ("ESEF_XHTML","ESEF_ZIP","ANNUAL_PDF")
+                    or not isinstance(original.get("source_url_declared"),str)
+                    or not original["source_url_declared"].startswith("https://")):
                 raise ValueError("Original ESEF/PDF issuer identity or checksum missing")
             published=_date(original.get("published_date_declared"),cutoff)
             period=_date(original.get("fiscal_year_end"),published)
