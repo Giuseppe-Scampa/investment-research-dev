@@ -88,9 +88,9 @@ def generate(root):
             "venue":"XNAS","currency":"USD",
         },
     }
-    milano=("Trading date;Last;Quantity\\n"+"\\n".join(
+    milano=("Trading date;Last;Quantity\n"+"\n".join(
         f"{d:%d/%m/%Y};{90+i//8},{i%10};1.000,0"
-        for i,d in enumerate(mil_days))+"\\n").encode("utf-8-sig")
+        for i,d in enumerate(mil_days))+"\n").encode("utf-8-sig")
     milano_file=dest/"SYNTHETIC_EURONEXT_MILAN_NOT_MARKET_DATA.csv"
     milano_file.write_bytes(milano)
     mil={
