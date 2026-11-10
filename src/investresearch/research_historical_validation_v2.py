@@ -53,7 +53,7 @@ def preregistered_anchors(venues,policy=None):
     schedule=p["cohort"]
     first=date.fromisoformat(schedule["first_decision_date"])
     last=date.fromisoformat(schedule["last_decision_date"])
-    if not venues or len(venues)>5:
+    if not venues or len(set(venues))>5:
         raise ValueError("Invalid V2 venue basket")
     # Materialise version-pinned calendars once per venue.
     valid={v:set(dates_v2(date(2020,1,1),date(2026,12,31),v))
