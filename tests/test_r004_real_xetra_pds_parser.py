@@ -1,6 +1,7 @@
 """No raw market data in repository: validate PDS schema with fictional rows."""
 import pytest
-from tools.probe_public_xetra_pds_historical import strict_probe
+import runpy
+strict_probe=runpy.run_path("tools/probe_public_xetra_pds_historical.py")["strict_probe"]
 
 
 def payload():
