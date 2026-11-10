@@ -27,6 +27,12 @@ def main(argv=None):
     discovery.add_argument('--sec-raw',type=Path,default=None)
     discovery.add_argument('--sec-meta',type=Path,default=None)
     discovery.add_argument('--max-age-sessions',type=int,default=1)
+    v2=sp.add_parser('historical-validation-v2',
+        help='Multi-year 2022–2026 V2 preregistered paper research, NOT a trading signal')
+    v2.add_argument('--bundle',type=Path,required=True,
+                    help='Original previously authorized private B bundle; NEVER Tiingo Starter')
+    v2.add_argument('--output',type=Path,required=True,
+                    help='NEW private research result under data/private')
     backtest=sp.add_parser('historical-validation',
         help='PRE-REGISTERED historical falsification: B score vs cash/universe/10000 random; not a forecast')
     backtest.add_argument('--bundle',type=Path,required=True,
@@ -248,6 +254,13 @@ def main(argv=None):
         print(f"R-006 coverage: {report['source_screened_universe_count']} source-bundle candidates, "
               f"{report['source_ranked_count']} ranked, {report['reference_catalog_count']} original independent catalogs, "
               "NO market data inferred from listings")
+    elif args.command=='historical-validation-v2':
+        from .research_historical_v2 import validate_v2
+        from .research_historical_validation import write_backtest
+        report=validate_v2(args.bundle)
+        write_backtest(report,args.output,repo_root=ROOT)
+        print("V2 research:",report["folds_count"],"complete independent folds;",
+              "no source right/corporate action validation, no trades")
     elif args.command=='historical-validation':
         from .research_historical_validation import validate_historical,write_backtest
         report=validate_historical(args.bundle)
