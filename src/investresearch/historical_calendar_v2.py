@@ -24,7 +24,7 @@ def _calendar(venue):
         raise ValueError("V2 needs explicitly pinned exchange_calendars==4.13.1") from None
     if xcals.__version__!=LIB_VERSION:
         raise ValueError("V2 exchange calendar version changed; compare/approve new release before running")
-    return xcals.get_calendar(venue,start="2020-01-01",end="2026-12-31")
+    return xcals.get_calendar(venue,start="2019-12-20",end="2027-01-05")
 
 
 def session_v2(day: date,venue: str)->bool:
