@@ -32,7 +32,7 @@ class NoRedirect(HTTPRedirectHandler):
 def strict_probe(payload: bytes,expected_day:str) -> dict:
     if not isinstance(payload,bytes) or not 0<len(payload)<=MAX_BYTES:
         raise ValueError("PDS original minute source missing/oversized")
-    if b"\\0" in payload:
+    if b"\0" in payload:
         raise ValueError("PDS original source is not plain CSV")
     raw=payload.decode("utf-8-sig")
     reader=csv.DictReader(io.StringIO(raw))
