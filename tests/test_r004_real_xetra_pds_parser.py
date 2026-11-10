@@ -4,9 +4,9 @@ from tools.probe_public_xetra_pds_historical import strict_probe
 
 
 def payload():
-    return ("ISIN,Date,Time,StartPrice,MaxPrice,MinPrice,EndPrice,TradedVolume,Currency\\n"
-            "DE0005810055,2019-04-18,14:00:00,100.0,101.0,99.0,100.5,200,EUR\\n"
-            "DE000BASF111,2019-04-18,14:01:00,60.0,60.0,59.0,59.8,100,EUR\\n").encode()
+    return ("ISIN,Date,Time,StartPrice,MaxPrice,MinPrice,EndPrice,TradedVolume,Currency\n"
+            "DE0005810055,2019-04-18,14:00:00,100.0,101.0,99.0,100.5,200,EUR\n"
+            "DE000BASF111,2019-04-18,14:01:00,60.0,60.0,59.0,59.8,100,EUR\n").encode()
 
 
 def test_public_source_parser_never_exports_raw_prices():
