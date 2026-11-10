@@ -33,6 +33,16 @@ def main(argv=None):
                           help='Original B bundle of authorized dated prices; never free Tiingo Starter')
     backtest.add_argument('--output',type=Path,required=True,
                           help='New result file ONLY under B/data/private')
+    v2=sp.add_parser('historical-validation-v2',
+        help='V2 registered 2021-26 research-only walk forward; needs audited original adjusted source')
+    v2.add_argument('--bundle',type=Path,required=True)
+    v2.add_argument('--output',type=Path,required=True,
+                    help='New report under a local ignored data/private path only')
+    null=sp.add_parser('null-calibration-v2',
+        help='Run 1000 preregistered simulated no-alpha worlds, never real prices')
+    null.add_argument('--worlds',type=int,default=1000)
+    null.add_argument('--output',type=Path,required=True,
+                      help='New aggregate-only result under data/private')
     funnel=sp.add_parser('funnel',help='R-007 offline funnel: broad screened universe to evidence review queue')
     funnel.add_argument('--bundle',type=Path,required=True,help='Source checked Block B bundle, not an arbitrary rank CSV')
     funnel.add_argument('--output',type=Path,required=True,help='External data inside repo only in data/private/')
@@ -246,6 +256,24 @@ def main(argv=None):
               f"{report['folds_evaluable']} non-overlapping folds, "
               f"{report['random_portfolio_trials']} random trials; "
               f"{report['status']}; predictive edge NEVER certified, no trades")
+    elif args.command=='historical-validation-v2':
+        from .research_historical_validation_v2 import evaluate_v2
+        from .research_historical_validation import write_backtest
+        result=evaluate_v2(args.bundle)
+        write_backtest(result,args.output,repo_root=ROOT)
+        print("V2 prerecorded actual-source status:",result["status"],
+              "folds:",result["complete_nonoverlapping_folds"],
+              "random trials:",result["random_portfolio_trials"],
+              "trade_ready=False; predictive_edge_certified=False")
+    elif args.command=='null-calibration-v2':
+        from .research_negative_control_v2 import run_null_worlds
+        from .research_historical_validation import write_backtest
+        report=run_null_worlds(worlds=args.worlds)
+        write_backtest(report,args.output,repo_root=ROOT)
+        print("V2 random-walk calibration:",report["worlds_completed"],
+              "worlds, false positive rate:",report["false_positive_rate_observed"],
+              "upper 95%:",report["false_positive_rate_Wilson95_upper"],
+              "calibrated:",report["null_calibration_passed"])
     elif args.command=='funnel':
         from .research_funnel import build_funnel, write_funnel
         if args.max_age_sessions not in (0,1,2,3,4,5):
