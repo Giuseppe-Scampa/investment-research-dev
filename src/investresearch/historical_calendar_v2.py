@@ -6,6 +6,7 @@ auditable third-party exchange calendar MODEL, not official exchange proof.
 from __future__ import annotations
 
 from datetime import date
+from functools import lru_cache
 
 LIB_VERSION="4.13.1"
 VENUES=frozenset({"XNYS","XNAS","XMIL","XPAR","XETR"})
@@ -13,17 +14,23 @@ START=date(2020,1,1)
 END=date(2026,12,31)
 
 
-def session_v2(day: date,venue: str)->bool:
-    if not isinstance(day,date) or not START<=day<=END or venue not in VENUES:
-        raise ValueError("V2 calendar unknown venue or outside independently tested 2020–2026 window")
+@lru_cache(maxsize=5)
+def _calendar(venue):
+    if venue not in VENUES:
+        raise ValueError("Unsupported V2 historical exchange venue")
     try:
         import exchange_calendars as xcals
     except ImportError:
         raise ValueError("V2 needs explicitly pinned exchange_calendars==4.13.1") from None
     if xcals.__version__!=LIB_VERSION:
         raise ValueError("V2 exchange calendar version changed; compare/approve new release before running")
-    cal=xcals.get_calendar(venue,start="2020-01-01",end="2026-12-31")
-    return bool(cal.is_session(day.isoformat()))
+    return xcals.get_calendar(venue,start="2020-01-01",end="2026-12-31")
+
+
+def session_v2(day: date,venue: str)->bool:
+    if not isinstance(day,date) or not START<=day<=END:
+        raise ValueError("V2 calendar outside independently tested 2020–2026 window")
+    return bool(_calendar(venue).is_session(day.isoformat()))
 
 
 def dates_v2(start: date,end: date,venue: str)->tuple[str,...]:
@@ -31,11 +38,5 @@ def dates_v2(start: date,end: date,venue: str)->tuple[str,...]:
     if (not isinstance(start,date) or not isinstance(end,date) or
             start<START or end>END or start>end or venue not in VENUES):
         raise ValueError("V2 calendar date range or venue not supported")
-    try:
-        import exchange_calendars as xcals
-    except ImportError:
-        raise ValueError("V2 needs exchange_calendars==4.13.1") from None
-    if xcals.__version__!=LIB_VERSION:
-        raise ValueError("V2 historical calendar package is unpinned")
-    cal=xcals.get_calendar(venue,start="2020-01-01",end="2026-12-31")
-    return tuple(str(day.date()) for day in cal.sessions_in_range(start.isoformat(),end.isoformat()))
+    return tuple(str(day.date()) for day in
+                 _calendar(venue).sessions_in_range(start.isoformat(),end.isoformat()))
