@@ -33,7 +33,7 @@ from investresearch.research_sources import parse_ecb
 POLICY=Path(__file__).resolve().parents[1]/"config/backtest/v3_secondary_real_history_pilot_2026-11-10.json"
 MAX_PRICE_BYTES=110_000_000
 MAX_REF_BYTES=300_000
-MAX_ECB_BYTES=2_000_000
+MAX_ECB_BYTES=12_000_000
 MIN_ANCHORS_FOR_DESCRIPTIVE=3
 
 
@@ -270,7 +270,18 @@ def main():
         fx=_fetch(policy["source_fx"],MAX_ECB_BYTES)
         result=evaluate_secondary_pilot(p,c,fx)
     except (ValueError,HTTPError,URLError,OSError,TimeoutError) as exc:
-        print("REAL_PILOT_UNAVAILABLE_OR_BLOCKED",type(exc).__name__)
+        # Fixed allowlisted diagnostics only, never echo raw vendor price,
+        # ticker, response body, credentials or a sensitive source path.
+        allowed={
+            "Original research input missing or exceeds bounded source size":"SOURCE_SIZE_OR_EMPTY",
+            "Source current-constituent reference header changed":"COMPANY_REFERENCE_SCHEMA",
+            "Fixed research cohort cannot be formed from membership source":"COHORT_MEMBERSHIP",
+            "Original multi-year price source SHA changed: MUST preregister new data-vintage study":"PRICE_VINTAGE",
+            "Real historical source schema drift":"PRICE_COLUMNS",
+            "V2 input must be small bounded original or synthetic bundle without hindsight events":"UNIVERSE_MODE",
+        }
+        detail=allowed.get(str(exc),"INPUT_SOURCE_OR_CROSSMARKET_VALIDATION")
+        print("REAL_PILOT_UNAVAILABLE_OR_BLOCKED",type(exc).__name__,detail)
         raise SystemExit(2) from None
     # Strictly descriptive aggregate output; raw original prices, tickers,
     # individual investment returns, personal holdings never published.
