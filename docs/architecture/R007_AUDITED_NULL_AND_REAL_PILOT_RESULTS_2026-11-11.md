@@ -80,3 +80,33 @@ private A. No automatic recommendations, margin/risk approval, or trading.
 
 Evidence as-of 2026-11-11; record is a reproducible diagnostic, not a
 new protocol preregistration.
+
+
+## 11 November software-only follow-up: paired same-K excess
+
+The original frozen V2 protocol and its acceptance calculations remain intact.
+A newly added **exploratory** diagnostic measures each fold's TOP2 return
+against the *exact expected net return* of a random two-leg strategy, with
+the same EUR 10,000 notional, identical per-leg minimum commissions and
+USD FX assumptions. Unlike N-leg equal weighting this does not mechanically
+charge the comparator many more minimum tickets. A separate 10,000-draw
+whole-fold bootstrap produces an exploratory 95% CI for the paired difference.
+
+New machine-readable names:
+- `folds[].same_K_random_expected_net`
+- `folds[].same_K_excess_net`
+- `same_K_expected_random_net_mean`
+- `same_K_excess_net_mean`
+- `same_K_excess_paired_bootstrap_ci_95_EXPLORATORY`
+
+The existing Monte-Carlo same-K percentile and sampled expectation remain
+separate because they have simulation noise. Private A independently replays
+the exact paired fold arithmetic and deterministic bootstrap, and rejects
+altered source-linked results. **None** of these descriptive measures is
+promoted to predictive-edge certification or market readiness.
+
+The 2026-11-10 actual-price source SHA has since changed at its daily-updated
+upstream endpoint. Under the original preregistration, the old real pilot
+must NOT be silently rerun on new bytes to manufacture paired statistics.
+The new diagnostic fields exist in code and synthetic test results only
+until a new prospective, license-suitable original input study is frozen.
