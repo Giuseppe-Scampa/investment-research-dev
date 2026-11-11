@@ -292,6 +292,8 @@ def evaluate_v2(bundle,*,settings=None):
         "confidence_interval_95_ic":ic_ci,
         "random_portfolio_trials":len(random_pool),
         "random_percentile":round(rank_pct,6) if rank_pct is not None else None,
+        "equal_cost_two_leg_random_mean_net":round(mean(random_pool),8) if random_pool else None,
+        "selected_minus_equal_cost_two_leg_random":round(observed-mean(random_pool),8) if random_pool else None,
         "minimum_fold_and_universe_power_met":enough,
         "statistical_diagnostic_gate_without_null_control":diagnostics,
         "random_walk_false_positive_rate_calibrated":False,
