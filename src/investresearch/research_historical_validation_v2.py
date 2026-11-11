@@ -228,6 +228,9 @@ def evaluate_v2(bundle,*,settings=None):
             univ.append(q["net"])
         picked=mean(sample_at_k[c["id"]]["net"] for c in chosen)
         rejected_strategy=mean(sample_at_k[c["id"]]["net"] for c in inverse)
+        # Exact expectation of a uniformly sampled K=2 portfolio using
+        # the identical K-leg costs, BEFORE Monte Carlo sampling noise.
+        fair_k_expected=mean(q["net"] for q in sample_at_k.values())
         benchmark=mean(univ)
         ic=_spearman([c["score"] for c in ranked],
                      [sample_at_k[c["id"]]["gross"] for c in ranked])
@@ -241,6 +244,8 @@ def evaluate_v2(bundle,*,settings=None):
             "bottom_net":round(rejected_strategy,8),
             "universe_net":round(benchmark,8),
             "excess":round(picked-benchmark,8),
+            "same_K_random_expected_net":round(fair_k_expected,8),
+            "same_K_excess_net":round(picked-fair_k_expected,8),
             "ic":round(ic,8) if ic is not None else None,
             "max_drawdown":round(_dd([sample_at_k[c["id"]]["curve"] for c in chosen]),8),
             "selection_above_median_rate":round(mean(
@@ -262,6 +267,10 @@ def evaluate_v2(bundle,*,settings=None):
     observed=mean(f["selected_net"] for f in fold_results) if fold_results else None
     rank_pct=(sum(x<observed for x in random_pool)/len(random_pool)) if random_pool else None
     excess_ci,ic_ci=_bootstrap(fold_results,policy)
+    # Exploratory paired-fold bootstrap for identical K=2 cost burden;
+    # it does NOT retroactively redefine the preregistered N-leg V2 test.
+    fair_k_ci,_=_bootstrap([{"excess":f["same_K_excess_net"],"ic":f["ic"]}
+                            for f in fold_results],policy)
     enough=(len(fold_results)>=policy["cohort"]["minimum_independent_folds_for_predictive_evidence"]
             and all(f["eligible"]>=policy["cohort"]["minimum_eligible_instruments"] for f in fold_results))
     diagnostics=bool(enough and excess_ci and ic_ci and
@@ -294,6 +303,11 @@ def evaluate_v2(bundle,*,settings=None):
         "random_percentile":round(rank_pct,6) if rank_pct is not None else None,
         "equal_cost_two_leg_random_mean_net":round(mean(random_pool),8) if random_pool else None,
         "selected_minus_equal_cost_two_leg_random":round(observed-mean(random_pool),8) if random_pool else None,
+        "same_K_expected_random_net_mean":round(
+            mean(f["same_K_random_expected_net"] for f in fold_results),8) if fold_results else None,
+        "same_K_excess_net_mean":round(
+            mean(f["same_K_excess_net"] for f in fold_results),8) if fold_results else None,
+        "same_K_excess_paired_bootstrap_ci_95_EXPLORATORY":fair_k_ci,
         "minimum_fold_and_universe_power_met":enough,
         "statistical_diagnostic_gate_without_null_control":diagnostics,
         "random_walk_false_positive_rate_calibrated":False,
