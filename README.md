@@ -201,3 +201,24 @@ a modelli a pagamento, nessun retry, nessuna chiamata pianificata.
 Per le istruzioni CLI locali, i modelli consentiti, le condizioni privacy
 e i limiti della verifica costi: [R-009 AI counteranalysis](docs/architecture/R009_AI_COUNTERANALYSIS.md).
 
+
+## Registered V3 successor — matched-K retrospective validation (11 November 2026)
+
+The newly frozen V3 evaluation protocol does **not** replace the original
+V1/V2 baselines. It fixes the documented artificial advantage of the
+30-position benchmark by making the **exact expected return of an equally
+costed K=2 random portfolio** the primary comparison. Any matured, as-of
+eligible member with unresolved future prices blocks statistical acceptance;
+source vintages and future memberships cannot be silently selected away.
+
+`investresearch-b historical-validation-v3 --bundle data/private/<existing-original-bundle> --output data/private/<new-report>.json`
+runs strictly offline with the V3 protocol hash fixed. The separate 1,000
+no-alpha-world test is
+`investresearch-b null-calibration-v3 --worlds 1000 --output data/private/<new-null-report>.json`.
+All generated source-linked reports belong ONLY in an ignored private
+directory, never in Git history or public CI artifacts.
+
+[Complete V3 protocol, limitations, source-rights and calibration evidence](docs/architecture/R007_SUCCESSOR_V3_SAME_K_MISSINGNESS_2026-11-11.md).
+The full synthetic null calibration found 4/1000 false joint-gate passes,
+but **no genuine market predictive advantage, tax eligibility or trade
+execution has been certified**.
