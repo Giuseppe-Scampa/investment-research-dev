@@ -37,7 +37,7 @@ BASELINE_DATE="2021-07-01"
 
 def parse_mit_member_intervals(payload:bytes):
     if (len(payload)>1_000_000 or not payload
-            or hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\\x00"+payload).hexdigest()
+            or hashlib.sha1(b"blob "+str(len(payload)).encode()+b"\x00"+payload).hexdigest()
                !=MIT_PIT_GIT_BLOB):
         raise ValueError("Original public MIT PIT membership source changed")
     rows=csv.DictReader(io.StringIO(payload.decode("utf-8-sig")))
