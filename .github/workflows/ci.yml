@@ -6,6 +6,12 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# A source-audit series can create many superseded PR and push jobs. Keep
+# full validation on each NEW final head, but do not let obsolete running
+# 1,000-world simulations delay the newest head's CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   check:
     runs-on: ubuntu-latest
