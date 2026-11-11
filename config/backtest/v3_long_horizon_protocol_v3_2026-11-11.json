@@ -1,0 +1,148 @@
+{
+  "schema_version": "v3-historical-evaluation-protocol-v3",
+  "registered_on": "2026-11-11",
+  "change_control": "NEW_SUCCESSOR_PREREGISTERED_AFTER_KNOWN_V2_FEE_BIAS; V1_V2_IMMUTABLE",
+  "pre_registration_status": "REGISTERED_BEFORE_NEW_V3_OUTCOME_EXECUTION; PRIOR_V2_PILOT_AND_SYNTHETIC_RESULTS_ARE_NOT_UNSEEN_EVIDENCE",
+  "purpose": "TEST_SAME_K_EXACT_RANDOM_EXPECTED_NET_EXCESS_WITH_EX_ANTE_FOLDS_AND_NO_MISSING_FUTURE_SELECTION",
+  "no_model_retuning": true,
+  "calendar": {
+    "library": "exchange_calendars",
+    "required_version": "4.13.1",
+    "allowed_venues": [
+      "XNYS",
+      "XNAS",
+      "XMIL",
+      "XPAR",
+      "XETR"
+    ],
+    "first_supported_session": "2020-01-01",
+    "last_supported_session": "2026-12-31",
+    "historical_closed_days_are_library_model_not_EXCHANGE_ATTESTATION": true
+  },
+  "cohort": {
+    "first_decision_date": "2021-07-01",
+    "last_decision_date": "2026-05-31",
+    "decision_step_calendar_days": 49,
+    "max_anchor_rollback_calendar_days": 10,
+    "minimum_price_training_sessions": 61,
+    "forward_return_intervals": 30,
+    "entry_after_decision_exchange_sessions": 1,
+    "universe_membership_policy": "REQUIRE_POINT_IN_TIME_LISTING_DATE_DELISTING_DATE_AND_SOURCE_VINTAGE_OR_NONCERTIFIED",
+    "delisted_and_missing_future_policy": "AS_OF_COHORT_FROZEN_BEFORE_OUTCOME; ANY_UNRESOLVED_MATURED_MEMBER_BLOCKS_STATISTICAL_PASS; NO_POSTHOC_ASSET_OR_FOLD_DROPPING",
+    "minimum_eligible_instruments": 20,
+    "minimum_independent_folds_for_predictive_evidence": 30,
+    "asset_types": [
+      "EQUITY",
+      "ETF_UCITS",
+      "ETC",
+      "ETN"
+    ],
+    "require_corporate_action_and_currency_reconciliation": true,
+    "exclude_unsupported_payoffs": true
+  },
+  "score": {
+    "formula": "EXISTING_BLOCK_B_SCORE_INDICATORS_AND_MARKET_SCORE",
+    "weights_frozen": {
+      "momentum_20": 0.3,
+      "momentum_60": 0.2,
+      "volatility_20": 0.2,
+      "drawdown_60": 0.15,
+      "turnover_20": 0.15
+    },
+    "feature_cutoff": "T_OR_EARLIER_ONLY",
+    "no_future_filing_data": true,
+    "no_training_or_tuning_on_evaluation_data": true
+  },
+  "comparisons": {
+    "selected_top_k": 2,
+    "contrarian_bottom_k": 2,
+    "primary_benchmark": "EXACT_EXPECTED_RANDOM_K_PORTFOLIO_NET_SAME_INSTRUMENTS_SAME_COSTS",
+    "secondary_benchmark": "ZERO_RETURN_CASH",
+    "random_portfolios": 10000,
+    "random_seed": 20261115,
+    "random_control": "SAME_AS_OF_POOL_SAME_NUMBER_OF_POSITIONS_AND_SAME_COST",
+    "negative_control_random_walk_worlds": 1000,
+    "negative_control_random_walk_assets": 30,
+    "negative_control_random_walk_folds": 30,
+    "negative_control_seed": 20261116,
+    "negative_control_target_false_positive_rate": 0.05,
+    "descriptive_benchmark": "EQUAL_WEIGHT_N_LEG_WITH_DISTINCT_MINIMUM_COMMISSION_NOT_ALPHA"
+  },
+  "costs": {
+    "notional_eur": 10000,
+    "commission_fraction_each_side": 0.0019,
+    "minimum_commission_eur_each_side": 7,
+    "usd_fx_fraction_each_side": 0.0025,
+    "slippage_spread_eur_bps_scenarios": [
+      0,
+      10,
+      25,
+      50
+    ],
+    "transaction_tax_only_when_isin_and_venue_evidence_verified": true,
+    "italian_income_tax_and_minusvalenze": "ONLY_IN_PRIVATE_A_WITH_BROKER_STATEMENTS"
+  },
+  "statistics": {
+    "primary_metric": "MEAN_COMPLETE_FOLD_SELECTED_EXCESS_NET_VS_EXACT_SAME_K_RANDOM_EXPECTATION",
+    "secondary_metrics": [
+      "SPEARMAN_RANK_IC",
+      "BOTTOM2_MINUS_TOP2",
+      "MAX_DRAWDOWN",
+      "WIN_RATE_ABOVE_ELIGIBLE_MEDIAN"
+    ],
+    "bootstrap_unit": "COMPLETE_NON_OVERLAPPING_FOLD",
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20261117,
+    "confidence_level": 0.95,
+    "require_excess_bootstrap_lower_bound_positive": true,
+    "require_ic_bootstrap_lower_bound_positive": true,
+    "random_portfolio_percentile_at_least": 0.9,
+    "require_top2_outperform_bottom2": true,
+    "require_negative_control_false_positive_rate_at_most": 0.05,
+    "do_not_infer_actual_predictive_edge_from_retrospective_lookback_data": true,
+    "require_zero_unresolved_matured_as_of_cohorts": true,
+    "require_null_calibration_before_statistical_pass": true,
+    "primary_metric_must_not_fall_back_to_N_leg": true
+  },
+  "power_calibration": {
+    "pre_run_simulation_effect_sizes_IC": [
+      0,
+      0.025,
+      0.05,
+      0.1
+    ],
+    "nominal_alpha": 0.05,
+    "target_power": 0.8,
+    "independent_fold_IC_standard_error_approximation": "1/sqrt(number_of_assets-1); multiply by 1/sqrt(independent_folds)",
+    "power_result_is_simulation_only_not_market_evidence": true
+  },
+  "release_gate": {
+    "never_trade": true,
+    "report_source_rights_and_original_vintage": true,
+    "report_survivorship_and_hindsight_universe_bias": true,
+    "no_predictive_certification_without_prospective_ledger": true,
+    "no_public_raw_price_or_personal_data_artifacts": true,
+    "matured_unresolved_outcomes_block_all_positive_statistical_claims": true,
+    "only_new_prospective_data_can_support_predictive_certification": true
+  },
+  "missing_outcomes": {
+    "eligibility_freeze": "ALL_AS_OF_ELIGIBLE_LISTINGS_BEFORE_FUTURE_PRICE_ACCESS",
+    "maturity": "ENTRY_PLUS_30_COMPLETE_EXCHANGE_SESSIONS_FOR_EACH_ELIGIBLE_LISTING_ON_ALL_REQUIRED_VENUES_BY_AS_OF_DATE",
+    "pending": "NOT_YET_MATURED_ANCHOR_REPORTED_SEPARATELY_NOT_STATISTICALLY_SCORED",
+    "outcome_unresolved": "MATURED_AS_OF_ELIGIBLE_MISSING_ANY_REQUIRED_FUTURE_SESSION_OR_UNRESOLVED_CORPORATE_ACTION",
+    "unresolved_matured_policy": "BLOCK_PRIMARY_STATISTICAL_GATE_AND_FLAG_CENSORED_COMPLETE_CASE_STATISTICS_ONLY",
+    "verified_delisting_cashflow": "REQUIRES_LICENSED_PIT_TERMINAL_SETTLEMENT_PRICE_AND_AUDITED_EFFECTIVE_DATE; NOT_IMPLEMENTED_FAIL_CLOSED",
+    "missing_asset_policy": "DO_NOT_DROP; NEVER_IMPUTE_ZERO_OR_LAST_PRICE; NEVER_REPLACE_WITH_NEXT_WINNER",
+    "no_conditioning_on_outcome_completeness": true,
+    "scheduled_folds": "DETERMINED_EX_ANTE_BY_CALENDAR_NOT_BY_PAST_SUCCESS_OR_FUTURE_AVAILABILITY",
+    "risk_gate": "NO_ALPHA_CLAIM_IF_ANY_MATURED_FUTURE_OUTCOME_UNRESOLVED",
+    "report": "EXPLICIT_PER_ANCHOR_AS_OF_SELECTED_IDS_MISSING_IDS_COUNTS_AND_MATURITY"
+  },
+  "reporting": {
+    "preregistered_after_prior_v2_outcomes": true,
+    "v2_known_pilot_reused_for_confirmatory_claim": false,
+    "licensed_provider_PIT_and_CA_review_required": true,
+    "never_expose_private_market_csv_in_public_artifact": true,
+    "no_predictive_claim_without_new_external_verified_prospective_records": true
+  }
+}
