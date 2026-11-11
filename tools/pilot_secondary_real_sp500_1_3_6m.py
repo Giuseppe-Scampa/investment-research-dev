@@ -37,6 +37,14 @@ MAX_PRICE_BYTES=110_000_000
 MAX_REF_BYTES=300_000
 MAX_FX_BYTES=12_000_000
 SCHEMA="AETHEREAL_REAL_SOURCE_EXPLORATORY_1_3_6M_V1"
+# Exact ORIGINAL source-vintage digests observed in the first genuine
+# educational run BEFORE this post-evidence replay guard was added.
+# This is provenance freeze, NOT a changed strategy or outcome threshold.
+FIRST_OBSERVED_SOURCE_SHA256={
+    "prices":"6480d9c288ae7521a6a44dbb75786cbec3a62149bcfaecc263999290fa30d020",
+    "members":"853f2fe3c4b126b6b251dbc7c81510de22c17167f2c0e646212e38e1cc45420f",
+    "ecb":"e00ae31dccd722aa1edb5970252f82641c70a0c873e3a0556554259336043af1",
+}
 
 
 def source_policy():
@@ -234,6 +242,15 @@ def main():
         original_price=previous_source._fetch(paths["prices"],MAX_PRICE_BYTES)
         original_members=previous_source._fetch(paths["current_membership"],MAX_REF_BYTES)
         original_fx=previous_source._fetch(paths["ecb_fx"],MAX_FX_BYTES)
+        observed={
+            "prices":hashlib.sha256(original_price).hexdigest(),
+            "members":hashlib.sha256(original_members).hexdigest(),
+            "ecb":hashlib.sha256(original_fx).hexdigest(),
+        }
+        if observed!=FIRST_OBSERVED_SOURCE_SHA256:
+            print("PREREGISTERED_REAL_1_3_6M_ORIGINAL_SOURCE_VINTAGE_CHANGED;"
+                  " NO_NEW_RETROSPECTIVE_OUTCOMES")
+            return 3
         answer=evaluate_secondary_real(original_price,original_members,original_fx)
     except (OSError,ValueError,TimeoutError,UnicodeError,KeyError,
             previous_source.HTTPError,previous_source.URLError) as exc:
