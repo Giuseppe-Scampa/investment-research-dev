@@ -197,6 +197,7 @@ def evaluate_secondary_pilot(raw_prices:bytes,raw_ref:bytes,raw_ecb:bytes):
         top=ranked[:2];bottom=ranked[-2:]
         top_return=mean(results[x["id"]]["net"] for x in top)
         bottom_return=mean(results[x["id"]]["net"] for x in bottom)
+        same_k_expected=mean(q["net"] for q in results.values())
         universe=mean(all_n)
         ic=_spearman([x["score"] for x in ranked],
                      [results[x["id"]]["gross"] for x in ranked])
@@ -210,6 +211,8 @@ def evaluate_secondary_pilot(raw_prices:bytes,raw_ref:bytes,raw_ecb:bytes):
             "bottom_net":round(bottom_return,8),
             "universe_net":round(universe,8),
             "excess":round(top_return-universe,8),
+            "same_K_random_expected_net":round(same_k_expected,8),
+            "same_K_excess_net":round(top_return-same_k_expected,8),
             "ic":round(ic,8) if ic is not None else None,
             "_net_by_k":{x:results[x]["net"] for x in results},
         })
@@ -221,6 +224,8 @@ def evaluate_secondary_pilot(raw_prices:bytes,raw_ref:bytes,raw_ecb:bytes):
     observed=mean(f["selected_net"] for f in folds) if folds else None
     percentile=(sum(x<observed for x in random_means)/len(random_means)) if folds else None
     excess_ci,ic_ci=_bootstrap(folds,protocol)
+    fair_k_ci,_=_bootstrap([{"excess":f["same_K_excess_net"],"ic":f["ic"]}
+                           for f in folds],protocol)
     for f in folds:
         del f["_net_by_k"]
     return {
@@ -250,6 +255,11 @@ def evaluate_secondary_pilot(raw_prices:bytes,raw_ref:bytes,raw_ecb:bytes):
         "rank_vs_random_percentile":round(percentile,6) if percentile is not None else None,
         "mean_equal_cost_two_stock_random_net":round(mean(random_means),8) if random_means else None,
         "selected_minus_equal_cost_two_stock_random":round(observed-mean(random_means),8) if random_means else None,
+        "same_K_expected_random_net_mean":round(
+            mean(f["same_K_random_expected_net"] for f in folds),8) if folds else None,
+        "same_K_excess_net_mean":round(
+            mean(f["same_K_excess_net"] for f in folds),8) if folds else None,
+        "same_K_excess_paired_bootstrap_ci_95_EXPLORATORY":fair_k_ci,
         "survivorship_bias":"SEVERE_CURRENT_2026_MEMBERS_BACKFILLED_TO_2021",
         "original_price_point_in_time_versioning":False,
         "original_source_adjustment_validated_independently":False,
