@@ -38,6 +38,11 @@ def main(argv=None):
     v2.add_argument('--bundle',type=Path,required=True)
     v2.add_argument('--output',type=Path,required=True,
                     help='New report under a local ignored data/private path only')
+    period=sp.add_parser('historical-1-3-6m',
+        help='NEW 1/3/6 calendar-month ex-ante as-of replay; ORIGINAL score, fee-matched K, no trading')
+    period.add_argument('--bundle',type=Path,required=True)
+    period.add_argument('--output',type=Path,required=True,
+                        help='Unused private original 1/3/6-month validation report path')
     v3=sp.add_parser('historical-validation-v3',
         help='PRE-REGISTERED V3 primary same-K and matured missing-outcome fail-closed; NEVER trade')
     v3.add_argument('--bundle',type=Path,required=True)
@@ -275,6 +280,19 @@ def main(argv=None):
               "folds:",result["complete_nonoverlapping_folds"],
               "random trials:",result["random_portfolio_trials"],
               "trade_ready=False; predictive_edge_certified=False")
+    elif args.command=='historical-1-3-6m':
+        from .research_historical_1_3_6m import evaluate_historical_1_3_6
+        from .research_historical_validation import write_backtest
+        result=evaluate_historical_1_3_6(args.bundle)
+        write_backtest(result,args.output,repo_root=ROOT)
+        print("AS-OF REPLAY 1/3/6 CALENDAR MONTHS: NO MARKET ALPHA PROVEN")
+        for horizon in result["independent_horizon_results"]:
+            print(horizon["calendar_months"],"months",
+                  horizon["count"]["matured_complete"],"complete,",
+                  horizon["count"]["matured_unresolved"],"unresolved,",
+                  "selected mean",horizon["mean_selected_net"],
+                  "same-K excess",horizon["mean_same_K_excess_net"])
+        print("trade_ready=False; predictive_edge_certified=False")
     elif args.command=='historical-validation-v3':
         from .research_historical_validation_v3 import evaluate_v3
         from .research_historical_validation import write_backtest
