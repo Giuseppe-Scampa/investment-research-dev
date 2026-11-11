@@ -114,6 +114,45 @@ jobs:
           if-no-files-found: error
 
 
+
+  secondary_real_1_3_6m_educational_pilot:
+    # First REAL price experiment using a separate, already-committed
+    # research/education-only Aethereal source-vintage policy. Current S&P
+    # 500 members (2026) are backfilled; no PIT/ISIN/delisted guarantees.
+    # Never capture raw price files or ticker selections in CI artifacts.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+      - name: Offline research packages and frozen exchange calendar
+        run: python -m pip install -e '.[test,historical]'
+      - name: Source-original secondary retrospective 1/3/6-month research pilot
+        shell: bash
+        run: |
+          set +e
+          PYTHONPATH=src python tools/pilot_secondary_real_sp500_1_3_6m.py
+          status=$?
+          set -e
+          if [ "$status" -eq 3 ]; then
+            echo "::warning::SECONDARY_REAL_MULTI_HORIZON_UNAVAILABLE: source/network/schema blocked, no market data substituted"
+            echo 'Real 1/3/6m source pilot is **BLOCKED**, not a predictive test pass.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Unexpected source-based research calculation failed"
+            exit "$status"
+          fi
+          echo 'Real-source exploratory 1/3/6m completed, current-index survivorship bias; **NOT** investable or predictive.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Original source bytes, security names, per-security returns NOT persisted or uploaded.' >> "$GITHUB_STEP_SUMMARY"
+
   v3_full_same_k_null_calibration:
     # Successor protocol is preregistered on its own prior commit. Run the
     # original B ranking in 1000 independent simulated null worlds and check
