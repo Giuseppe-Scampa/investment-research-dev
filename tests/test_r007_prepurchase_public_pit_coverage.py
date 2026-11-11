@@ -19,6 +19,7 @@ def test_public_coverage_schema_separates_no_match_from_outage_and_reused_ticker
     assert out["state"]=="FOUND_METADATA_ONLY"
     assert out["interval_spans_asof"] is True
     assert out["candidate_delisted"] is True
+    assert out["matching_listing_last_date"]=="2022-08-05"
     assert out["multiple_listings"] is False
     base["stocks"]["records"].append({
         "file":"SAME_TICKER_DIFFERENT_LISTING.csv",
@@ -63,3 +64,26 @@ def test_departure_count_cannot_be_forged(monkeypatch):
     monkeypatch.setattr(m,"EXPECTED_MISSING_2021_FROM_2026",95)
     with pytest.raises(ValueError,match="membership size"):
         m.prior_departures(intervals)
+
+
+def test_index_departure_effective_date_is_distinct_from_price_file_end(monkeypatch):
+    monkeypatch.setattr(m,"EXPECTED_MISSING_2021_FROM_2026",1)
+    spells=[
+        ("FAKE_EXIT","2019-01-01","2023-08-25"),
+        ("FAKE_CONTINUED","2019-01-01",None),
+    ]
+    assert m.prior_departures(spells)==["FAKE_EXIT"]
+    assert m.departure_exit_calendar_dates(spells)=={
+        "FAKE_EXIT":"2023-08-25"}
+    record=m.summarize_one_response({
+        "apiVersion":"2",
+        "stocks":{"found":True,"records":[
+            {"file":"ID1.csv","firstDate":"2010-01-01",
+             "lastDate":"2023-08-24","delistDate":"2023-08-29"}
+        ]}
+    })
+    assert record["interval_spans_asof"] is True
+    assert record["matching_listing_last_date"]=="2023-08-24"
+    # No price record on 25 Aug is guaranteed even though the ticker
+    # history spans July 2021; final settlement can differ from last close.
+    assert record["candidate_delisted"] is True
