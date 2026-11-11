@@ -248,6 +248,8 @@ def evaluate_secondary_pilot(raw_prices:bytes,raw_ref:bytes,raw_ecb:bytes):
         "ic_95_ci":ic_ci,
         "random_2_stock_portfolios":len(random_means),
         "rank_vs_random_percentile":round(percentile,6) if percentile is not None else None,
+        "mean_equal_cost_two_stock_random_net":round(mean(random_means),8) if random_means else None,
+        "selected_minus_equal_cost_two_stock_random":round(observed-mean(random_means),8) if random_means else None,
         "survivorship_bias":"SEVERE_CURRENT_2026_MEMBERS_BACKFILLED_TO_2021",
         "original_price_point_in_time_versioning":False,
         "original_source_adjustment_validated_independently":False,
