@@ -157,8 +157,23 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -e '.[historical]'
-      - name: Obtain actual US 2015-26 historical prices, current membership and ECB FX
-        run: python tools/pilot_real_sp500_backtest_v2.py
+      - name: Obtain original price version only when preregistered SHA still matches
+        shell: bash
+        run: |
+          set +e
+          python tools/pilot_real_sp500_backtest_v2.py > "$RUNNER_TEMP/sp500-retrospective-pilot.log" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/sp500-retrospective-pilot.log"
+          if [ "$rc" -eq 0 ]; then
+            echo 'REPLAYED_PINNED_ORIGINAL_VERSION: read only non-investable retrospective pilot' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$rc" -eq 3 ] && grep -Fxq 'PREREGISTERED_ORIGINAL_MARKET_DATA_SHA_CHANGED; NO_RETROSPECTIVE_RESULTS' "$RUNNER_TEMP/sp500-retrospective-pilot.log"; then
+            echo "::warning::The external daily-updating CSV has changed SHA. Frozen study NOT replayed; no fresh outcomes accepted."
+            echo 'BLOCKED_VINTAGE_DRIFT: no new evaluation; original immutable 2026-11-10 job remains prior evidence' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Unexpected actual-source validation or network failure; pilot unavailable"
+            exit "$rc"
+          fi
       - name: Explicit no-investment inference and no external raw data artifacts
         if: always()
         run: |
