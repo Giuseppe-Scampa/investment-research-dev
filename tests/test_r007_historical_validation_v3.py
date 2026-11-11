@@ -19,7 +19,7 @@ from investresearch.research_historical_validation_v3 import (
 )
 
 
-def make_v3_bundle(tmp_path, *, remove_future=False, as_of="2026-07-15"):
+def make_v3_bundle(tmp_path, *, remove_future=False, crash_future=False, as_of="2026-07-15"):
     sessions=dates_v2(date(2020,12,1), date(2026,7,15),"XMIL")
     entries=[]
     missing_session=dates_v2(date(2023,2,1),date(2023,2,28),"XMIL")[9]
@@ -31,6 +31,10 @@ def make_v3_bundle(tmp_path, *, remove_future=False, as_of="2026-07-15"):
                 continue
             # Smooth fictional returns, no real security mapping.
             price=100+k*4+j*.008+.65*math.sin(j/28+k)
+            # FICTIONAL sudden market loss, not a certified split;
+            # frozen historical V3 must keep that member unresolved.
+            if crash_future and k==0 and day>="2023-02-15":
+                price*=.84
             rows.append(f"{day},{price:.6f},{250000+k*2000}")
         path.write_text("\n".join(rows)+"\n")
         entries.append({
@@ -144,3 +148,43 @@ def test_v3_immutable_same_day_asof_rank_against_later_prices(tmp_path):
     assert before is not None
     after=_eligible(asset,series,t,settings)
     assert before==after
+
+
+def test_v3_report_consumes_all_registered_slippage_levels_without_changing_alpha_gate(tmp_path):
+    out=evaluate_v3(make_v3_bundle(tmp_path))
+    assert out["slippage_execution_bps_interpretation"]==(
+        "ADVERSE_BPS_PER_SIDE_NOT_VERIFIED_QUOTES")
+    assert out["slippage_sensitivity_changes_primary_gate"] is False
+    assert out["unresolved_ge15_jump_is_split_or_crash_unverified"] is True
+    assert out["stale_identical_closes_are_not_verified_suspensions"] is True
+    levels=[0,10,25,50]
+    stress=out["slippage_spread_scenarios_DESCRIPTIVE_ONLY"]
+    assert [x["bps_each_side"] for x in stress]==levels
+    for fold in out["folds"]:
+        series=fold["slippage_spread_scenarios_DESCRIPTIVE_ONLY"]
+        assert [x["bps_each_side"] for x in series]==levels
+        for key in ("selected_net","bottom_net","same_K_random_expected_net",
+                    "same_K_excess_net"):
+            assert abs(series[0][key]-fold[key])<2.1e-8
+        assert all(series[i]["selected_net"]>=series[i+1]["selected_net"]
+                   for i in range(3))
+        assert all(series[i]["same_K_random_expected_net"]>=
+                   series[i+1]["same_K_random_expected_net"] for i in range(3))
+    assert abs(stress[0]["mean_same_K_excess_net_DESCRIPTIVE_ONLY"]-
+               out["same_K_excess_net_mean_PRIMARY"])<2.1e-8
+    assert out["predictive_edge_certified"] is False
+    assert out["trade_ready"] is False
+
+
+def test_v3_fictional_market_crash_is_an_unresolved_matured_member_not_a_winner(tmp_path):
+    out=evaluate_v3(make_v3_bundle(tmp_path,crash_future=True))
+    unresolved=[a for a in out["ex_ante_anchor_audit"] if a["state"]==
+                "MATURED_OUTCOME_UNRESOLVED_FAIL_CLOSED"]
+    assert unresolved
+    assert any(
+        a["unresolved_reason_by_id"].get("FICTIONAL_V3_SECURITY_0")==
+        "JUMP_GE15_PERCENT_CORPORATE_ACTION_OR_REAL_CRASH_UNRESOLVED"
+        for a in unresolved)
+    assert out["matured_outcome_completeness_gate"] is False
+    assert out["primary_diagnostic_gate_without_null_control"] is False
+    assert out["predictive_edge_certified"] is False
