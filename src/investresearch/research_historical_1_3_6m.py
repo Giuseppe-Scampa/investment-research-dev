@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import calendar
 from datetime import date, timedelta
+from functools import lru_cache
 from decimal import Decimal
 import hashlib
 import json
@@ -74,6 +75,7 @@ def add_calendar_months(d,months):
     return date(year,month,min(d.day,calendar.monthrange(year,month)[1]))
 
 
+@lru_cache(maxsize=2048)
 def _first_session_on_or_after(d,venue):
     if d>date(2026,12,31):
         raise ValueError("Horizon goes beyond the frozen exchange calendar")
@@ -83,6 +85,7 @@ def _first_session_on_or_after(d,venue):
     return days[0]
 
 
+@lru_cache(maxsize=4096)
 def _venue_dates(t,venue,months):
     entry=_first_session_on_or_after(date.fromisoformat(t)+timedelta(days=1),venue)
     target=add_calendar_months(date.fromisoformat(entry),months)
