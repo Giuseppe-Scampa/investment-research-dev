@@ -266,7 +266,8 @@ def main():
     p=_fetch(policy["source_price_csv"],MAX_PRICE_BYTES)
     # Ensure identical original market input BEFORE any analysis.
     if hashlib.sha256(p).hexdigest()!=policy["source_price_fixed_sha256"]:
-        raise SystemExit("PREREGISTERED_ORIGINAL_MARKET_DATA_SHA_CHANGED; NO_RETROSPECTIVE_RESULTS")
+        print("PREREGISTERED_ORIGINAL_MARKET_DATA_SHA_CHANGED; NO_RETROSPECTIVE_RESULTS")
+        raise SystemExit(3)
     try:
         c=_fetch(policy["source_current_members_csv"],MAX_REF_BYTES)
         fx=_fetch(policy["source_fx"],MAX_ECB_BYTES)
