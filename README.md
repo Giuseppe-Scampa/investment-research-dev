@@ -16,7 +16,7 @@ This is a **synthetic, public technical example** of an independent financial re
 ## Run offline
 
 ```bash
-python -m pip install -e '.[test]'
+python -m pip install -e '.[test,historical]'
 pytest -q
 investresearch report
 python -m investresearch.dashboard
