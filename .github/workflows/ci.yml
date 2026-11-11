@@ -125,6 +125,7 @@ jobs:
             reports/generated/block_b_tactical_demo/TACTICAL_RESEARCH.json
             reports/generated/block_b_tactical_demo/TACTICAL_RESEARCH.md
           retention-days: 14
+          if-no-files-found: error
       - name: Identify failed report upload separately from passing tests
         if: always()
         shell: bash
@@ -136,7 +137,6 @@ jobs:
             echo "::warning::GitHub report artifact storage was unavailable; pytest and local integrity checks remain authoritative, but download not delivered."
             echo 'Artifact delivery UNAVAILABLE — rerun to obtain a downloadable artifact; never infer missing reports are published.' >> "$GITHUB_STEP_SUMMARY"
           fi
-          if-no-files-found: error
 
 
 
