@@ -1,0 +1,65 @@
+{
+  "schema_version": "AETHEREAL_SP500_US_RESEARCH_1_3_6M_SECONDARY_EXPLORATORY_V1",
+  "registered_on": "2026-11-11",
+  "registered_before_first_1_3_6m_source_outcome_run": true,
+  "previous_source_pilot_outcomes_already_seen": true,
+  "research_use_only": true,
+  "source_urls": {
+    "prices": "https://dataset.aethereal.top/files/sp500-stock-prices.csv",
+    "current_membership": "https://dataset.aethereal.top/files/sp500-companies.csv",
+    "ecb_fx": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml"
+  },
+  "source_source_license": "AETHEREAL_FREE_RESEARCH_AND_EDUCATION_ONLY_NOT_TRADING",
+  "membership_source_license": "AETHEREAL_S_P500_COMPANIES_CC0",
+  "sample_source_prior_policy": "config/backtest/v3_secondary_real_history_pilot_2026-11-10.json",
+  "sample_selection": "BLIND_SEED_HASH_ASCENDING_40_CURRENT_NOV2026_MEMBERS_ADDED_PRE2021_EXCLUDING_ENERGY_AND_INDUSTRY_OIL",
+  "lookback": "ORIGINAL_BLOCK_B_FROZEN_61_TRADING_SESSIONS",
+  "model": "ORIGINAL_B_SCORE_NO_RETUNING",
+  "horizons_calendar_months": [
+    1,
+    3,
+    6
+  ],
+  "use_registered_multihorizon_protocol": "config/backtest/v3_asof_multihorizon_1_3_6m_protocol_2026-11-11.json",
+  "source_row_cutoff": "2026-11-09",
+  "fx": {
+    "instrument_currency": "USD",
+    "reported_performance_currency": "EUR",
+    "mapping": "ECB_LATEST_PREVIOUSLY_PUBLISHED_FIX_ON_OR_BEFORE_MARKET_DATE",
+    "max_previous_calendar_days": 5,
+    "missing_older_fx": "FAIL_CLOSED_MISSING_CURRENCY_SERIES",
+    "ecb_fix_is_tradable_fx": false,
+    "adjusted_usd_price_to_eur": "SOURCE_ADJ_CLOSE_USD_DIVIDED_BY_ECB_USD_PER_EUR",
+    "adjusted_turnover_volume": "RAW_USD_CLOSE_X_RAW_SHARES_DIVIDED_BY_ADJ_USD_CLOSE",
+    "usd_fx_transaction_friction_applied_separately_per_side": true
+  },
+  "data_capture": {
+    "source_snapshot_SHA256_logged_in_aggregate_report": true,
+    "source_last_date_required_on_or_before": "2026-11-09",
+    "original_data_not_persisted": true,
+    "source_data_never_in_public_artifacts": true,
+    "cohort_tickers_not_in_public_logs": true,
+    "no_raw_price_or_individual_trades_in_public_logs": true
+  },
+  "hypotheses": {
+    "selected_k": 2,
+    "exact_same_K_mean_random_universe_return_primary": true,
+    "allow_cash_zero_reference": true,
+    "fee_aware": true,
+    "report_no_independent_external_market_index": true,
+    "do_not_claim_predictive_alpha_from_current_survivors": true,
+    "no_tax_or_trade_certification": true
+  },
+  "known_flaws": [
+    "2026_CURRENT_CONSTITUENTS_BACKFILLED_SURVIVORSHIP_BIAS",
+    "ADJ_CLOSE_SOURCE_ASSERTION_NOT_RECONCILED_WITH_ISSUER_CA",
+    "FX_REFERENCE_PUBLISHED_AT_ECB_TIME_DIFFERENT_FROM_EXECUTABLE_US_CLOSE",
+    "NO_ISIN_OR_HISTORICAL_DELISTED_STOCK_MEMBERSHIP",
+    "PRIOR_V2_REAL_OUTCOMES_SEEN_NOT_CONFIRMATORY_HOLDOUT",
+    "US_ONLY_EQUITIES_NOT_EU_ETF_ETC_ETN_GLOBAL_INVESTABLE_UNIVERSE"
+  ],
+  "never_relabel_as": "V3_MAIN_REGISTERED_ORIGINAL_FWB_EURONEXT_LICENSED_VALIDATION",
+  "null_evidence": false,
+  "predictive_edge_certified": false,
+  "trade_ready": false
+}
