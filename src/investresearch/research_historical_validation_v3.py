@@ -26,6 +26,10 @@ from .research_historical_validation_v2 import (
     SUPPORTED_PROVIDERS, ELIGIBLE_BASIS, MAX_ASSETS,
 )
 from .research_screen import WEIGHTS
+from .research_slippage_v3 import fold_spread_scenarios,aggregate_spread_scenarios
+from .research_outcome_diagnostics_v3 import (
+    unresolved_reason,stale_close_warning,
+)
 
 PROTOCOL_V3 = (Path(__file__).resolve().parents[2] /
     "config/backtest/v3_long_horizon_protocol_v3_2026-11-11.json")
@@ -173,6 +177,14 @@ def evaluate_v3(bundle, *, settings=None):
             else:
                 observed[member["id"]] = outcome
         if missing_ids:
+            # The frozen as-of membership cannot change after reading future
+            # outcomes. Reasons are descriptive, never replacements/payouts.
+            audit["unresolved_reason_by_id"]={
+                member["id"]:unresolved_reason(
+                    member,aligned[member["id"]][1],t,
+                    policy["cohort"]["forward_return_intervals"])
+                for member in ranked if member["id"] in missing_ids
+            }
             unresolved_matured_count += 1
             unresolved_matured_member_count += len(missing_ids)
             audit["state"] = "MATURED_OUTCOME_UNRESOLVED_FAIL_CLOSED"
@@ -184,6 +196,12 @@ def evaluate_v3(bundle, *, settings=None):
             anchor_audit.append(audit)
             continue
         audit["state"] = "MATURED_COMPLETE"
+        audit["suspected_stale_price_or_suspension_ids_NOT_VERIFIED"]=[
+            member["id"] for member in ranked
+            if stale_close_warning(
+                member,aligned[member["id"]][1],t,
+                policy["cohort"]["forward_return_intervals"])
+        ]
         audit["unresolved_ids"] = []
         audit["unresolved_count"] = 0
         anchor_audit.append(audit)
@@ -203,6 +221,14 @@ def evaluate_v3(bundle, *, settings=None):
                 raise ValueError("V3 future-path validity depends on leg size")
             n_leg.append(q["net"])
         n_leg_mean = mean(n_leg)
+        # Stress ALL original as-of members and both TOP2 and random-K using
+        # identical K-leg fees. Zero scenario MUST reconcile to primary net.
+        stress=fold_spread_scenarios(
+            ranked,observed,chosen,bottom,policy)
+        if (abs(stress[0]["selected_net"]-round(same_k_selected,8))>2.1e-8
+                or abs(stress[0]["same_K_random_expected_net"]-
+                       round(random_k_expected,8))>2.1e-8):
+            raise ValueError("V3 zero-spread net cannot reconcile to frozen primary")
         ic = _spearman(
             [member["score"] for member in ranked],
             [observed[member["id"]]["gross"] for member in ranked])
@@ -218,6 +244,7 @@ def evaluate_v3(bundle, *, settings=None):
             "same_K_excess_net": round(same_k_selected-random_k_expected,8),
             "N_leg_descriptive_net": round(n_leg_mean,8),
             "N_leg_descriptive_excess": round(same_k_selected-n_leg_mean,8),
+            "slippage_spread_scenarios_DESCRIPTIVE_ONLY":stress,
             "ic": round(ic,8) if ic is not None else None,
             "max_drawdown": round(_dd(
                 [observed[c["id"]]["curve"] for c in chosen]),8),
@@ -253,6 +280,8 @@ def evaluate_v3(bundle, *, settings=None):
         and percentile is not None
         and percentile >= policy["statistics"]["random_portfolio_percentile_at_least"]
         and mean(f["selected_net"]-f["bottom_net"] for f in results) > 0)
+    spread_aggregates=aggregate_spread_scenarios(
+        results,policy["costs"]["slippage_spread_eur_bps_scenarios"])
     for fold in results:
         del fold["_candidate_net"]
     return {
@@ -283,6 +312,11 @@ def evaluate_v3(bundle, *, settings=None):
             mean(f["same_K_excess_net"] for f in results),8) if results else None,
         "confidence_interval_95_same_K_excess_PRIMARY": primary_ci,
         "confidence_interval_95_ic": ic_ci,
+        "slippage_spread_scenarios_DESCRIPTIVE_ONLY":spread_aggregates,
+        "slippage_execution_bps_interpretation":"ADVERSE_BPS_PER_SIDE_NOT_VERIFIED_QUOTES",
+        "slippage_sensitivity_changes_primary_gate":False,
+        "unresolved_ge15_jump_is_split_or_crash_unverified":True,
+        "stale_identical_closes_are_not_verified_suspensions":True,
         "N_leg_descriptive_excess_mean_DO_NOT_USE_AS_ALPHA": round(
             mean(f["N_leg_descriptive_excess"] for f in results),8) if results else None,
         "N_leg_descriptive_CI_DO_NOT_USE_AS_ALPHA": descriptive_ci,
@@ -309,6 +343,9 @@ def evaluate_v3(bundle, *, settings=None):
             "Complete-fold estimates may be censored/selected when missing data exists; never certify.",
             "Delisting payouts need authenticated terminal settlement; unsupported outcomes fail closed.",
             "N-leg grossly unequal ticket-size fee comparator is descriptive and excluded from acceptance.",
+            "Frozen 0/10/25/50 bps adverse execution spread is descriptive only, per side.",
+            "A >=15% daily jump may be a true crash or a corporate action; no invented adjusted return.",
+            "Identical adjusted closes may indicate an exchange halt OR stale/rounded source data.",
             "Missing PIT and corporate action verification, provider licence and broker tax evidence.",
             "No retrospective or synthetic statistical advantage qualifies as prospective predictive edge.",
         ],
