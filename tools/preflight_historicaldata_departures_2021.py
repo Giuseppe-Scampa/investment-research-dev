@@ -13,7 +13,7 @@ import hashlib
 import io
 import json
 import time
-from datetime import date
+from datetime import date,timedelta
 from urllib.error import HTTPError,URLError
 from urllib.parse import quote
 from urllib.request import Request,urlopen
@@ -76,6 +76,20 @@ def prior_departures(intervals):
     return gone
 
 
+def departure_exit_calendar_dates(intervals):
+    """Membership spells active at START, before seeing vendor price metadata."""
+    gone=set(prior_departures(intervals))
+    ended={}
+    for ticker,started,last in intervals:
+        if ticker in gone and started<=START and (last is None or last>=START):
+            if not last or ticker in ended:
+                raise ValueError("PIT historical 2021 member had missing/ambiguous exit spell")
+            ended[ticker]=last
+    if set(ended)!=gone:
+        raise ValueError("Could not match all original exited membership spells")
+    return ended
+
+
 def summarize_one_response(document,as_of=START):
     """Return only public coverage *flags*, not issuer data or source rows."""
     if not isinstance(document,dict) or document.get("apiVersion") not in ("2",2):
@@ -83,7 +97,8 @@ def summarize_one_response(document,as_of=START):
     stocks=document.get("stocks")
     if not isinstance(stocks,dict) or stocks.get("unavailable") is True:
         return {"state":"UNAVAILABLE","multiple_listings":False,
-                "interval_spans_asof":False,"candidate_delisted":False}
+                "interval_spans_asof":False,"candidate_delisted":False,
+                "matching_listing_last_date":None}
     records=stocks.get("records")
     if not isinstance(records,list):
         raise ValueError("Published provider stock schema missing records")
@@ -91,8 +106,10 @@ def summarize_one_response(document,as_of=START):
         if stocks.get("found") is not False:
             raise ValueError("Empty records without explicit public not-found")
         return {"state":"NOT_FOUND","multiple_listings":False,
-                "interval_spans_asof":False,"candidate_delisted":False}
+                "interval_spans_asof":False,"candidate_delisted":False,
+                "matching_listing_last_date":None}
     valid=0
+    matching_last_date=None
     candidate_delisted=False
     for rec in records:
         if not isinstance(rec,dict):
@@ -104,24 +121,30 @@ def summarize_one_response(document,as_of=START):
         date.fromisoformat(b)
         if a>b:
             raise ValueError("Public listing has impossible date sequence")
-        valid+=int(a<=as_of<=b)
+        if a<=as_of<=b:
+            valid+=1
+            if matching_last_date is None or b>matching_last_date:
+                matching_last_date=b
         candidate_delisted|=bool(rec.get("delistDate"))
     return {
         "state":"FOUND_METADATA_ONLY",
         "multiple_listings":len(records)>1,
         "interval_spans_asof":valid>0,
         "candidate_delisted":candidate_delisted,
+        "matching_listing_last_date":matching_last_date,
     }
 
 
 def coverage_audit(members_payload,fetch_metadata=_fetch_public):
     intervals=frozen_intervals(members_payload)
     missing=prior_departures(intervals)
+    by_membership_exit=departure_exit_calendar_dates(intervals)
     if len(missing)>MAX_PUBLIC_METADATA_REQUESTS:
         raise ValueError("Too many metadata checks; adjust scope rather than rate limits")
     counts={x:0 for x in (
         "FOUND_METADATA_ONLY","NOT_FOUND","UNAVAILABLE")}
     spans=0;reused=0;delisted_markers=0;error_count=0
+    spans_to_end=0;ends_within_week=0;ends_earlier=0
     fingerprints=[]
     for i,ticker in enumerate(missing):
         if i:time.sleep(REQUEST_SPACING_SECONDS)
@@ -132,12 +155,23 @@ def coverage_audit(members_payload,fetch_metadata=_fetch_public):
             fingerprints.append(hashlib.sha256(raw).hexdigest())
         except (HTTPError,URLError,OSError,ValueError,KeyError,UnicodeError):
             entry={"state":"UNAVAILABLE","multiple_listings":False,
-                   "interval_spans_asof":False,"candidate_delisted":False}
+                   "interval_spans_asof":False,"candidate_delisted":False,
+                   "matching_listing_last_date":None}
             error_count+=1
         counts[entry["state"]]+=1
         spans+=int(entry["interval_spans_asof"])
         reused+=int(entry["multiple_listings"])
         delisted_markers+=int(entry["candidate_delisted"])
+        last=entry["matching_listing_last_date"]
+        if last:
+            exit_day=date.fromisoformat(by_membership_exit[ticker])
+            last_day=date.fromisoformat(last)
+            if last_day>=exit_day:
+                spans_to_end+=1
+            elif last_day>=exit_day-timedelta(days=7):
+                ends_within_week+=1
+            else:
+                ends_earlier+=1
     if sum(counts.values())!=len(missing):
         raise ValueError("Historical ticker numerator/denominator mismatch")
     return {
@@ -151,6 +185,9 @@ def coverage_audit(members_payload,fetch_metadata=_fetch_public):
         "provider_public_metadata_not_found":counts["NOT_FOUND"],
         "provider_unavailable_or_error":counts["UNAVAILABLE"],
         "public_listing_file_spans_2021_asof_date":spans,
+        "metadata_listing_extends_to_or_after_historical_index_exit":spans_to_end,
+        "metadata_listing_ends_within_week_before_historical_exit":ends_within_week,
+        "metadata_listing_ends_more_than_week_before_exit":ends_earlier,
         "tickers_with_multiple_published_listing_lifetimes":reused,
         "metadata_records_with_delisting_date":delisted_markers,
         "public_network_errors":error_count,
