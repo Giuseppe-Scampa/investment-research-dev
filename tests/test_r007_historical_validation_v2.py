@@ -66,6 +66,14 @@ def test_long_horizon_real_pipeline_on_synthetic_is_necessarily_non_predictive(t
     assert result["planned_decision_anchors"]>=35
     assert result["complete_nonoverlapping_folds"]>=30
     assert result["random_portfolio_trials"]==10000
+    # N-leg equal-weight benchmark pays N minimum commissions. The same-K
+    # random comparator is a different, cost-matched baseline and cannot
+    # be substituted with the spuriously favorable N-leg excess.
+    assert result["equal_cost_two_leg_random_mean_net"] is not None
+    assert result["selected_minus_equal_cost_two_leg_random"] is not None
+    assert abs(result["selected_minus_equal_cost_two_leg_random"] -
+               (result["mean_net_selected"] -
+                result["equal_cost_two_leg_random_mean_net"])) < 2.1e-8
     assert result["confidence_interval_95_excess"] is not None
     assert result["confidence_interval_95_ic"] is not None
     assert all(len(f["selected_ids"])==2 and len(f["bottom_ids"])==2
