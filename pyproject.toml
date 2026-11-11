@@ -11,7 +11,7 @@ dependencies = ["defusedxml>=0.7.1,<1"]
 
 [project.optional-dependencies]
 data = ["yfinance>=0.2.50", "pandas>=2.0", "numpy>=1.26"]
-test = ["pytest>=8"]
+test = ["pytest>=8", "exchange_calendars==4.13.1"]
 historical = ["exchange_calendars==4.13.1"]
 
 [project.scripts]
