@@ -20,9 +20,11 @@ def test_posthoc_scope_immutable_but_not_confirmatory():
     assert p["first_source_missingness_outcome_already_seen"] is True
     assert p["never_use_as_confirmatory_test"] is True
     assert p["acceptance"]["allow_conclusion_about_true_alpha"] is False
-    assert p["source_original_SHA256"]==m.original_source.FIRST_OBSERVED_SOURCE_SHA256 | {
-        "companies":m.original_source.FIRST_OBSERVED_SOURCE_SHA256["members"]
-    } if False else p["source_original_SHA256"]
+    assert p["source_original_SHA256"]=={
+        "prices":m.original_source.FIRST_OBSERVED_SOURCE_SHA256["prices"],
+        "companies":m.original_source.FIRST_OBSERVED_SOURCE_SHA256["members"],
+        "ecb_fx":m.original_source.FIRST_OBSERVED_SOURCE_SHA256["ecb"],
+    }
 
 
 def _fold(t):
