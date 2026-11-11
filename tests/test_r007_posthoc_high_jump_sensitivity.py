@@ -28,7 +28,10 @@ def test_posthoc_scope_immutable_but_not_confirmatory():
 
 
 def _fold(t):
-    return {"decision_date":t,"selected_net":.01,
+    # Actual B complete folds carry decision_date; the independent
+    # vendor-proxy helper returns date. Both must be represented in the
+    # deliberately fictional test fixture.
+    return {"decision_date":t,"date":t,"selected_net":.01,
             "same_K_uniform_random_expected_net":.005,
             "same_K_excess_net":.005,"ic":.1}
 
