@@ -116,11 +116,12 @@ jobs:
 
 
   secondary_real_1_3_6m_educational_pilot:
-    # First REAL price experiment using a separate, already-committed
-    # research/education-only Aethereal source-vintage policy. Current S&P
-    # 500 members (2026) are backfilled; no PIT/ISIN/delisted guarantees.
-    # Never capture raw price files or ticker selections in CI artifacts.
-    if: github.event_name == 'pull_request'
+    # Original 11 November 2026 research-vintage experiment completed:
+    # https://github.com/Giuseppe-Scampa/investment-research-dev/actions/runs/43064389030
+    # Subsequent daily-updated data MUST NOT be re-evaluated automatically
+    # under the same registered protocol after the first outcomes were seen.
+    # Manual-only and source SHA-guarded; NO source bytes/artifacts/ticker data.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
