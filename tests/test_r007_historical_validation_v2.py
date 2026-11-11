@@ -71,6 +71,19 @@ def test_long_horizon_real_pipeline_on_synthetic_is_necessarily_non_predictive(t
     # be substituted with the spuriously favorable N-leg excess.
     assert result["equal_cost_two_leg_random_mean_net"] is not None
     assert result["selected_minus_equal_cost_two_leg_random"] is not None
+    assert result["same_K_expected_random_net_mean"] is not None
+    assert result["same_K_excess_net_mean"] is not None
+    assert result["same_K_excess_paired_bootstrap_ci_95_EXPLORATORY"] is not None
+    assert len(result["same_K_excess_paired_bootstrap_ci_95_EXPLORATORY"])==2
+    assert abs(result["same_K_excess_net_mean"] -
+               (result["mean_net_selected"] -
+                result["same_K_expected_random_net_mean"]))<2.1e-8
+    assert abs(result["same_K_excess_net_mean"] -
+               mean(f["same_K_excess_net"] for f in result["folds"]))<2.1e-8
+    assert all(abs(f["same_K_excess_net"] -
+                   (f["selected_net"]-f["same_K_random_expected_net"]))<2.1e-8
+               for f in result["folds"])
+    assert result["predictive_edge_certified"] is False
     assert abs(result["selected_minus_equal_cost_two_leg_random"] -
                (result["mean_net_selected"] -
                 result["equal_cost_two_leg_random_mean_net"])) < 2.1e-8
