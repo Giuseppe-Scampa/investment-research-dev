@@ -149,6 +149,7 @@ def evaluate_v3(bundle, *, settings=None):
         audit = {
             "date": t, "eligible": len(ranked),
             "as_of_cohort_sha256": cohort_sha,
+            "as_of_eligible_ids_in_rank_order": [r["id"] for r in ranked],
             "selected_ids_as_of": [r["id"] for r in chosen],
             "bottom_ids_as_of": [r["id"] for r in bottom],
             "planned_exit_date": planned_exit,
