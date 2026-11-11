@@ -38,6 +38,16 @@ def main(argv=None):
     v2.add_argument('--bundle',type=Path,required=True)
     v2.add_argument('--output',type=Path,required=True,
                     help='New report under a local ignored data/private path only')
+    v3=sp.add_parser('historical-validation-v3',
+        help='PRE-REGISTERED V3 primary same-K and matured missing-outcome fail-closed; NEVER trade')
+    v3.add_argument('--bundle',type=Path,required=True)
+    v3.add_argument('--output',type=Path,required=True,
+                    help='New V3 original research report under ignored B/data/private only')
+    null3=sp.add_parser('null-calibration-v3',
+        help='V3 independently preregistered same-K no-alpha worlds, not market evidence')
+    null3.add_argument('--worlds',type=int,default=1000)
+    null3.add_argument('--output',type=Path,required=True,
+                       help='New aggregate-only simulated null report under B/data/private')
     null=sp.add_parser('null-calibration-v2',
         help='Run 1000 preregistered simulated no-alpha worlds, never real prices')
     null.add_argument('--worlds',type=int,default=1000)
@@ -265,6 +275,25 @@ def main(argv=None):
               "folds:",result["complete_nonoverlapping_folds"],
               "random trials:",result["random_portfolio_trials"],
               "trade_ready=False; predictive_edge_certified=False")
+    elif args.command=='historical-validation-v3':
+        from .research_historical_validation_v3 import evaluate_v3
+        from .research_historical_validation import write_backtest
+        report=evaluate_v3(args.bundle)
+        write_backtest(report,args.output,repo_root=ROOT)
+        print("V3 SAME-K preregistered research:",report["status"],
+              "completed folds:",report["complete_nonoverlapping_folds"],
+              "unresolved matured:",report["matured_outcome_unresolved_anchors"],
+              "primary CI:",report["confidence_interval_95_same_K_excess_PRIMARY"],
+              "trade_ready=False; predictive_edge_certified=False")
+    elif args.command=='null-calibration-v3':
+        from .research_negative_control_v3 import run_null_worlds_v3
+        from .research_historical_validation import write_backtest
+        report=run_null_worlds_v3(worlds=args.worlds)
+        write_backtest(report,args.output,repo_root=ROOT)
+        print("V3 SAME-K null calibration:",report["worlds_completed"],
+              "false positive upper Wilson:",report["false_positive_rate_Wilson95_upper"],
+              "calibrated:",report["null_calibration_passed"],
+              "NO market evidence or trading")
     elif args.command=='null-calibration-v2':
         from .research_negative_control_v2 import run_null_worlds
         from .research_historical_validation import write_backtest
