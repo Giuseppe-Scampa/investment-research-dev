@@ -129,7 +129,7 @@ def read_historical_pack(pack_path: Path, *, private_root: Path):
         raise ValueError("Unrecognized original PIT source pack")
     snapshots = {}
     for spec in pack["snapshots"]:
-        needed = {"market", "snapshot_as_of", "original_published_on",
+        needed = {"market", "snapshot_as_of", "original_published_on", "original_effective_on",
                   "source_kind", "usage_rights",
                   "source_url", "original_path", "original_sha256",
                   "transcription_path", "transcription_sha256"}
@@ -140,8 +140,9 @@ def read_historical_pack(pack_path: Path, *, private_root: Path):
             raise ValueError("PIT market or membership source kind not supported")
         day = _iso(spec["snapshot_as_of"])
         published = _iso(spec["original_published_on"])
-        if published > day:
-            raise ValueError("Retrospective document must not be backdated as contemporaneous")
+        effective = _iso(spec["original_effective_on"])
+        if published > day or effective > day or effective < published:
+            raise ValueError("Historical membership announcement is not effective at the claimed snapshot")
         if spec["usage_rights"] not in RIGHTS:
             raise ValueError("Original source usage permission not classified")
         _source_url(spec["source_url"])
