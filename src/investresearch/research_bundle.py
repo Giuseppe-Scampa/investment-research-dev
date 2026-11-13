@@ -260,6 +260,20 @@ def build_bundle(spec:dict, output:Path):
             _validate_manual_price_evidence(source,as_of,records)
         source_kinds.add(source['provider'])
         entry={k:row.get(k,'') for k in ('id','name','isin','asset_type','sector','venue','currency','oil_exposure','index_memberships','index_membership_status')}
+        # Preserve operator-supplied *historical* lifecycle boundaries. They
+        # constrain as-of eligibility but DO NOT authenticate vendor PIT IDs,
+        # delisting cash flows or source vintage. Never infer dates from the
+        # first/last observation of a price file.
+        for field in ('listing_date','delisted_date'):
+            value=row.get(field)
+            if value not in (None,''):
+                if not isinstance(value,str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}',value):
+                    raise ValueError('Historical listing/delisting date requires exact ISO day')
+                date.fromisoformat(value)
+                entry[field]=value
+        if (entry.get('listing_date') and entry.get('delisted_date') and
+                entry['delisted_date']<entry['listing_date']):
+            raise ValueError('Delisting precedes listing; source lifecycle conflicts')
         if entry.get('isin') and not valid_isin(entry['isin']):
             raise ValueError(f"Invalid ISIN: {uid}")
         source_note={'provider':source['provider'],'source_url':source.get('source_url',''),
