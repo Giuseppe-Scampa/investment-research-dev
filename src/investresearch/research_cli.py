@@ -48,6 +48,12 @@ def main(argv=None):
     v3.add_argument('--bundle',type=Path,required=True)
     v3.add_argument('--output',type=Path,required=True,
                     help='New V3 original research report under ignored B/data/private only')
+    readiness=sp.add_parser('historical-source-readiness',
+        help='R-004 aggregate local PIT/61+31 coverage and rights blockers, NO alpha or price export')
+    readiness.add_argument('--bundle',type=Path,required=True,
+                           help='Existing original hash-checked B local bundle')
+    readiness.add_argument('--output',type=Path,required=True,
+                           help='NEW aggregate audit JSON under data/private only')
     null3=sp.add_parser('null-calibration-v3',
         help='V3 independently preregistered same-K no-alpha worlds, not market evidence')
     null3.add_argument('--worlds',type=int,default=1000)
@@ -307,6 +313,19 @@ def main(argv=None):
               "unresolved matured:",report["matured_outcome_unresolved_anchors"],
               "primary CI:",report["confidence_interval_95_same_K_excess_PRIMARY"],
               "trade_ready=False; predictive_edge_certified=False")
+    elif args.command=='historical-source-readiness':
+        from .research_historical_source_readiness import (
+            audit_historical_source_readiness,write_readiness,
+        )
+        report=audit_historical_source_readiness(args.bundle)
+        write_readiness(report,args.output,repo_root=ROOT)
+        print('R-004 source readiness:',report['research_readiness'],
+              '| instruments:',report['total_assets'],
+              '| V3 anchors:',report['scheduled_v3_anchors_before_source_cutoff'],
+              '| missing PIT lifecycle:',report['unknown_listing_date_count'],
+              '| unresolved 31-session paths:',
+                report['member_anchor_combinations_with_matured_unresolved_31_day_path'],
+              '| no alpha or orders')
     elif args.command=='null-calibration-v3':
         from .research_negative_control_v3 import run_null_worlds_v3
         from .research_historical_validation import write_backtest
