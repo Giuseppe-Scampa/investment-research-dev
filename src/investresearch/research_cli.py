@@ -48,6 +48,18 @@ def main(argv=None):
     v3.add_argument('--bundle',type=Path,required=True)
     v3.add_argument('--output',type=Path,required=True,
                     help='New V3 original research report under ignored B/data/private only')
+    pit=sp.add_parser('pit-multi-market-pilot',
+        help='P0 original private historic membership pack, 32-name pre-outcome pilot; NO prices/backtest')
+    pit.add_argument('--pack',type=Path,required=True,
+                     help='Original operator-reviewed PIT source pack JSON in data/private')
+    pit.add_argument('--private-root',type=Path,required=True,
+                     help='Existing trusted private directory holding the source pack and snapshots')
+    pit.add_argument('--seed',required=True,
+                     help='Exactly 64 lowercase hex characters; declare BEFORE any outcome inspection')
+    pit.add_argument('--first-anchors',type=int,default=12,
+                     help='First N V3 calendar anchors (default 12, never cherry-pick dates)')
+    pit.add_argument('--output',type=Path,required=True,
+                     help='NEW private audit JSON, NO prices and no trading')
     readiness=sp.add_parser('historical-source-readiness',
         help='R-004 aggregate local PIT/61+31 coverage and rights blockers, NO alpha or price export')
     readiness.add_argument('--bundle',type=Path,required=True,
@@ -313,6 +325,16 @@ def main(argv=None):
               "unresolved matured:",report["matured_outcome_unresolved_anchors"],
               "primary CI:",report["confidence_interval_95_same_K_excess_PRIMARY"],
               "trade_ready=False; predictive_edge_certified=False")
+    elif args.command=='pit-multi-market-pilot':
+        from .research_pit_multi_market import pilot_pit_multi_market,write_private_pit_audit
+        report=pilot_pit_multi_market(args.pack,private_root=args.private_root,
+                   seed=args.seed,first_anchors=args.first_anchors)
+        write_private_pit_audit(report,args.output,private_root=args.private_root)
+        print('R-004 PIT membership pilot: market sources:',
+              report['source_snapshot_count_by_market'],
+              '| draw-only unverified anchors:',report['drawn_complete_unverified_anchors'],
+              '| total anchors:',report['pilot_anchors'],
+              '| NOT PIT-certified, no prices, no trades')
     elif args.command=='historical-source-readiness':
         from .research_historical_source_readiness import (
             audit_historical_source_readiness,write_readiness,
