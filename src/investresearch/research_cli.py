@@ -298,6 +298,10 @@ def main(argv=None):
         from .research_historical_validation import write_backtest
         report=evaluate_v3(args.bundle)
         write_backtest(report,args.output,repo_root=ROOT)
+        # Additive original-code receipt: NEVER mutates preregistered V3 JSON.
+        from .research_v3_code_receipt import write_receipt
+        code_receipt_path=write_receipt(args.output,repo_root=ROOT)
+        print("V3 code receipt (not a signature):",code_receipt_path)
         print("V3 SAME-K preregistered research:",report["status"],
               "completed folds:",report["complete_nonoverlapping_folds"],
               "unresolved matured:",report["matured_outcome_unresolved_anchors"],
