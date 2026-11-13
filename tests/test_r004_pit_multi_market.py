@@ -59,6 +59,7 @@ def fixture(tmp_path, *, missing=None, rights_override=None, count=10,
         specs.append({
             "market":market,"snapshot_as_of":day,
             "original_published_on":(date.fromisoformat(day)-timedelta(days=2)).isoformat(),
+            "original_effective_on":day,
             "source_kind":"ARCHIVED_HISTORICAL_SNAPSHOT_OPERATOR_TRANSCRIBED",
             "usage_rights":"UNVERIFIED" if rights_override==market else
                            "OPERATOR_REVIEWED_PERSONAL_NONCOMMERCIAL",
@@ -143,6 +144,7 @@ def test_original_snapshot_hash_tampering_is_rejected(tmp_path):
 
 @pytest.mark.parametrize("field,value",[
     ("original_published_on","2026-12-01"),
+    ("original_effective_on","2026-12-01"),
     ("usage_rights","UNKNOWN_STATE"),
     ("source_url","http://insecure.example.org"),
     ("snapshot_as_of","not-a-date"),
