@@ -1,0 +1,67 @@
+{
+  "schema_version": "P0_OFFICIAL_MEMBERSHIP_SOURCE_CANDIDATE_CATALOG_V1",
+  "as_of_research_date": "2026-11-14",
+  "not_a_price_feed": true,
+  "no_original_source_bytes_in_git": true,
+  "university_or_community_lists_are_not_2021_source_attestations": true,
+  "all_source_rights_unverified_for_automated_research": true,
+  "trade_ready": false,
+  "sources": [
+    {
+      "market": "GERMANY",
+      "index": "DAX",
+      "role": "HISTORICAL_FULL_COMPOSITION_FILE_DIRECTORY",
+      "url": "https://www.stoxx.com/end-of-the-day-data",
+      "historical_availability_evidence": "DAX_Composition 2021 January through December listed in STOXX page",
+      "candidate_snapshot_as_of": "2021-06-30",
+      "candidate_snapshot_actual_effective_date_verified": false,
+      "downloaded_source_bytes": false,
+      "rights_for_intended_use": "UNVERIFIED",
+      "security_identity_complete": false,
+      "membership_certificate": false,
+      "blocking_note": "Monthly archive directory found; individual June/July archive and file header/effective-date not yet inspected; website privileges and historical licences depend on account tier"
+    },
+    {
+      "market": "ITALY",
+      "index": "FTSE MIB",
+      "role": "HISTORICAL_MONTH_END_COMPOSITION_CANDIDATE",
+      "url": "https://www.borsaitaliana.it/borsaitaliana/statistiche/statistiche-storiche/capitalizzazioni/capitalizzazioni.htm",
+      "historical_availability_evidence": "June and July 2021 FTSE MIB capitalisation reports listed; July 30 basket lists 40 issuer names but no confirmed historic ISIN crosswalk",
+      "candidate_snapshot_as_of": "2021-06-30",
+      "candidate_snapshot_actual_effective_date_verified": false,
+      "downloaded_source_bytes": false,
+      "rights_for_intended_use": "UNVERIFIED",
+      "security_identity_complete": false,
+      "membership_certificate": false,
+      "blocking_note": "For July 1 2021 use June 30 evidence only if fully reviewed; July 30 report is future for that date; basket publication dates/rights and stable identifiers still missing"
+    },
+    {
+      "market": "FRANCE",
+      "index": "CAC 40",
+      "role": "DATED_CHANGE_NOTICE_NOT_FULL_BASELINE",
+      "url": "https://www.euronext.com/en/about/media/euronext-press-releases/euronext-announces-june-2021-quarterly-review-results-cacr",
+      "historical_availability_evidence": "June 10 2021 CAC 40 no-change notification effective June 21 2021; September 9 2021 annual review adds Eurofins removes Atos",
+      "candidate_snapshot_as_of": "2021-06-21",
+      "candidate_snapshot_actual_effective_date_verified": true,
+      "downloaded_source_bytes": false,
+      "rights_for_intended_use": "UNVERIFIED",
+      "security_identity_complete": false,
+      "membership_certificate": false,
+      "blocking_note": "No-change notice does not enumerate 40 members: need contemporaneous full roster plus series of effective additions/removals; later 2023 educational PDF cannot prove 2021 original vintage"
+    },
+    {
+      "market": "USA",
+      "index": "S&P 500",
+      "role": "RETROSPECTIVE_MEMBERSHIP_INTERVAL_CANDIDATE",
+      "url": "https://github.com/kitata2/8765_sp500_pit",
+      "historical_availability_evidence": "Project already uses pinned historical membership candidate; approximately 614 ticker labels in July 2021–Aug 2026 and 95 of July 2021 names absent at end",
+      "candidate_snapshot_as_of": "2021-07-01",
+      "candidate_snapshot_actual_effective_date_verified": false,
+      "downloaded_source_bytes": false,
+      "rights_for_intended_use": "UNVERIFIED",
+      "security_identity_complete": false,
+      "membership_certificate": false,
+      "blocking_note": "Retrospectively reconstructed ticker intervals lack independently confirmed security IDs, original historic source vintage and all delisting settlement values"
+    }
+  ]
+}

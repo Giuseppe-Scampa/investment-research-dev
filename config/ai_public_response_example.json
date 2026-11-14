@@ -1,0 +1,15 @@
+{
+  "summary": "La dichiarazione sintetica non basta a stabilire la qualità degli utili o le prospettive future.",
+  "counterarguments": [
+    {
+      "claim": "La crescita dei ricavi non dimostra da sola crescita dei flussi di cassa.",
+      "source_ids": [
+        "SRC1"
+      ]
+    }
+  ],
+  "uncertainties": [
+    "Mancano i dati di margine e le note di bilancio.",
+    "La fonte di esempio non è un report societario autentico."
+  ]
+}

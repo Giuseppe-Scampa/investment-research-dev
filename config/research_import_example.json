@@ -1,0 +1,38 @@
+{
+  "as_of": "2026-11-01",
+  "mode": "EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE",
+  "assets": [
+    {
+      "id": "EXAMPLE_US_EQUITY",
+      "name": "Example US issuer — replace mapping after verification",
+      "isin": "",
+      "asset_type": "EQUITY",
+      "venue": "XNAS",
+      "currency": "USD",
+      "sector": "Technology",
+      "oil_exposure": "none",
+      "index_memberships": [],
+      "sec_cik": "0000320193",
+      "prices_source": {
+        "provider": "YFINANCE_EOD_UNVERIFIED",
+        "path": "REPLACE_WITH_YFINANCE_CACHED_BLOB_PATH",
+        "sha256": "REPLACE_WITH_RAW_SHA256",
+        "source_url": "https://finance.yahoo.com/quote/AAPL/history/",
+        "price_basis": "YAHOO_CLOSE_AUTO_ADJUST_FALSE_NOT_TOTAL_RETURN",
+        "split_dates": []
+      },
+      "fundamentals_source": {
+        "provider": "SEC_COMPANYFACTS",
+        "path": "REPLACE_WITH_SEC_CACHED_BLOB_PATH",
+        "sha256": "REPLACE_WITH_RAW_SHA256",
+        "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json"
+      }
+    }
+  ],
+  "fx_source": {
+    "provider": "ECB_EUR_FX",
+    "path": "REPLACE_WITH_ECB_CACHED_BLOB_PATH",
+    "sha256": "REPLACE_WITH_RAW_SHA256",
+    "source_url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml"
+  }
+}

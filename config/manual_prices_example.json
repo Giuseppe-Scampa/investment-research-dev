@@ -1,0 +1,25 @@
+{
+  "as_of": "2026-11-02",
+  "mode": "EXTERNAL_RESEARCH_SOURCES_NOT_EXECUTABLE",
+  "assets": [
+    {
+      "id": "EXAMPLE_AUTHORIZED_LOCAL_PRICE",
+      "name": "Illustrative local import; replace with identified issuer",
+      "isin": "",
+      "asset_type": "EQUITY",
+      "venue": "XMIL",
+      "currency": "EUR",
+      "sector": "",
+      "oil_exposure": "unknown",
+      "index_memberships": [],
+      "prices_source": {
+        "provider": "MANUAL_AUTHORIZED_LOCAL_OHLCV_UNVERIFIED",
+        "path": "REPLACE_WITH_LOCAL_LICENSED_CSV_PATH",
+        "sha256": "REPLACE_WITH_ACTUAL_64_CHARACTER_SHA256",
+        "source_url": "https://provider.example.org/authorized-history.csv",
+        "retrieved_at_utc": "2026-11-02T18:00:00+00:00",
+        "usage_attestation": "LOCAL_RESEARCH_RIGHTS_ASSERTED_NOT_VERIFIED"
+      }
+    }
+  ]
+}

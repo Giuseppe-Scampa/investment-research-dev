@@ -1,0 +1,38 @@
+{
+  "schema_version": "architecture-control-v1",
+  "current_version": "V3.0.0",
+  "baseline_path": "docs/architecture/V3.0.0.md",
+  "index_path": "docs/architecture/README.md",
+  "roadmap_path": "docs/architecture/ROADMAP.md",
+  "change_control_path": "docs/architecture/CHANGE_CONTROL.md",
+  "review_prompts_path": "docs/architecture/ASSESSMENT_PROMPTS.md",
+  "decision_register": [
+    "docs/architecture/adr/ADR-0001-v3-baseline.md"
+  ],
+  "milestones": [
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6"
+  ],
+  "requirement_ids": [
+    "R-001",
+    "R-002",
+    "R-003",
+    "R-004",
+    "R-005",
+    "R-006",
+    "R-007",
+    "R-008",
+    "R-009",
+    "R-010",
+    "R-011",
+    "R-012",
+    "R-013"
+  ],
+  "owner": "public-neutral-architecture",
+  "last_approved_on": "2026-11-03",
+  "version_change_requires": "ADR-and-user-approval"
+}

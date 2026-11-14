@@ -1,0 +1,54 @@
+{
+  "schema_version": "SECONDARY_REAL_ADJUSTED_PRICE_HIGH_JUMP_SENSITIVITY_V1",
+  "registered_on": "2026-11-11",
+  "preexisting_main_protocol": "config/backtest/v3_asof_multihorizon_1_3_6m_protocol_2026-11-11.json",
+  "first_actual_source_experiment_already_seen": true,
+  "first_source_missingness_outcome_already_seen": true,
+  "posthoc_descriptive_only": true,
+  "never_use_as_confirmatory_test": true,
+  "never_change_original_v1_v2_v3_or_1_3_6m_gate": true,
+  "source_original_SHA256": {
+    "prices": "6480d9c288ae7521a6a44dbb75786cbec3a62149bcfaecc263999290fa30d020",
+    "companies": "853f2fe3c4b126b6b251dbc7c81510de22c17167f2c0e646212e38e1cc45420f",
+    "ecb_fx": "e00ae31dccd722aa1edb5970252f82641c70a0c873e3a0556554259336043af1"
+  },
+  "frozen_original_horizons_calendar_months": [
+    1,
+    3,
+    6
+  ],
+  "original_approved_only_full_asof_cohorts": true,
+  "comparison_conditions": {
+    "same_original_40_current_sp500_survivors": true,
+    "same_asof_61_day_rank_and_selected_top_2": true,
+    "same_registered_entry_and_exit_sessions": true,
+    "same_costs_and_eur_fx_mapping": true,
+    "original_complete_folds_kept_unchanged": true,
+    "previously_censored_ge15_only_evaluated_when_all_sessions_observed": true,
+    "do_not_replace_missing_sessions_or_delisted_cashflows": true,
+    "vendor_total_return_proxy_requires_independent_CA_proof": true,
+    "real_market_crash_classification_not_automatically_a_split": true
+  },
+  "descriptive_calculations": {
+    "comparison": "TOP2_MINUS_UNIFORM_SAME_K_EXPECTED_NET",
+    "bootstrap": "10K_PAIRED_INDEPENDENT_FOLD_BOOTSTRAP_FROZEN_ORIGINAL_SEED",
+    "random_K_percentile": "NOT_REQUIRED_NO_REOPTIMIZATION",
+    "report_original_and_proxy_in_same_output": true,
+    "separate_result_from_broker_trade_recommendations": true,
+    "reports_only_aggregate_counts_returns_without_tickers": true
+  },
+  "acceptance": {
+    "allow_conclusion_about_true_alpha": false,
+    "allow_shortlist_for_real_money": false,
+    "allow_change_original_model_weights": false,
+    "source_licence_for_educational_research_only": true
+  },
+  "limitations": [
+    "Post-hoc sensitivity created after first complete-case results and high-jump censor cause were observed",
+    "2026-current S&P500 membership backfilled with survivorship and stable-ID biases",
+    "Vendor adjusted prices can be restated, or misreport corporate actions and cashflows",
+    "Euro performance uses ECB published fix rather than executable broker FX",
+    "Proxy cannot certify whether 15 percent changes were actual crash or stock split",
+    "No independently source-confirmed delisting proceeds, ISIN, taxes, execution prices or licence for trading"
+  ]
+}

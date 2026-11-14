@@ -1,0 +1,122 @@
+{
+  "schema_version": "v3-historical-evaluation-protocol-v2",
+  "registered_on": "2026-11-10",
+  "change_control": "ADDITIVE_TO_V3_0_0_BASELINE_NOT_REPLACEMENT_OF_V1",
+  "pre_registration_status": "UNTESTED_NEW_PROTOCOL_BEFORE_OUTCOME_EXECUTION",
+  "purpose": "EVALUATE_EXISTING_B_SCORE_ON_MULTIPLE_NONOVERLAPPING_HISTORICAL_COHORTS_WITH_NEGATIVE_CONTROLS",
+  "no_model_retuning": true,
+  "calendar": {
+    "library": "exchange_calendars",
+    "required_version": "4.13.1",
+    "allowed_venues": [
+      "XNYS",
+      "XNAS",
+      "XMIL",
+      "XPAR",
+      "XETR"
+    ],
+    "first_supported_session": "2020-01-01",
+    "last_supported_session": "2026-12-31",
+    "historical_closed_days_are_library_model_not_EXCHANGE_ATTESTATION": true
+  },
+  "cohort": {
+    "first_decision_date": "2021-07-01",
+    "last_decision_date": "2026-05-31",
+    "decision_step_calendar_days": 49,
+    "max_anchor_rollback_calendar_days": 10,
+    "minimum_price_training_sessions": 61,
+    "forward_return_intervals": 30,
+    "entry_after_decision_exchange_sessions": 1,
+    "universe_membership_policy": "REQUIRE_POINT_IN_TIME_LISTING_DATE_DELISTING_DATE_AND_SOURCE_VINTAGE_OR_NONCERTIFIED",
+    "delisted_and_missing_future_policy": "DO_NOT_DROP_LOSERS;FAIL_FOLD_AND_REPORT_SURVIVORSHIP_RISK",
+    "minimum_eligible_instruments": 20,
+    "minimum_independent_folds_for_predictive_evidence": 30,
+    "asset_types": [
+      "EQUITY",
+      "ETF_UCITS",
+      "ETC",
+      "ETN"
+    ],
+    "require_corporate_action_and_currency_reconciliation": true,
+    "exclude_unsupported_payoffs": true
+  },
+  "score": {
+    "formula": "EXISTING_BLOCK_B_SCORE_INDICATORS_AND_MARKET_SCORE",
+    "weights_frozen": {
+      "momentum_20": 0.3,
+      "momentum_60": 0.2,
+      "volatility_20": 0.2,
+      "drawdown_60": 0.15,
+      "turnover_20": 0.15
+    },
+    "feature_cutoff": "T_OR_EARLIER_ONLY",
+    "no_future_filing_data": true,
+    "no_training_or_tuning_on_evaluation_data": true
+  },
+  "comparisons": {
+    "selected_top_k": 2,
+    "contrarian_bottom_k": 2,
+    "primary_benchmark": "EQUAL_WEIGHT_AS_OF_ELIGIBLE_UNIVERSE",
+    "secondary_benchmark": "ZERO_RETURN_CASH",
+    "random_portfolios": 10000,
+    "random_seed": 20261110,
+    "random_control": "SAME_AS_OF_POOL_SAME_NUMBER_OF_POSITIONS_AND_SAME_COST",
+    "negative_control_random_walk_worlds": 1000,
+    "negative_control_random_walk_assets": 30,
+    "negative_control_random_walk_folds": 30,
+    "negative_control_seed": 20261111,
+    "negative_control_target_false_positive_rate": 0.05
+  },
+  "costs": {
+    "notional_eur": 10000,
+    "commission_fraction_each_side": 0.0019,
+    "minimum_commission_eur_each_side": 7,
+    "usd_fx_fraction_each_side": 0.0025,
+    "slippage_spread_eur_bps_scenarios": [
+      0,
+      10,
+      25,
+      50
+    ],
+    "transaction_tax_only_when_isin_and_venue_evidence_verified": true,
+    "italian_income_tax_and_minusvalenze": "ONLY_IN_PRIVATE_A_WITH_BROKER_STATEMENTS"
+  },
+  "statistics": {
+    "primary_metric": "MEAN_FOLD_SELECTED_EXCESS_NET_VS_UNIVERSE",
+    "secondary_metrics": [
+      "SPEARMAN_RANK_IC",
+      "BOTTOM2_MINUS_TOP2",
+      "MAX_DRAWDOWN",
+      "WIN_RATE_ABOVE_ELIGIBLE_MEDIAN"
+    ],
+    "bootstrap_unit": "COMPLETE_NON_OVERLAPPING_FOLD",
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20261112,
+    "confidence_level": 0.95,
+    "require_excess_bootstrap_lower_bound_positive": true,
+    "require_ic_bootstrap_lower_bound_positive": true,
+    "random_portfolio_percentile_at_least": 0.9,
+    "require_top2_outperform_bottom2": true,
+    "require_negative_control_false_positive_rate_at_most": 0.05,
+    "do_not_infer_actual_predictive_edge_from_retrospective_lookback_data": true
+  },
+  "power_calibration": {
+    "pre_run_simulation_effect_sizes_IC": [
+      0,
+      0.025,
+      0.05,
+      0.1
+    ],
+    "nominal_alpha": 0.05,
+    "target_power": 0.8,
+    "independent_fold_IC_standard_error_approximation": "1/sqrt(number_of_assets-1); multiply by 1/sqrt(independent_folds)",
+    "power_result_is_simulation_only_not_market_evidence": true
+  },
+  "release_gate": {
+    "never_trade": true,
+    "report_source_rights_and_original_vintage": true,
+    "report_survivorship_and_hindsight_universe_bias": true,
+    "no_predictive_certification_without_prospective_ledger": true,
+    "no_public_raw_price_or_personal_data_artifacts": true
+  }
+}

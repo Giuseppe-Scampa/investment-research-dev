@@ -1,0 +1,60 @@
+{
+  "schema_version": "V3_SECONDARY_SOURCE_REAL_PRICE_PILOT_V1",
+  "registered_on": "2026-11-10",
+  "experiment_priority": "DESCRIPTIVE_REAL_RETROSPECTIVE_SOURCE_BIASED_NOT_MODEL_VALIDATION",
+  "v2_protocol_git_blob": "fc2a7013171f156449f324749b89970cff02bb93",
+  "source_price_csv": "https://dataset.aethereal.top/files/sp500-stock-prices.csv",
+  "source_price_fixed_sha256": "ae7aeba441dc4071bcdc79948b17d49d89e4c5960798d5e6ddc8bf0c4eded0f1",
+  "source_current_members_csv": "https://dataset.aethereal.top/files/sp500-companies.csv",
+  "source_fx": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml",
+  "source_rights": "AETHEREAL_RESEARCH_EDUCATION_ONLY; COMPANY_REFERENCE_CC0; ECB_OFFICIAL_REFERENCE_FX",
+  "universe_definition": {
+    "seed": "V3_REAL_SOURCE_BLIND_COHORT_NOV10_2026_A",
+    "target_ticker_count": 40,
+    "selection": "SORT_BY_SHA256_OF_SEED_COLON_TICKER_THEN_TAKE_FIRST_40; BEFORE_READ_PRICE_ROWS",
+    "sector_exclude": [
+      "Energy"
+    ],
+    "exclude_industry_words": [
+      "oil",
+      "petroleum",
+      "gas exploration",
+      "hydrocarbon"
+    ],
+    "require_index_date_added_on_or_before": "2021-01-01",
+    "ticker_symbol_is_not_isin": true,
+    "current_constituents_only_survivorship_bias": true
+  },
+  "data_transform": {
+    "original_price": "ADJ_CLOSE_SOURCE_ASSERTED_SPLIT_DIVIDEND_ADJUSTED_USD",
+    "eur_adjusted_return_proxy": "ADJ_CLOSE_USD_DIVIDED_BY_SAME_DAY_ECB_USD_PER_EUR",
+    "turnover_eur_proxy": "RAW_CLOSE_USD_TIMES_RAW_VOLUME_DIVIDED_BY_SAME_DAY_ECB_RATE",
+    "missing_ecb_policy": "MISSING_DATA_CAUSES_FOLD_REJECTION_NO_FORWARD_FILL",
+    "future_price_data": "NOT_PERMITTED_TO_SELECT_OR_OPTIMIZE"
+  },
+  "fee_simulation": {
+    "notional_eur": 10000,
+    "commission_fraction_each_side": 0.0019,
+    "minimum_commission_eur_each_side": 7,
+    "fx_fraction_each_side": 0.0025,
+    "spread_bps_assumption": 0
+  },
+  "analysis": {
+    "dates": "USE_REGISTERED_V2_2021_TO_2026_49_DAY_ANCHORS",
+    "training_sessions": 61,
+    "holding_intervals": 30,
+    "ranker": "UNCHANGED_B_SCORES",
+    "k": 2,
+    "random_portfolios": 10000,
+    "bootstrap_resamples": 10000,
+    "random_seed": 20261110,
+    "no_midcourse_tuning": true
+  },
+  "privacy": {
+    "no_raw_price_or_ticker_selection_publication": true,
+    "aggregate_only_public_CI_logs": true,
+    "do_not_publish_pseudonym_reversible_raw_sha": false
+  },
+  "expected_outcome": "ALLOW_NEGATIVE_OR_POSITIVE_EXCESS_WITH_INADEQUATE_SOURCE_PROVENANCE_NO_PREDICTIVE_CERTIFICATION",
+  "no_trading": true
+}

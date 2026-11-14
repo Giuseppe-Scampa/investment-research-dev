@@ -1,0 +1,92 @@
+{
+  "schema_version": "v3-asof-calendar-multihorizon-replay-v1",
+  "registered_on": "2026-11-11",
+  "purpose": "RETROSPECTIVE_EX_ANTE_SELECTION_1_3_6_CALENDAR_MONTH_OUTCOME_FALSIFICATION",
+  "change_control": "NEW_EXPERIMENT_UNCHANGED_V1_V2_V3_PREREGISTRATIONS; NO_FITTING_ON_OBSERVED_OUTCOMES",
+  "replay_only": true,
+  "trade_ready": false,
+  "predictive_edge_certified": false,
+  "schedule": {
+    "anchor_source": "EXACT_FROZEN_V3_PREREGISTERED_49_DAY_COMMON_EXCHANGE_DATE_ANCHORS",
+    "first_decision_date": "2021-07-01",
+    "last_decision_date": "2026-05-31",
+    "horizons_calendar_months": [
+      1,
+      3,
+      6
+    ],
+    "entry": "FIRST_VENUE_SESSION_STRICTLY_AFTER_SELECTION",
+    "exit": "FIRST_VENUE_SESSION_ON_OR_AFTER_ENTRY_PLUS_CALENDAR_MONTHS",
+    "fold_independence": "PER_HORIZON_EX_ANTE_GREEDY_NONOVERLAP_WITH_EXIT_RESERVED_EVEN_IF_FUTURE_MISSING",
+    "all_anchors_reported": true,
+    "report_pending_not_matured_separately": true
+  },
+  "frozen_model": {
+    "score": "EXISTING_BLOCK_B_MARKET_INDICATOR_SCORE_WITHOUT_OUTCOME_TUNING",
+    "lookback_exchange_sessions": 61,
+    "rank_by": "DECREASING_SCORE_TIEBREAK_RESEARCH_ID",
+    "portfolio_k": 2,
+    "minimum_as_of_eligible_members": 20,
+    "minimum_independent_folds_for_predictive_evidence": 30,
+    "require_authentic_point_in_time_listing_and_delisted_records_for_certification": true
+  },
+  "costs": {
+    "notional_eur": 10000,
+    "commission_fraction_each_side": 0.0019,
+    "minimum_commission_eur_each_side": 7,
+    "usd_fx_fraction_each_side": 0.0025,
+    "slippage_sensitivity_bps_each_side": [
+      0,
+      10,
+      25,
+      50
+    ],
+    "slippage_is_descriptive_not_primary": true,
+    "dividend_and_corporate_action_confirmation_required": true
+  },
+  "comparators": {
+    "primary": "EXACT_EXPECTED_UNIFORM_RANDOM_K_AS_OF_INSTRUMENTS_SAME_LEG_FEES",
+    "secondary": "ZERO_RETURN_CASH",
+    "market_index": "OPTIONAL_ONLY_WITH_SEPARATELY_AUTHENTICATED_VINTAGED_PRICE_SOURCE",
+    "random_K_portfolios": 10000,
+    "random_seed": 20261120,
+    "per_horizon_bootstrap_repetitions": 10000,
+    "bootstrap_seed": 20261121,
+    "bootstrap_ci_fraction": 0.95,
+    "require_unresolved_matured_zero": true
+  },
+  "failure_policy": {
+    "missing_any_matured_as_of_member": "CENSOR_WHOLE_FOLD_AND_BLOCK_POSITIVE_ACCEPTANCE",
+    "gap_or_unverified_daily_move_ge15_percent": "MATURED_FOLD_UNRESOLVED_NEVER_IMPUTE",
+    "no_delisting_cashflow": "MATURED_FOLD_UNRESOLVED_NEVER_ASSUME_ZERO_OR_100_PERCENT_LOSS",
+    "no_price_or_rights_source": "BLOCK_MARKET_VALIDATION",
+    "allow_complete_case_descriptive_diagnostics": true,
+    "no_lookahead": "RANKING_AS_OF_T_AND_CALENDAR_RESERVATIONS_BEFORE_CONSULTING_ANY_OUTCOME",
+    "no_future_metric_leaks": "SCORE_FROM_B_61_PRE_DECISION_EXCHANGE_CLOSES_ONLY"
+  },
+  "independence": {
+    "report_all_asof_anchors_even_when_overlap": true,
+    "overlap_not_counted_as_independent": true,
+    "one_three_six_month_returns_for_same_decision_are_correlated": true,
+    "naive_cross_horizon_significance_prohibited": true,
+    "minimum_independent_folds_needs_longer_source_history_for_6_months": true
+  },
+  "output": {
+    "per_selection_asset_ids_and_venue": true,
+    "entry_exit_calendar_dates": true,
+    "net_realized_return_and_eur_pnl": true,
+    "uniform_random_K_expectation_and_percentile": true,
+    "paired_fold_bootstrap_ci": true,
+    "completeness_and_rights_gate": true,
+    "source_sha256": true,
+    "privacy_private_local_only": true,
+    "all_results_retro_not_true_prospective": true
+  },
+  "external_acceptance": {
+    "data_rights_independently_verified": false,
+    "point_in_time_universe_verified": false,
+    "corporate_actions_dividends_adjustment_independently_verified": false,
+    "actual_bid_ask_fx_tax_verified": false,
+    "predictive_edge_certification_possible_without_new_evidence": false
+  }
+}

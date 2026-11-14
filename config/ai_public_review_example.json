@@ -1,0 +1,15 @@
+{
+  "schema_version": "r009-public-research-v1",
+  "data_scope": "PUBLIC_ISSUER_RESEARCH_ONLY_NO_PERSONAL_DATA",
+  "as_of": "2026-11-04",
+  "question": "Quali limiti metodologici ha la seguente dichiarazione societaria sintetica?",
+  "sources": [
+    {
+      "source_id": "SRC1",
+      "url": "https://issuer.example.test/investor-relations/illustrative-report",
+      "published_date": "2026-11-03",
+      "excerpt": "ESEMPIO INVENTATO: l'emittente dimostrativo segnala un aumento dei ricavi. Non sono inclusi prospetti completi.",
+      "sha256": null
+    }
+  ]
+}
